@@ -1,4 +1,10 @@
-# Antimatter Dimensions
+# Antimatter Dimensions TAS
+
+## Disclaimer
+
+This is a fork of Antimatter Dimensions project. Original repository link can be found [here](https://github.com/IvarK/AntimatterDimensionsSourceCode).
+
+License of the project can be found [here](https://github.com/a;ex9127git/AntimatterDimensionsTAS/blob/master/LICENSE).
 
 ## Run
 

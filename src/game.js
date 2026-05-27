@@ -11,6 +11,8 @@ import { supportedBrowsers } from "./supported-browsers";
 
 import Payments from "./core/payments";
 
+import { tasTick } from "./tas";
+
 if (GlobalErrorHandler.handled) {
   throw new Error("Initialization failed");
 }
@@ -430,6 +432,7 @@ export function gameLoop(passDiff, options = {}) {
   // check or else it'll attempt to run the game anyway
   if (Speedrun.isPausedAtStart() || GameEnd.creditsEverClosed) {
     GameUI.update();
+    tasTick();
     return;
   }
 
@@ -621,6 +624,8 @@ export function gameLoop(passDiff, options = {}) {
   Pelle.gameLoop(realDiff);
   GalaxyGenerator.loop(realDiff);
   GameEnd.gameLoop(realDiff);
+
+  tasTick();
 
   if (!Enslaved.canAmplify) {
     Enslaved.boostReality = false;
