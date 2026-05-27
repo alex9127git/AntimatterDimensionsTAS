@@ -63,8 +63,8 @@ export const TAS = {
 		console.log(`
 			Bought at: ${performance.now() - this.startTime},
 			step: ${this.currentInstruction}`);
-		this.currentInstruction += 1;
 	    }
+	    if (isSuccessful)  this.currentInstruction += 1;
         }
     },
 
