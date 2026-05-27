@@ -86,7 +86,7 @@ export const TAS = {
     async getInstructions(path) {
         const response = await fetch(path);
         const text = await response.text();
-        const data = JSON.parse(data);
+        const data = JSON.parse(text);
 
         data.forEach(([fn, args]) => {
             createInstruction(() => actions[fn](...args));
