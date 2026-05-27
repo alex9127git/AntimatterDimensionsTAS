@@ -83,7 +83,7 @@ export const TAS = {
     	dev.hardReset();
     	Speedrun.prepareSave(name);
     },
-    getInstructions(path) {
+    async getInstructions(path) {
         const response = await fetch(path);
         const data = await data.text();
 
