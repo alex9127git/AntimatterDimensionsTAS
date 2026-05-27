@@ -38,7 +38,7 @@ export const TAS = {
         createInstruction(() => buyOneDimension(2))
     ],
     currentInstruction: 0,
-    startTime = null,
+    startTime: null,
 
     enable() {
         console.log("TAS started running");
