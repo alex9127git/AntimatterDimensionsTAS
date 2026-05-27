@@ -26,7 +26,6 @@ export const TAS = {
         createInstruction(() => waitNextTick()),
         createInstruction(() => buyOneDimension(1)),
         createInstruction(() => simulateEvent("keydown", "enter", 13)),
-        createInstruction(() => waitNextTick()),
         createInstruction(() => buyOneDimension(1)),
         createInstruction(() => buyOneDimension(1)),
         createInstruction(() => buyOneDimension(1)),
@@ -39,9 +38,11 @@ export const TAS = {
         createInstruction(() => buyOneDimension(2))
     ],
     currentInstruction: 0,
-    
+    startTime = null,
+
     enable() {
         console.log("TAS started running");
+	this.startTime = performance.now();
         this.isRunning = true;
         this.nextTickSwitch = true;
         this.currentInstruction = 0;
@@ -71,6 +72,12 @@ export const TAS = {
         }
         let instruction = this.instructions[index];
         return instruction.run();
+    },
+    restart(name = "JadeGPTas") {
+    	TAS.isRunning = false;
+    	TAS.currentInstruction = 0;
+    	dev.hardReset();
+    	Speedrun.prepareSave(name);
     }
 }
 
@@ -78,19 +85,19 @@ export function tasTick() {
     TAS.runNextPendingInstruction();
 }
 
-function waitNextTick() {
+export function waitNextTick() {
     TAS.nextTickSwitch = !TAS.nextTickSwitch;
     return TAS.nextTickSwitch;
 }
 
-function createInstruction(action) {
+export function createInstruction(action) {
     return {
         action: action,
         run: (() => action())
     };
 }
 
-function simulateEvent(type, key, keyCode) {
+export function simulateEvent(type, key, keyCode) {
     const event = new KeyboardEvent(type, {
         key,
         keyCode: keyCode,
