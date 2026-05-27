@@ -82,6 +82,14 @@ export const TAS = {
     	TAS.currentInstruction = 0;
     	dev.hardReset();
     	Speedrun.prepareSave(name);
+    },
+    getInstructions(path) {
+        const response = await fetch(path);
+        const data = await data.text();
+
+        instructions.forEach(([fn, args]) => {
+            createInstruction(() => actions[fn](...args));
+        });   
     }
 }
 
