@@ -92,7 +92,7 @@ export const TAS = {
         data.forEach(([fn, args]) => {
             instructions.push(createInstruction(() => actions[fn](...args)));
         });   
-
+        TAS.instructions = instructions;
     }
 }
 
