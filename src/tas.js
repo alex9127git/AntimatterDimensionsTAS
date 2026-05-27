@@ -88,9 +88,11 @@ export const TAS = {
         const text = await response.text();
         const data = JSON.parse(text);
 
+        const instructions = [];
         data.forEach(([fn, args]) => {
-            createInstruction(() => actions[fn](...args));
+            instructions.push(createInstruction(() => actions[fn](...args)));
         });   
+
     }
 }
 
