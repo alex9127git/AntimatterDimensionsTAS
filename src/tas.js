@@ -59,8 +59,12 @@ export const TAS = {
         let isSuccessful = true;
         while (isSuccessful) {
             isSuccessful = this.runOneInstruction(this.currentInstruction);
-            console.log(isSuccessful);
-            if (isSuccessful) this.currentInstruction += 1;
+            if (isSuccessful && (TAS.currentInstruction > 22 || TAS.currentInstruction === 20)) {
+		console.log(`
+			Bought at: ${performance.now() - this.startTime},
+			step: ${this.currentInstruction}`);
+		this.currentInstruction += 1;
+	    }
         }
     },
 
