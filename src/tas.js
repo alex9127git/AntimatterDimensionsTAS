@@ -1,5 +1,12 @@
-import { buyOneDimension } from "./core/globals"
+import { buyOneDimension, buyTickSpeed, requestDimensionBoost } from "./core/globals"
 
+const actions = {
+    ["buyOneDimension"]: buyOneDimension,
+    ["buyTickSpeed"]: buyTickSpeed,
+    ["requestDimensionBoost"]: requestDimensionBoost,
+    ["wait"]: waitNextTick,
+    ["dp"]: simulateEvent
+}
 export const TAS = {
     isRunning: false,
     nextTickSwitch: true,
@@ -39,7 +46,7 @@ export const TAS = {
     ],
     currentInstruction: 0,
     startTime: null,
-
+    queue: [],
     enable() {
         console.log("TAS started running");
 	this.startTime = performance.now();
@@ -92,7 +99,14 @@ export const TAS = {
         data.forEach(([fn, args]) => {
             instructions.push(createInstruction(() => actions[fn](...args)));
         });   
-        TAS.instructions = instructions;
+        this.queue.push(instructions);
+    },
+    loadInstructions(path) {
+        if (this.queue.length === 0) {
+            this.getInstructions(path);
+        } else {
+            this.instructions = this.queue;
+        };
     }
 }
 
