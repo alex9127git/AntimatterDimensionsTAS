@@ -1,4 +1,4 @@
-import { buyOneDimension, buyTickSpeed, requestDimensionBoost } from "./core/globals"
+import { buyOneDimension, buyTickSpeed, GameStorage, requestDimensionBoost } from "./core/globals"
 
 /*  Addition notes (from Jade :3):
 *-- We can add a return true for functions that don't 
@@ -19,55 +19,24 @@ import { buyOneDimension, buyTickSpeed, requestDimensionBoost } from "./core/glo
 export const actions = {
     ["buyOneDimension"]: buyOneDimension,
     ["buyTickSpeed"]: buyTickSpeed,
-    ["requestDimensionBoost"]: requestDimensionBoost,
+    ["buyDimensionBoost"]: buyDimensionBoost,
     ["wait"]: waitNextTick,
     ["dp"]: simulateEvent
 }
+
 export const TAS = {
     isRunning: false,
     nextTickSwitch: true,
 
-    instructions: [
-        createInstruction(() => simulateEvent("keydown", "up", 38)),
-        createInstruction(() => waitNextTick()),
-        createInstruction(() => simulateEvent("keydown", "up", 38)),
-        createInstruction(() => waitNextTick()),
-        createInstruction(() => simulateEvent("keydown", "down", 40)),
-        createInstruction(() => waitNextTick()),
-        createInstruction(() => simulateEvent("keydown", "down", 40)),
-        createInstruction(() => waitNextTick()),
-        createInstruction(() => simulateEvent("keydown", "left", 37)),
-        createInstruction(() => waitNextTick()),
-        createInstruction(() => simulateEvent("keydown", "right", 39)),
-        createInstruction(() => waitNextTick()),
-        createInstruction(() => simulateEvent("keydown", "left", 37)),
-        createInstruction(() => waitNextTick()),
-        createInstruction(() => simulateEvent("keydown", "right", 39)),
-        createInstruction(() => waitNextTick()),
-        createInstruction(() => simulateEvent("keydown", "b", 66)),
-        createInstruction(() => waitNextTick()),
-        createInstruction(() => simulateEvent("keydown", "a", 65)),
-        createInstruction(() => waitNextTick()),
-        createInstruction(() => buyOneDimension(1)),
-        createInstruction(() => simulateEvent("keydown", "enter", 13)),
-        createInstruction(() => buyOneDimension(1)),
-        createInstruction(() => buyOneDimension(1)),
-        createInstruction(() => buyOneDimension(1)),
-        createInstruction(() => buyOneDimension(1)),
-        createInstruction(() => buyOneDimension(1)),
-        createInstruction(() => buyOneDimension(1)),
-        createInstruction(() => buyOneDimension(1)),
-        createInstruction(() => buyOneDimension(1)),
-        createInstruction(() => buyOneDimension(1)),
-        createInstruction(() => buyOneDimension(2))
-    ],
+    instructions: [],
 
     currentInstruction: 0,
     startTime: null,
     queue: [],
 
-    enable() {
+    start() {
         console.log("TAS started running");
+        // this.startTime = player.records.totalTimePlayed; ? is this necessary
         this.isRunning = true;
         this.nextTickSwitch = true;
         this.currentInstruction = 0;
@@ -75,25 +44,19 @@ export const TAS = {
         return true;
     },
 
-    // I'm scared to add a return 
-    // statement on this behemoth of a function
     runNextPendingInstruction() {
         if (!this.isRunning) return;
         let isSuccessful = true;
         while (isSuccessful) {
             isSuccessful = this.runOneInstruction(this.currentInstruction);
-
             if (isSuccessful) {
                 if (this.currentInstruction === 21 || this.currentInstruction > 22) {
-
-                this.startTime = this.startTime || performance.now();
-    
-		        console.log(`
-			        Bought at: ${performance.now() - this.startTime}ms,
-			        step: ${this.currentInstruction}`);
-
+                    this.startTime = this.startTime || performance.now();
+                    console.log(`
+                        Bought at: ${performance.now() - this.startTime}ms,
+                        step: ${this.currentInstruction}`);
 	            };
-	        this.currentInstruction += 1;
+	            this.currentInstruction += 1;
             };
         };
     },
@@ -101,34 +64,46 @@ export const TAS = {
     runOneInstruction(index) {
         if (index >= this.instructions.length) {
             TAS.isRunning = false;
-        // we can just return the console.log statement,
-        // this is still fine for readability.
-            return console.log("TAS finished running");;
+            console.log("TAS finished running, exporting save:");
+            GameStorage.save();
+            return console.log(GameStorage.exportModifiedSave());
         };
         
         let instruction = this.instructions[index];
         return instruction.run();
     },
 
-    restart(name = "JadeGPTas") {
+    async prepareAndStart(pathsToInstructions, pathToSave=null) {
+        await pathsToInstructions.forEach(async (path) => {
+            await this.getInstructions(path);
+            this.loadInstructions();
+        });
+        console.log("Finished loading instructions");
+        if (pathToSave === null) {
+            console.log("Save not found, hard resetting");
+            dev.hardReset();
+            Speedrun.prepareSave("JadeGPTas");
+        } else {
+            console.log("Save found, importing");
+            await this.importSave(pathToSave);
+        }
+        TAS.start();
+    },
 
-        // reset the TAS values.
-        TAS.startTime = null;
-    	TAS.isRunning = false;
-    	TAS.currentInstruction = 0;
-
-    	dev.hardReset(); // reset the achievements
-    	Speedrun.prepareSave(name); // enable speedrun mode
+    async importSave(path) {
+        const response = await fetch(path);
+        const text = await response.text();
+        GameStorage.import(text);
         return true;
     },
 
     async getInstructions(path) {
         const response = await fetch(path);
         const text = await response.text();
-        const data = JSON.parse(text);
+        const commands = JSON.parse(text);
         const instructions = [];
 
-        data.forEach(([fn, args]) => {
+        commands.forEach(([fn, args]) => {
             instructions.push(createInstruction(() => actions[fn](...args)));
         });   
         this.queue = instructions;
@@ -136,7 +111,7 @@ export const TAS = {
     },
 
     loadInstructions() {
-        this.instructions = this.queue;
+        this.instructions.push(...this.queue);
         return true;
     }
 };
@@ -166,3 +141,10 @@ export function simulateEvent(type, key, keyCode) {
     });
     return document.dispatchEvent(event);
 };
+
+export function buyDimensionBoost() {
+    let oldValue = player.dimensionBoosts;
+    requestDimensionBoost();
+    let newValue = player.dimensionBoosts;
+    return oldValue !== newValue;
+}
