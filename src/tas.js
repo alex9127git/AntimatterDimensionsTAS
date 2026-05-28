@@ -55,20 +55,15 @@ export const TAS = {
         this.runNextPendingInstruction();
     },
 
-    waitNextTick() {
-        this.nextTickSwitch = !this.nextTickSwitch;
-        return this.nextTickSwitch;
-    },
-
     runNextPendingInstruction() {
         if (!this.isRunning) return;
         let isSuccessful = true;
         while (isSuccessful) {
             isSuccessful = this.runOneInstruction(this.currentInstruction);
-            if (isSuccessful && (TAS.currentInstruction > 23 || TAS.currentInstruction === 22)) {
+            if (isSuccessful && (this.currentInstruction === 21 || this.currentInstruction > 22)) {
             this.startTime = this.startTime || performance.now();
 		    console.log(`
-			    Bought at: ${performance.now() - this.startTime},
+			    Bought at: ${performance.now() - this.startTime}ms,
 			    step: ${this.currentInstruction}`);
 	    }
 	    if (isSuccessful)  this.currentInstruction += 1;
@@ -85,6 +80,7 @@ export const TAS = {
         return instruction.run();
     },
     restart(name = "JadeGPTas") {
+        TAS.startTime = null;
     	TAS.isRunning = false;
     	TAS.currentInstruction = 0;
     	dev.hardReset();
