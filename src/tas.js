@@ -1,6 +1,6 @@
 import { buyOneDimension, buyTickSpeed, requestDimensionBoost } from "./core/globals"
 
-const actions = {
+export const actions = {
     ["buyOneDimension"]: buyOneDimension,
     ["buyTickSpeed"]: buyTickSpeed,
     ["requestDimensionBoost"]: requestDimensionBoost,
@@ -49,7 +49,6 @@ export const TAS = {
     queue: [],
     enable() {
         console.log("TAS started running");
-	this.startTime = performance.now();
         this.isRunning = true;
         this.nextTickSwitch = true;
         this.currentInstruction = 0;
@@ -66,10 +65,11 @@ export const TAS = {
         let isSuccessful = true;
         while (isSuccessful) {
             isSuccessful = this.runOneInstruction(this.currentInstruction);
-            if (isSuccessful && (TAS.currentInstruction > 22 || TAS.currentInstruction === 20)) {
-		console.log(`
-			Bought at: ${performance.now() - this.startTime},
-			step: ${this.currentInstruction}`);
+            if (isSuccessful && (TAS.currentInstruction > 23 || TAS.currentInstruction === 22)) {
+            this.startTime = this.startTime || performance.now();
+		    console.log(`
+			    Bought at: ${performance.now() - this.startTime},
+			    step: ${this.currentInstruction}`);
 	    }
 	    if (isSuccessful)  this.currentInstruction += 1;
         }
@@ -99,11 +99,11 @@ export const TAS = {
         data.forEach(([fn, args]) => {
             instructions.push(createInstruction(() => actions[fn](...args)));
         });   
-        this.queue.push(instructions);
+        this.queue = instructions;
     },
-    loadInstructions(path) {
+    async loadInstructions(path) {
         if (this.queue.length === 0) {
-            this.getInstructions(path);
+            await this.getInstructions(path);
         } else {
             this.instructions = this.queue;
         };
