@@ -270,5 +270,5 @@
  ["buyOneDimension",[6]], 
  ["buyOneDimension",[6]], 
  ["buyOneDimension",[6]],
- ["requestDimensionBoost",[0]]
+ ["buyDimensionBoost",[0]]
 ]

@@ -1,30 +1,19 @@
 import { buyOneDimension, buyTickSpeed, GameStorage, requestDimensionBoost, requestGalaxyReset, sacrificeReset } from "./core/globals"
 
-export const actions = {
-    ["buyOneDimension"]: buyOneDimension,
-    ["buyTickSpeed"]: buyTickSpeed,
-    ["buyDimensionBoost"]: buyDimensionBoost,
-    ["trySacrificeReset"]: trySacrificeReset,
-    ["wait"]: waitNextTick,
-    ["dp"]: simulateEvent,
-    ["galaxy"]: requestGalaxyReset
-}
-
 export const TAS = {
     isRunning: false,
-    nextTickSwitch: true,
+    tickSwitch: true,
 
-    instructions: [],
-
-    currentInstruction: 0,
     startTime: null,
+    instructions: [],
+    currentInstruction: 0,
     queue: [],
 
     start() {
         console.log("TAS started running");
-        // this.startTime = player.records.totalTimePlayed; ? is this necessary
+        this.startTime = player.records.totalTimePlayed;
         this.isRunning = true;
-        this.nextTickSwitch = true;
+        this.tickSwitch = true;
         this.currentInstruction = 0;
         this.runNextPendingInstruction();
         return true;
@@ -36,10 +25,12 @@ export const TAS = {
         while (isSuccessful) {
             isSuccessful = this.runOneInstruction(this.currentInstruction);
             if (isSuccessful) {
-                this.startTime = player.records.totalTimePlayed
-                console.log(`
-                    Bought at: ${player.records.totalTimePlayed.toFixed(3)}ms,
-                    step: ${player.records.totalTimePlayed.toFixed(3)}`);
+                this.startTime = this.startTime || performance.now();
+                if (this.currentInstruction > 20) {
+                    console.log(`
+                        Bought at: ${performance.now() - this.startTime}ms,
+                        step: ${this.currentInstruction}`);
+                };
 	            this.currentInstruction += 1;
             };
         };
@@ -47,12 +38,10 @@ export const TAS = {
 
     runOneInstruction(index) {
         if (index >= this.instructions.length) {
-            TAS.isRunning = false;
-            console.log("TAS finished running, exporting save:");
-            GameStorage.save();
-            return console.log(GameStorage.exportModifiedSave());
+            this.pause();
+            this.export();
         };
-        
+
         let instruction = this.instructions[index];
         return instruction.run();
     },
@@ -97,7 +86,36 @@ export const TAS = {
     loadInstructions() {
         this.instructions.push(...this.queue);
         return true;
+    },
+    pause() {
+        GameIntervals.stop();
+        this.isRunning = false;
+        return true;
+    },
+    export() {
+        GameStorage.save();
+        console.log(GameStorage.exportModifiedSave());
+        return true;
+    },
+    restart(name = "JadeGPTas") {
+        TAS.currentInstruction = 0;
+        TAS.isRunning = false;
+        TAS.startTime = null;
+        dev.hardReset();
+        Speedrun.prepareSave(name);
     }
+};
+
+export const actions = {
+    ["buyOneDimension"]: buyOneDimension,
+    ["buyTickSpeed"]: buyTickSpeed,
+    ["buyDimensionBoost"]: buyDimensionBoost,
+    ["trySacrificeReset"]: trySacrificeReset,
+    ["buyGalaxyReset"]: requestGalaxyReset,
+    ["getInstruction"]: TAS.getInstructions,
+    ["loadInstruction"]: TAS.loadInstructions,
+    ["wait"]: waitNextTick,
+    ["dp"]: simulateEvent
 };
 
 export function tasTick() {
@@ -106,8 +124,8 @@ export function tasTick() {
 };
 
 export function waitNextTick() {
-    TAS.nextTickSwitch = !TAS.nextTickSwitch;
-    return TAS.nextTickSwitch;
+    TAS.tickSwitch = !TAS.tickSwitch;
+    return TAS.tickSwitch;
 };
 
 export function createInstruction(action) {
