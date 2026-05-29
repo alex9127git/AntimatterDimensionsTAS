@@ -109,8 +109,9 @@ export const TAS = {
     },
 
     export() {
+        console.log("TAS finished running, exporting save:");
         GameStorage.save();
-        return true;
+        return console.log(GameStorage.exportModifiedSave());
     }
 };
 
