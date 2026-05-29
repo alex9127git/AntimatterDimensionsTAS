@@ -80,6 +80,7 @@ export const TAS = {
 
     loadInstructions() {
         TAS.instructions.push(...TAS.queue);
+        TAS.queue = [];
         return true;
     },
 
