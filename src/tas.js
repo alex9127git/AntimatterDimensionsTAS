@@ -1,27 +1,13 @@
-import { buyOneDimension, buyTickSpeed, GameStorage, requestDimensionBoost } from "./core/globals"
+import { buyOneDimension, buyTickSpeed, GameStorage, requestDimensionBoost, requestGalaxyReset, sacrificeReset } from "./core/globals"
 
-/*  Addition notes (from Jade :3):
-*-- We can add a return true for functions that don't 
-*-- have an implicit return statement,
-*
-*-- Cleaned up some of the logic, mainly:
-*-- -- logic regarding creating the instructions
-*-- -- especially as they are stored.
-*-- -- See runNextPendingInstruction;
-*
-*-- The current problem is that
-*-- -- requestDimensionBoost();
-*-- -- doesn't return false/true, only undefined.
-*-- -- this is annoying, we can either just force 
-*-- -- it to return a boolean, or change our checks.
-*
-*/
 export const actions = {
     ["buyOneDimension"]: buyOneDimension,
     ["buyTickSpeed"]: buyTickSpeed,
     ["buyDimensionBoost"]: buyDimensionBoost,
+    ["trySacrificeReset"]: trySacrificeReset,
     ["wait"]: waitNextTick,
-    ["dp"]: simulateEvent
+    ["dp"]: simulateEvent,
+    ["galaxy"]: requestGalaxyReset
 }
 
 export const TAS = {
@@ -50,12 +36,10 @@ export const TAS = {
         while (isSuccessful) {
             isSuccessful = this.runOneInstruction(this.currentInstruction);
             if (isSuccessful) {
-                if (this.currentInstruction === 21 || this.currentInstruction > 22) {
-                    this.startTime = this.startTime || performance.now();
-                    console.log(`
-                        Bought at: ${performance.now() - this.startTime}ms,
-                        step: ${this.currentInstruction}`);
-	            };
+                this.startTime = player.records.totalTimePlayed
+                console.log(`
+                    Bought at: ${player.records.totalTimePlayed.toFixed(3)}ms,
+                    step: ${player.records.totalTimePlayed.toFixed(3)}`);
 	            this.currentInstruction += 1;
             };
         };
@@ -147,4 +131,12 @@ export function buyDimensionBoost() {
     requestDimensionBoost();
     let newValue = player.dimensionBoosts;
     return oldValue !== newValue;
+}
+
+export function trySacrificeReset(value) {
+    if (Sacrifice.nextBoost.gte(value)) {
+        sacrificeReset();
+        return true;
+    }
+    return false;
 }
