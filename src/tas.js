@@ -54,7 +54,7 @@ export const TAS = {
         TAS.start();
     },
 
-    async importSave(path) {
+    async importSave(path=null) {
         let save = "";
         try {
             const response = await fetch(path);
@@ -104,7 +104,7 @@ export const TAS = {
         return true;
     },
 
-    reset(pathToSave) {
+    reset(pathToSave=null) {
         this.importSave(pathToSave);
         TAS.pause();
         this.startTime = player.records.totalTimePlayed;
