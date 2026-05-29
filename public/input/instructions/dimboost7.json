@@ -1,5 +1,6 @@
 [
 ["buyOneDimension",[1]],
+ ["getInstruction",["input\\instructions\\dimboost8.json"]],
 ["buyOneDimension",[1]],
 ["buyOneDimension",[1]],
 ["buyOneDimension",[1]],
@@ -1134,6 +1135,7 @@
 ["buyOneDimension",[1]],
 ["buyOneDimension",[1]],
 ["buyTickSpeed",[0]],
+["loadInstruction",[0]],
 ["buyOneDimension",[8]],
 ["buyOneDimension",[8]],
 ["buyOneDimension",[8]],
