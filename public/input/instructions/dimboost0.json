@@ -1,5 +1,4 @@
 [
-["getInstruction",["input\\instructions\\dimboost1.json"]],
 ["dp",["keydown", "up", "38"]],
 ["wait",["0"]],
 ["dp",["keydown", "up", "38"]],
@@ -41,7 +40,6 @@
 ["buyOneDimension",[2]], 
 ["buyOneDimension",[2]], 
 ["buyOneDimension",[2]], 
-["loadInstruction",[0]],
 ["buyTickSpeed",[0]], 
 ["buyOneDimension",[3]], 
 ["buyOneDimension",[3]], 

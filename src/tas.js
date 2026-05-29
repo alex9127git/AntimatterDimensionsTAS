@@ -37,14 +37,17 @@ export const TAS = {
         return instruction.run();
     },
 
-    async prepareAndStart(pathsToInstructions, pathToSave=null) {
+    async prepare(pathsToInstructions, pathToSave=null) {
         await TAS.reset(pathToSave);
+        let i = 1;
+        let max = pathsToInstructions.length;
         for (const path of pathsToInstructions) {
+            console.log("Loading instructions (" + i + "/" + max + ")");
             await this.getInstructions(path);
             this.loadInstructions();
+            i++;
         }
         console.log("Finished loading instructions");
-        TAS.start();
     },
 
     async importSave(path=null) {
