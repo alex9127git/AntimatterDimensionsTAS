@@ -71,12 +71,12 @@ export const TAS = {
         commands.forEach(([fn, args]) => {
             instructions.push(createInstruction(() => actions[fn](...args)));
         });   
-        this.queue = instructions;
+        TAS.queue = instructions;
         return true;
     },
 
     loadInstructions() {
-        this.instructions.push(...this.queue);
+        TAS.instructions.push(...TAS.queue);
         return true;
     },
 
