@@ -1,4 +1,4 @@
-import { buyOneDimension, buyTickSpeed, GameStorage, requestDimensionBoost, requestGalaxyReset, sacrificeReset } from "./core/globals"
+import { buyOneDimension, buyTickSpeed, GameIntervals, GameStorage, requestDimensionBoost, requestGalaxyReset, sacrificeReset } from "./core/globals"
 
 export const TAS = {
     isRunning: false,
@@ -8,16 +8,6 @@ export const TAS = {
     instructions: [],
     currentInstruction: 0,
     queue: [],
-
-    start() {
-        console.log("TAS started running");
-        this.startTime = player.records.totalTimePlayed;
-        this.isRunning = true;
-        this.tickSwitch = true;
-        this.currentInstruction = 0;
-        this.runNextPendingInstruction();
-        return true;
-    },
 
     runNextPendingInstruction() {
         if (!this.isRunning) return;
@@ -60,14 +50,32 @@ export const TAS = {
             console.log("Save found, importing");
             await this.importSave(pathToSave);
         }
+        TAS.reset();
         TAS.start();
     },
 
     async importSave(path) {
-        const response = await fetch(path);
-        const text = await response.text();
-        GameStorage.import(text);
-        return true;
+        let save = "";
+        try {
+            const response = await fetch(path);
+            save = await response.text();
+        } catch(e) {
+            console.log(e);
+        }
+        if (!save) {
+            console.log("Save not found, hard resetting");
+            dev.hardReset();
+            Speedrun.prepareSave();
+            return true;
+        } else {
+            try {
+                GameStorage.import(save);
+                return true;
+            } catch(e) {
+                console.log("Save is malformed");
+                return false;
+            }
+        }
     },
 
     async getInstructions(path) {
@@ -87,16 +95,36 @@ export const TAS = {
         this.instructions.push(...this.queue);
         return true;
     },
+
+    start() {
+        console.log("TAS started running");
+        this.isRunning = true;
+        GameIntervals.restart();
+        this.runNextPendingInstruction();
+        return true;
+    },
+
+    reset(pathToSave) {
+        this.importSave(pathToSave);
+        TAS.pause();
+        this.startTime = player.records.totalTimePlayed;
+        this.tickSwitch = true;
+        this.currentInstruction = 0;
+        return true;
+    },
+
     pause() {
         GameIntervals.stop();
         this.isRunning = false;
         return true;
     },
+
     export() {
         GameStorage.save();
         console.log(GameStorage.exportModifiedSave());
         return true;
     },
+
     restart(name = "JadeGPTas") {
         TAS.currentInstruction = 0;
         TAS.isRunning = false;
