@@ -1,4 +1,4 @@
-import { buyOneDimension, buyTickSpeed, GameIntervals, GameStorage, requestDimensionBoost, requestGalaxyReset, sacrificeReset } from "./core/globals"
+import { buyOneDimension, buyTickSpeed, GameIntervals, GameSaveSerializer, GameStorage, requestDimensionBoost, requestGalaxyReset, sacrificeReset } from "./core/globals"
 
 export const TAS = {
     isRunning: false,
@@ -30,6 +30,7 @@ export const TAS = {
         if (index >= this.instructions.length) {
             this.pause();
             this.export();
+            return;
         };
 
         let instruction = this.instructions[index];
@@ -37,44 +38,27 @@ export const TAS = {
     },
 
     async prepareAndStart(pathsToInstructions, pathToSave=null) {
-        await pathsToInstructions.forEach(async (path) => {
+        await TAS.reset(pathToSave);
+        for (const path of pathsToInstructions) {
             await this.getInstructions(path);
             this.loadInstructions();
-        });
-        console.log("Finished loading instructions");
-        if (pathToSave === null) {
-            console.log("Save not found, hard resetting");
-            dev.hardReset();
-            Speedrun.prepareSave("JadeGPTas");
-        } else {
-            console.log("Save found, importing");
-            await this.importSave(pathToSave);
         }
-        TAS.reset();
+        console.log("Finished loading instructions");
         TAS.start();
     },
 
     async importSave(path=null) {
         let save = "";
-        try {
-            const response = await fetch(path);
-            save = await response.text();
-        } catch(e) {
-            console.log(e);
-        }
-        if (!save) {
-            console.log("Save not found, hard resetting");
-            dev.hardReset();
-            Speedrun.prepareSave();
+        const response = await fetch(path);
+        save = await response.text();
+        if (GameStorage.checkPlayerObject(GameSaveSerializer.deserialize(save)) === "") {
+            console.log("Save found, importing");
+            GameStorage.import(save);
             return true;
         } else {
-            try {
-                GameStorage.import(save);
-                return true;
-            } catch(e) {
-                console.log("Save is malformed");
-                return false;
-            }
+            console.log("Path to save doesn't exist or save is invalid, hard resetting");
+            dev.hardReset();
+            Speedrun.prepareSave();
         }
     },
 
@@ -104,11 +88,12 @@ export const TAS = {
         return true;
     },
 
-    reset(pathToSave=null) {
-        this.importSave(pathToSave);
+    async reset(pathToSave=null) {
+        await this.importSave(pathToSave);
         TAS.pause();
         this.startTime = player.records.totalTimePlayed;
         this.tickSwitch = true;
+        this.instructions = [];
         this.currentInstruction = 0;
         return true;
     },
@@ -121,16 +106,7 @@ export const TAS = {
 
     export() {
         GameStorage.save();
-        console.log(GameStorage.exportModifiedSave());
         return true;
-    },
-
-    restart(name = "JadeGPTas") {
-        TAS.currentInstruction = 0;
-        TAS.isRunning = false;
-        TAS.startTime = null;
-        dev.hardReset();
-        Speedrun.prepareSave(name);
     }
 };
 
