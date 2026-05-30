@@ -1274,6 +1274,7 @@
 ["buyOneDimension",[1]],
 ["buyOneDimension",[1]],
 ["buyTickSpeed",[0]],
+<<<<<<< HEAD
 ["buyTickSpeed",[0]],
 ["buyOneDimension",[6]],
 ["buyOneDimension",[6]],
@@ -1360,6 +1361,8 @@
 ["buyOneDimension",[2]],
 ["buyOneDimension",[2]],
 ["buyOneDimension",[2]],
+=======
+>>>>>>> 9df55d60d35260748a2d3ef0b894e95685d2dfaf
 ["buyOneDimension",[8]],
 ["buyOneDimension",[8]],
 ["buyOneDimension",[8]],
