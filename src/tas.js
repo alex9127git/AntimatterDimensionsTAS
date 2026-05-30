@@ -1,5 +1,29 @@
 import { buyOneDimension, buyTickSpeed, GameIntervals, GameSaveSerializer, GameStorage, requestDimensionBoost, requestGalaxyReset, sacrificeReset } from "./core/globals"
 
+/*  Notes from Jade :3
+*-- We can add a .bind(TAS) to the command line so we can continue using "this"
+*-- .bind changes the "this" context for the function that .bind is called on
+*-- example:
+instructions.push(createInstruction(() => actions.bind(TAS)&&actions[fn](...args)));
+*-- .bind() regardless of the argument passed in returns a truthy value
+*-- it allows the next side of the and operator to evaluate, and those are also truthy
+*-- this means that it will be return by the createInstructions, 
+*-- note: this is bad practice, horrible readability, and shouldn't be used.
+*-- this is just the idea in spirit.
+*-- for an actual suggestion of code:
+
+instructions.push(createInstruction(() => {
+    const fn = actions[fn].bind(TAS);
+    return fn(...args);
+}));
+
+*/
+
+
+
+
+
+
 export const TAS = {
     isRunning: false,
     tickSwitch: true,
@@ -54,6 +78,9 @@ export const TAS = {
         let save = "";
         const response = await fetch(path);
         save = await response.text();
+        // note to Jade:
+        // check player object checks if there are any problems with the save, if there is none
+        // returns an empty string.
         if (GameStorage.checkPlayerObject(GameSaveSerializer.deserialize(save)) === "") {
             console.log("Save found, importing");
             GameStorage.import(save);
@@ -94,7 +121,9 @@ export const TAS = {
 
     async reset(pathToSave=null) {
         await this.importSave(pathToSave);
-        TAS.pause();
+        // use "this", unless we expect to call this
+        // function from the command line.
+        this.pause();
         this.startTime = player.records.totalTimePlayed;
         this.tickSwitch = true;
         this.instructions = [];
@@ -103,8 +132,9 @@ export const TAS = {
     },
 
     pause() {
+        // use "TAS" to use this from the command line
         GameIntervals.stop();
-        this.isRunning = false;
+        TAS.isRunning = false;
         return true;
     },
 
