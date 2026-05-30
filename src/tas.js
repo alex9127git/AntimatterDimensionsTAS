@@ -61,6 +61,11 @@ export const TAS = {
         return instruction.run();
     },
 
+    async prepareAndStart(pathsToInstructions, pathToSave=null) {
+        await TAS.prepare(pathsToInstructions, pathToSave);
+        TAS.start();
+    },
+
     async prepare(pathsToInstructions, pathToSave=null) {
         await TAS.reset(pathToSave);
         let i = 1;
