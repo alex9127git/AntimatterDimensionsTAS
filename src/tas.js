@@ -66,8 +66,8 @@ export const TAS = {
         TAS.start();
     },
 
-    async prepare(pathsToInstructions, pathToSave=null) {
-        await TAS.reset(pathToSave);
+    async prepare(pathsToInstructions, save=null) {
+        TAS.reset(save);
         let i = 1;
         let max = pathsToInstructions.length;
         for (const path of pathsToInstructions) {
@@ -79,10 +79,15 @@ export const TAS = {
         console.log("Finished loading instructions");
     },
 
-    async importSave(path=null) {
+    async getSave(path=null) {
         let save = "";
         const response = await fetch(path);
         save = await response.text();
+        save = save.trim();
+        return save
+    },
+
+    importSave(save) {
         // note to Jade:
         // check player object checks if there are any problems with the save, if there is none
         // returns an empty string.
@@ -124,8 +129,8 @@ export const TAS = {
         return true;
     },
 
-    async reset(pathToSave=null) {
-        await this.importSave(pathToSave);
+    reset(save=null) {
+        this.importSave(save);
         // use "this", unless we expect to call this
         // function from the command line.
         this.pause();
