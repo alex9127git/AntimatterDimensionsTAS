@@ -2,6 +2,11 @@
 #include <vector>
 #include <cmath>
 
+
+/*  NOTE:
+*   When using numbers that interact with any Decimal value
+*   intialize it as a Decimal type.
+*/
 using namespace std;
 
 
@@ -12,6 +17,30 @@ struct Decimal {
 
     Decimal operator+(const Decimal& b) {
         return Decimal::add(*this, b);
+    };
+    Decimal operator*(const Decimal& b) {
+        return Decimal::multiply(*this, b);
+    };
+
+    // note to Jade: 
+    // do not use recursive behavior in C++... dummy
+    // while loops are better.
+    static Decimal multiply(const Decimal& a, const Decimal& b) {
+        if (a.mantissa == 0 || b.mantissa == 0) 
+            return Decimal(0,0);
+        Decimal result(
+            a.mantissa * b.mantissa,
+            a.exponent + b.exponent
+        );
+        while (result.mantissa >= 10) {
+            result.mantissa /= 10;
+            result.exponent++;
+        };
+        while (result.mantissa > 0 && result.mantissa < 1) {
+            result.mantissa *= 10;
+            result.exponent--; 
+        };
+        return result;
     };
 
     static Decimal add(const Decimal& a, const Decimal& b) {
@@ -34,8 +63,33 @@ struct Decimal {
         };
         return result;
     };
+
+    static bool gte(const Decimal& a, const Decimal& b) {
+        if (a.exponent != b.exponent) 
+            return a.exponent > b.exponent; 
+        return a.mantissa >= b.mantissa; 
+    };
+    static bool gt(const Decimal& a, const Decimal& b) {
+        if (a.exponent != b.exponent) 
+            return a.exponent > b.exponent; 
+        return a.mantissa > b.mantissa; 
+    };
 };
 
+struct Player {
+    Decimal antimatter;
+
+    Player(Decimal am) : antimatter(am) {};
+    
+    bool buyDimension(Dimension& a, Decimal _amount) {
+        if (Decimal::gte(antimatter, a.cost)) {
+            Decimal::add(a.amountManual, {1,0});
+            a.cost = a.cost * a.scaling;
+            return true;
+        };
+        return false;
+    };
+};
 
 struct Dimension {
     Decimal scaling;
@@ -51,19 +105,10 @@ struct Dimension {
             scaling(_scaling),
             amountAuto(_AA),
             amountManual(_AM),
-            unlocked(_unlocked)
-        {};
-    static void buyDimension(Dimension& a, Decimal _amount) {
-        a.amountManual = a.amountManual + _amount;
-    }
+            unlocked(_unlocked) 
+            {};
 };
 
-struct Player {
-    Decimal antimatter;
-
-    Player(Decimal am)
-        : antimatter(am) {};
-};
 
 struct Dimensions {
     vector<Dimension> dims = {
@@ -79,29 +124,39 @@ struct Dimensions {
 };
 
 struct Tickspeed {
-    double cost;
-    double effect;
-    int costScaling = 10;
-    Tickspeed(double _cost, double _effect) : cost(_cost), effect(_effect) {};
+    Decimal cost;
+    Decimal effect;
+    Decimal costScaling = {1,1};
+    Decimal amount;
+    Tickspeed(Decimal _cost, Decimal _effect, Decimal _amount) : cost(_cost), effect(_effect), amount(_amount) {};
     
-    void buyTickspeed() {
-        cost *= costScaling;
+    bool buyTickspeed(Player& a) {
+        if (Decimal::gte(a.antimatter, cost)) {
+            amount = amount + {1,0};
+            cost = cost * costScaling;
+            return true;
+        }; 
+        return false;
     };
 };
 
 struct Galaxy {
-    double cost;
-    int requirement;
+    bool requirement;
+    Decimal effect = {1,1};
+    Decimal amount = {0,0};
 
-    Galaxy(double _cost, int _req) : cost(_cost), requirement(_req) {};
+    Galaxy(Decimal _effect) : effect(_effect) {};
+
+    bool buyGalaxy(Player& a) {
+        bool bought = false;
+        if (requirement) {
+            amount = amount + {1,0};
+            return true;
+        };
+        return false;
+    };
 };
 
-bool buyGalaxy(Decimal& a, Decimal& b) {
-    bool bought = false;
-    if (a > )
-};
-
-};
 int main() {
     Player player(Decimal(1,1));
     Dimensions dims;
