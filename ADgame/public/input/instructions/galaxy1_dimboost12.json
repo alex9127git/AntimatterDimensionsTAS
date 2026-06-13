@@ -1,4 +1,5 @@
-[["buyOneDimension",[1]],
+[
+["buyOneDimension",[1]],
 ["buyOneDimension",[1]],
 ["buyOneDimension",[1]],
 ["buyOneDimension",[1]],
@@ -3081,5 +3082,5 @@
 ["buyOneDimension",[8]],
 ["buyOneDimension",[8]],
 ["buyOneDimension",[8]],
-["buyGalaxyReset",[0]]
+["buyDimensionBoost",[0]]
 ]
