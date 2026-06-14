@@ -27,10 +27,10 @@ instructions.push(createInstruction(() => {
 export const TAS = {
     isRunning: false,
     tickSwitch: true,
-
-    startTime: null,
     instructions: [],
     currentInstruction: 0,
+    lastCycleInstruction: 0,
+    cycleCounter: 0,
     queue: [],
 
     runNextPendingInstruction() {
@@ -39,12 +39,6 @@ export const TAS = {
         while (isSuccessful) {
             isSuccessful = this.runOneInstruction(this.currentInstruction);
             if (isSuccessful) {
-                this.startTime = this.startTime || performance.now();
-                if (this.currentInstruction > 20) {
-                    console.log(`
-                        Bought at: ${performance.now() - this.startTime}ms,
-                        step: ${this.currentInstruction}`);
-                };
 	            this.currentInstruction += 1;
             };
         };
@@ -176,6 +170,20 @@ export function waitNextTick() {
     TAS.tickSwitch = !TAS.tickSwitch;
     return TAS.tickSwitch;
 };
+
+export function startCycle(repeat) {
+    TAS.cycleCounter = repeat;
+    TAS.lastCycleInstruction = TAS.currentInstruction += 1;
+    return true;
+}
+
+export function endCycle() {
+    TAS.cycleCounter -= 1;
+    if (TAS.cycleCounter > 0) {
+        TAS.currentInstruction = TAS.lastCycleInstruction;
+    }
+    return true;
+}
 
 export function createInstruction(action) {
     return {
