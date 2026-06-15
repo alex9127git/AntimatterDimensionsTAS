@@ -161,7 +161,8 @@ export const actions = {
     ["startCycle"]: startCycle,
     ["endCycle"]: endCycle,
     ["exportSave"]: exportSave,
-    ["importSave"]: importSave
+    ["importSave"]: importSave,
+    ["pushSave"]: pushSave
 };
 
 export function createInstruction(action) {
@@ -185,7 +186,7 @@ export function startCycle(repeat) {
     TAS.cycleCounter = repeat;
     TAS.lastCycleInstruction = TAS.currentInstruction;
     return true;
-}
+};
 
 export function endCycle() {
     TAS.cycleCounter -= 1;
@@ -193,17 +194,22 @@ export function endCycle() {
         TAS.currentInstruction = TAS.lastCycleInstruction;
     }
     return true;
-}
+};
 
 export function exportSave() {
     TAS.variables.save = GameStorage.exportModifiedSave();
     return true;
-}
+};
 
 export function importSave() {
     GameStorage.import(TAS.variables.save);
     return true;
-}
+};
+
+export function pushSave(array) {
+    window[array].push(TAS.variables.save);
+    return true;
+};
 
 export function simulateEvent(type, key, keyCode) {
     const event = new KeyboardEvent(type, {
@@ -219,7 +225,7 @@ export function buyDimensionBoost() {
     requestDimensionBoost();
     let newValue = player.dimensionBoosts;
     return oldValue !== newValue;
-}
+};
 
 export function trySacrificeReset(value) {
     if (Sacrifice.nextBoost.gte(value)) {
@@ -227,4 +233,4 @@ export function trySacrificeReset(value) {
         return true;
     }
     return false;
-}
+};
