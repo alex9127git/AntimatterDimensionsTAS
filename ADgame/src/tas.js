@@ -1,27 +1,17 @@
 import { buyOneDimension, buyTickSpeed, GameIntervals, GameSaveSerializer, GameStorage, requestDimensionBoost, requestGalaxyReset, sacrificeReset } from "./core/globals"
 
 /*  Notes from Jade :3
-*-- We can add a .bind(TAS) to the command line so we can continue using "this"
-*-- .bind changes the "this" context for the function that .bind is called on
-*-- example:
-instructions.push(createInstruction(() => actions.bind(TAS)&&actions[fn](...args)));
-*-- .bind() regardless of the argument passed in returns a truthy value
-*-- it allows the next side of the and operator to evaluate, and those are also truthy
-*-- this means that it will be return by the createInstructions, 
-*-- note: this is bad practice, horrible readability, and shouldn't be used.
-*-- this is just the idea in spirit.
-*-- for an actual suggestion of code:
-
-instructions.push(createInstruction(() => {
-    const fn = actions[fn].bind(TAS);
-    return fn(...args);
-}));
-
+--- :blob:
+--- removed commented out code:
+--- --- actions; TAS.pushSave.
+--- added startTime for debugging
+--- added timestamps in console.log for debugging
 */
 
 export const TAS = {
     isRunning: false,
     tickSwitch: true,
+    startTime: null,
 
     instructions: [],
     currentInstruction: 0,
@@ -44,8 +34,13 @@ export const TAS = {
             isSuccessful = this.runOneInstruction(this.currentInstruction);
             if (isSuccessful) {
                 if (TAS.variables.debug === 69) {
-                    console.log(`Instruction ${TAS.currentInstruction}, cycleCounter: ${TAS.cycleCounter}`);
-                }
+                    console.log(`
+                        Instruction : ${TAS.currentInstruction}, 
+                        cycleCounter: ${TAS.cycleCounter},
+                        timestamp   :realtime: ${(performance.now() - this.startTime).toFixed(0)},
+                                     gametime: ${player.records.totalTimePlayed}
+                        `);
+                };
 	            this.currentInstruction += 1;
             };
         };
@@ -150,6 +145,7 @@ export const TAS = {
     },
 
     start() {
+        this.startTime = performance.now();
         console.log("TAS started running");
         this.isRunning = true;
         GameIntervals.restart();
@@ -159,8 +155,7 @@ export const TAS = {
 
     reset(save=null) {
         this.importSave(save);
-        // use "this", unless we expect to call this
-        // function from the command line.
+        this.startTime = null;
         this.pause();
         this.startTime = player.records.totalTimePlayed;
         this.tickSwitch = true;
@@ -184,21 +179,21 @@ export const TAS = {
     }
 };
 
+// formatting these so the colons line up
 export const actions = {
-    ["buyOneDimension"]: buyOneDimension,
-    ["buyTickSpeed"]: buyTickSpeed,
-    ["buyDimensionBoost"]: buyDimensionBoost,
-    ["trySacrificeReset"]: trySacrificeReset,
-    ["buyGalaxyReset"]: requestGalaxyReset,
-    ["getInstruction"]: TAS.getInstructions,
-    ["loadInstruction"]: TAS.loadInstructions,
-    ["wait"]: waitNextTick,
-    ["dp"]: simulateEvent,
-    ["startCycle"]: startCycle,
-    ["endCycle"]: endCycle,
-    ["exportSave"]: exportSave,
-    ["importSave"]: importSave
-    //["pushSave"]: pushSave
+    ["buyOneDimension"]     :   buyOneDimension,
+    ["buyTickSpeed"]        :   buyTickSpeed,
+    ["buyDimensionBoost"]   :   buyDimensionBoost,
+    ["trySacrificeReset"]   :   trySacrificeReset,
+    ["buyGalaxyReset"]      :   requestGalaxyReset,
+    ["getInstruction"]      :   TAS.getInstructions,
+    ["loadInstruction"]     :   TAS.loadInstructions,
+    ["wait"]                :   waitNextTick,
+    ["dp"]                  :   simulateEvent,
+    ["startCycle"]          :   startCycle,
+    ["endCycle"]            :   endCycle,
+    ["exportSave"]          :   exportSave,
+    ["importSave"]          :   importSave
 };
 
 export function createInstruction(action) {
@@ -241,11 +236,6 @@ export function importSave() {
     GameStorage.import(TAS.variables.save);
     return true;
 };
-
-// export function pushSave(array) {
-//     window[array].push(TAS.variables.save);
-//     return true;
-// };
 
 export function simulateEvent(type, key, keyCode) {
     const event = new KeyboardEvent(type, {
