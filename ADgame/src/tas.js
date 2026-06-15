@@ -22,12 +22,20 @@ instructions.push(createInstruction(() => {
 export const TAS = {
     isRunning: false,
     tickSwitch: true,
+
     instructions: [],
     currentInstruction: 0,
+
     lastCycleInstruction: 0,
     cycleCounter: 0,
+
     queue: [],
+
+    exportedSave: null,
+    segments: [],
+
     variables: {},
+    intervals: {},
 
     runNextPendingInstruction() {
         if (!this.isRunning) return;
@@ -52,6 +60,33 @@ export const TAS = {
 
         let instruction = this.instructions[index];
         return instruction.run();
+    },
+
+    getSegments(pathsToInstructions, startSave) {
+        TAS.segments = [];
+        TAS.segments.push(startSave);
+        let i = 0;
+        TAS.intervals["segmentInterval"] = setInterval(async () => {
+            if (!TAS.isRunning) {
+                console.log(i);
+                if (i >= pathsToInstructions.length) {
+                    TAS.segments.push(GameStorage.exportModifiedSave());
+                    console.log('TAS ended');
+                    this.removeInterval("segmentInterval");
+                    return;
+                };
+                if (TAS.exportedSave !== null) {
+                    TAS.segments.push(TAS.exportedSave);
+                }
+                await TAS.prepareAndStart([pathsToInstructions[i]], TAS.segments[i]);
+                i++;
+            }
+        }, 2000);
+    },
+
+    removeInterval(id) {
+        clearInterval(TAS.intervals[id])
+        delete TAS.intervals[id];
     },
 
     async prepareAndStart(pathsToInstructions, pathToSave=null) {
@@ -144,7 +179,8 @@ export const TAS = {
     export() {
         console.log("TAS finished running, exporting save:");
         GameStorage.save();
-        return console.log(GameStorage.exportModifiedSave());
+        TAS.exportedSave = GameStorage.exportModifiedSave();
+        return console.log(TAS.exportedSave);
     }
 };
 
@@ -161,8 +197,8 @@ export const actions = {
     ["startCycle"]: startCycle,
     ["endCycle"]: endCycle,
     ["exportSave"]: exportSave,
-    ["importSave"]: importSave,
-    ["pushSave"]: pushSave
+    ["importSave"]: importSave
+    //["pushSave"]: pushSave
 };
 
 export function createInstruction(action) {
@@ -206,10 +242,10 @@ export function importSave() {
     return true;
 };
 
-export function pushSave(array) {
-    window[array].push(TAS.variables.save);
-    return true;
-};
+// export function pushSave(array) {
+//     window[array].push(TAS.variables.save);
+//     return true;
+// };
 
 export function simulateEvent(type, key, keyCode) {
     const event = new KeyboardEvent(type, {
