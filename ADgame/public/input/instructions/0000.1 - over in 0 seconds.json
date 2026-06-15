@@ -1,6 +1,9 @@
 [
 ["exportSave",[0]],
-["startCycle", [500]],
+["startCycle", [400]],
 ["importSave",[0]],
+["wait",[0]],
+["wait",[0]],
+["wait",[0]],
 ["endCycle",[0]]
 ]

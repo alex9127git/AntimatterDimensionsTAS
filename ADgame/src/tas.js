@@ -19,11 +19,6 @@ instructions.push(createInstruction(() => {
 
 */
 
-
-
-
-
-
 export const TAS = {
     isRunning: false,
     tickSwitch: true,
@@ -32,6 +27,7 @@ export const TAS = {
     lastCycleInstruction: 0,
     cycleCounter: 0,
     queue: [],
+    variables: {},
 
     runNextPendingInstruction() {
         if (!this.isRunning) return;
@@ -39,6 +35,9 @@ export const TAS = {
         while (isSuccessful) {
             isSuccessful = this.runOneInstruction(this.currentInstruction);
             if (isSuccessful) {
+                if (TAS.variables.debug === 69) {
+                    console.log(`Instruction ${TAS.currentInstruction}, cycleCounter: ${TAS.cycleCounter}`);
+                }
 	            this.currentInstruction += 1;
             };
         };
@@ -158,7 +157,18 @@ export const actions = {
     ["getInstruction"]: TAS.getInstructions,
     ["loadInstruction"]: TAS.loadInstructions,
     ["wait"]: waitNextTick,
-    ["dp"]: simulateEvent
+    ["dp"]: simulateEvent,
+    ["startCycle"]: startCycle,
+    ["endCycle"]: endCycle,
+    ["exportSave"]: exportSave,
+    ["importSave"]: importSave
+};
+
+export function createInstruction(action) {
+    return {
+        action: action,
+        run: (() => action())
+    };
 };
 
 export function tasTick() {
@@ -173,7 +183,7 @@ export function waitNextTick() {
 
 export function startCycle(repeat) {
     TAS.cycleCounter = repeat;
-    TAS.lastCycleInstruction = TAS.currentInstruction += 1;
+    TAS.lastCycleInstruction = TAS.currentInstruction;
     return true;
 }
 
@@ -185,12 +195,15 @@ export function endCycle() {
     return true;
 }
 
-export function createInstruction(action) {
-    return {
-        action: action,
-        run: (() => action())
-    };
-};
+export function exportSave() {
+    TAS.variables.save = GameStorage.exportModifiedSave();
+    return true;
+}
+
+export function importSave() {
+    GameStorage.import(TAS.variables.save);
+    return true;
+}
 
 export function simulateEvent(type, key, keyCode) {
     const event = new KeyboardEvent(type, {
