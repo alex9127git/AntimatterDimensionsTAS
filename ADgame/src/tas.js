@@ -157,6 +157,7 @@ export const TAS = {
         this.startTime = performance.now();
         console.log("TAS started running");
         this.isRunning = true;
+        this.variables.dimPurchasesLeft = undefined;
         GameIntervals.restart();
         this.runNextPendingInstruction();
         return true;
@@ -191,6 +192,7 @@ export const TAS = {
 // formatting these so the colons line up
 export const actions = {
     ["buyOneDimension"]     :   buyOneDimension,
+    ["buyDimension"]        :   buyDimension,
     ["buyTickSpeed"]        :   buyTickSpeed,
     ["buyDimensionBoost"]   :   buyDimensionBoost,
     ["trySacrificeReset"]   :   trySacrificeReset,
@@ -254,6 +256,22 @@ export function simulateEvent(type, key, keyCode) {
     });
     return document.dispatchEvent(event);
 };
+
+export function buyDimension(tier, times) {
+    if (TAS.variables.dimPurchasesLeft === undefined) TAS.variables.dimPurchasesLeft = times;
+    let successfulPurchase = true;
+    while (successfulPurchase) {
+        successfulPurchase = buyOneDimension(tier);
+        if (successfulPurchase) {
+            TAS.variables.dimPurchasesLeft--;
+        }
+        if (TAS.variables.dimPurchasesLeft <= 0) {
+            TAS.variables.dimPurchasesLeft = undefined;
+            return true;
+        }
+    }
+    return false;
+}
 
 export function buyDimensionBoost() {
     let oldValue = player.dimensionBoosts;
