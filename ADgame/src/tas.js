@@ -6,6 +6,7 @@ import { buyOneDimension, buyTickSpeed, GameIntervals, GameSaveSerializer, GameS
 --- --- actions; TAS.pushSave.
 --- added startTime for debugging
 --- added timestamps in console.log for debugging
+--- explanation of/for debug code.
 */
 
 export const TAS = {
@@ -23,8 +24,16 @@ export const TAS = {
 
     exportedSave: null,
     segments: [],
-
-    variables: {},
+    /*
+    --debug codes can be different "modes" of debug if we ever need different.
+    --realistically, this would be to partition problems, or to focus on one thing at a time.
+    --add explanations for debug code here:
+    -- -- 0: default, no debug.
+    -- --69: console.log calls for instruction completions. 
+    */
+    variables: {
+        debug: 0
+    },
     intervals: {},
 
     runNextPendingInstruction() {
