@@ -281,7 +281,7 @@ export function buyDimensionBoost() {
 };
 
 export function trySacrificeReset(value) {
-    if (Sacrifice.nextBoost.gte(value)) {
+    if (new Decimal(value).divideBy(Sacrifice.totalBoost).lte(Sacrifice.nextBoost)) {
         sacrificeReset();
         return true;
     }

@@ -20,5 +20,6 @@
 ["buyTickSpeed",[0]],
 ["buyDimension",[1,10]],
 ["buyTickSpeed",[0]],
-["buyDimension",[4,10]]
+["buyDimension",[4,10]],
+["buyDimensionBoost",[0]]
 ]
