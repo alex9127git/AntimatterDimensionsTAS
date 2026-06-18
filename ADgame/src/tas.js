@@ -141,8 +141,15 @@ export const TAS = {
         const instructions = [];
 
         commands.forEach(([fn, args]) => {
-            instructions.push(createInstruction(() => actions[fn](...args)));
-        });   
+            instructions.push({
+                fn,
+                args,
+                action: actions[fn],
+                run() {
+                    return this.action(...this.args);
+                }
+            });
+        });
         TAS.queue = instructions;
         return true;
     },
@@ -205,13 +212,6 @@ export const actions = {
     ["endCycle"]            :   endCycle,
     ["exportSave"]          :   exportSave,
     ["importSave"]          :   importSave
-};
-
-export function createInstruction(action) {
-    return {
-        action: action,
-        run: (() => action())
-    };
 };
 
 export function tasTick() {
