@@ -689,6 +689,7 @@
 ["buyDimension",[5,10]],
 ["buyDimension",[1,10]],
 ["buyTickSpeed",[0]],
+["trySacrificeReset",[600.1]],
 ["buyDimension",[2,10]],
 ["buyTickSpeed",[0]],
 ["buyDimension",[3,10]],
@@ -706,5 +707,6 @@
 ["buyDimension",[5,10]],
 ["buyTickSpeed",[0]],
 ["buyDimension",[2,10]],
-["buyDimension",[4,4]]
+["buyDimension",[4,4]],
+["tryBigCrunchReset",[1]]
 ]

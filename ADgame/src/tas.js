@@ -1,4 +1,5 @@
-import { buyOneDimension, buyTickSpeed, GameIntervals, GameSaveSerializer, GameStorage, requestDimensionBoost, requestGalaxyReset, sacrificeReset } from "./core/globals"
+import { bigCrunchReset, buyOneDimension, buyTickSpeed, GameIntervals, GameSaveSerializer, GameStorage, requestDimensionBoost, requestGalaxyReset, sacrificeReset } from "./core/globals"
+import { gainedInfinityPoints } from "./game";
 
 /*  Notes from Jade :3
 --- :blob:
@@ -202,14 +203,20 @@ export const actions = {
     ["buyDimension"]        :   buyDimension,
     ["buyTickSpeed"]        :   buyTickSpeed,
     ["buyDimensionBoost"]   :   buyDimensionBoost,
-    ["trySacrificeReset"]   :   trySacrificeReset,
     ["buyGalaxyReset"]      :   requestGalaxyReset,
+
+    ["trySacrificeReset"]   :   trySacrificeReset,
+    ["tryBigCrunchReset"]   :   tryBigCrunchReset,
+
     ["getInstruction"]      :   TAS.getInstructions,
     ["loadInstruction"]     :   TAS.loadInstructions,
+
     ["wait"]                :   waitNextTick,
-    ["dp"]                  :   simulateEvent,
     ["startCycle"]          :   startCycle,
     ["endCycle"]            :   endCycle,
+
+    ["dp"]                  :   simulateEvent,
+
     ["exportSave"]          :   exportSave,
     ["importSave"]          :   importSave
 };
@@ -286,4 +293,10 @@ export function trySacrificeReset(value) {
         return true;
     }
     return false;
+};
+
+export function tryBigCrunchReset(ip) {
+    if (!Player.canCrunch || gainedInfinityPoints().gte(Decimal.pow10(ip))) return false;
+    bigCrunchReset(false, false);
+    return true;
 };
