@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-#include <cmath>
+#include "libraries/constants/constants.h"
 
 
 /*  NOTE:
@@ -9,72 +9,6 @@
 */
 using namespace std;
 
-
-struct Decimal {
-    double mantissa;
-    int exponent;
-    Decimal(double _mant, int _exp) : mantissa(_mant), exponent(_exp) {};
-
-    Decimal operator+(const Decimal& b) {
-        return Decimal::add(*this, b);
-    };
-    Decimal operator*(const Decimal& b) {
-        return Decimal::multiply(*this, b);
-    };
-
-    // note to Jade: 
-    // do not use recursive behavior in C++... dummy
-    // while loops are better.
-    static Decimal multiply(const Decimal& a, const Decimal& b) {
-        if (a.mantissa == 0 || b.mantissa == 0) 
-            return Decimal(0,0);
-        Decimal result(
-            a.mantissa * b.mantissa,
-            a.exponent + b.exponent
-        );
-        while (result.mantissa >= 10) {
-            result.mantissa /= 10;
-            result.exponent++;
-        };
-        while (result.mantissa > 0 && result.mantissa < 1) {
-            result.mantissa *= 10;
-            result.exponent--; 
-        };
-        return result;
-    };
-
-    static Decimal add(const Decimal& a, const Decimal& b) {
-        if (a.mantissa == 0) return b;
-        if (b.mantissa == 0) return a;
-        Decimal result(0, 0);
-        if (a.exponent >= b.exponent) {
-            double scaled = b.mantissa * pow(10, b.exponent - a.exponent);
-            result.mantissa = a.mantissa + scaled;
-            result.exponent = a.exponent;
-        } else {
-            double scaled = a.mantissa * pow(10, a.exponent - b.exponent);
-
-            result.mantissa = b.mantissa + scaled;
-            result.exponent = b.exponent;
-        };
-        while (result.mantissa >= 10.0) {
-            result.mantissa /= 10.0;
-            result.exponent++;
-        };
-        return result;
-    };
-
-    static bool gte(const Decimal& a, const Decimal& b) {
-        if (a.exponent != b.exponent) 
-            return a.exponent > b.exponent; 
-        return a.mantissa >= b.mantissa; 
-    };
-    static bool gt(const Decimal& a, const Decimal& b) {
-        if (a.exponent != b.exponent) 
-            return a.exponent > b.exponent; 
-        return a.mantissa > b.mantissa; 
-    };
-};
 
 struct Dimension {
     Decimal scaling;
@@ -97,14 +31,14 @@ struct Dimension {
 
 struct Dimensions {
     vector<Dimension> dims = {
-        {Decimal(0,0), Decimal(1,1), Decimal(1,3), Decimal(0,0), Decimal(0,0), true},
-        {Decimal(0,0), Decimal(1,3), Decimal(1,4), Decimal(0,0), Decimal(0,0), false},
-        {Decimal(0,0), Decimal(1,5), Decimal(1,5), Decimal(0,0), Decimal(0,0), false},
-        {Decimal(0,0), Decimal(1,7), Decimal(1,6), Decimal(0,0), Decimal(0,0), false},
-        {Decimal(0,0), Decimal(1,10), Decimal(1,8), Decimal(0,0), Decimal(0,0), false},
-        {Decimal(0,0), Decimal(1,14), Decimal(1,10), Decimal(0,0), Decimal(0,0), false},
-        {Decimal(0,0), Decimal(1,19), Decimal(1,12), Decimal(0,0), Decimal(0,0), false},
-        {Decimal(0,0), Decimal(1,25), Decimal(1,15), Decimal(0,0), Decimal(0,0), false}
+        {DC::D0,    DC::D10,    DC::D1E3,   DC::D0,     DC::D0,     true},
+        {DC::D0,    DC::D100,   DC::D1E4,   DC::D0,     DC::D0,     false},
+        {DC::D0,    DC::D1E4,   DC::D1E5,   DC::D0,     DC::D0,     false},
+        {DC::D0,    DC::D1E6,   DC::D1E6,   DC::D0,     DC::D0,     false},
+        {DC::D0,    DC::D1E9,   DC::D1E8,   DC::D0,     DC::D0,     false},
+        {DC::D0,    DC::D1E13,  DC::D1E10,  DC::D0,     DC::D0,     false},
+        {DC::D0,    DC::D1E18,  DC::D1E12,  DC::D0,     DC::D0,     false},
+        {DC::D0,    DC::D1E24,  DC::D1E15,  DC::D0,     DC::D0,     false}
     };
 };
 
@@ -132,7 +66,7 @@ struct Tickspeed {
     
     bool buyTickspeed(Player& a) {
         if (Decimal::gte(a.antimatter, cost)) {
-            amount = amount + Decimal(1,0);
+            amount = amount + DC::D1;
             cost = cost * costScaling;
             return true;
         }; 
@@ -143,14 +77,14 @@ struct Tickspeed {
 struct Galaxy {
     bool requirement;
     Decimal effect = {1,1};
-    Decimal amount = {0,0};
+    Decimal amount = DC::D0;
 
     Galaxy(Decimal _effect) : effect(_effect) {};
 
     bool buyGalaxy(Player& a) {
         bool bought = false;
         if (requirement) {
-            amount = amount + Decimal(1,0);
+            amount = amount + DC::D1;
             return true;
         };
         return false;
