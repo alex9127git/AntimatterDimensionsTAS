@@ -33,8 +33,64 @@ target_sources(constants
             libraries/constants/constants.h
 )
 
+add_library(dimensions)
+target_sources(dimensions
+    PRIVATE
+        libraries/dimensions/dimensions.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/dimensions
+        FILES
+            libraries/dimensions/dimensions.h
+)
+
+add_library(tickspeed)
+target_sources(tickspeed
+    PRIVATE
+        libraries/tickspeed/tickspeed.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/tickspeed
+        FILES
+            libraries/tickspeed/tickspeed.h
+)
+
+add_library(gamestate)
+target_sources(gamestate
+    PRIVATE
+        libraries/gamestate/gamestate.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/gamestate
+        FILES
+            libraries/gamestate/gamestate.h
+)
+
 target_link_libraries(main
     PRIVATE
         decimal
         constants
+        dimensions
+        tickspeed
+        gamestate
+)
+
+target_link_libraries(dimensions
+    PRIVATE
+        constants
+)
+
+target_link_libraries(tickspeed
+    PRIVATE
+        constants
+)
+
+target_link_libraries(gamestate
+    PRIVATE
+        dimensions
+        tickspeed
+        decimal
 )

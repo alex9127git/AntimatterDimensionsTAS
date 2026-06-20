@@ -1,3 +1,6 @@
+#pragma once
+
+
 struct Decimal {
     double mantissa;
     int exponent;

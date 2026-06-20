@@ -1,4 +1,5 @@
 #include "../decimal/decimal.h"
+#pragma once
 
 
 struct DC {
