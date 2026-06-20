@@ -76,21 +76,6 @@ struct Decimal {
     };
 };
 
-struct Player {
-    Decimal antimatter;
-
-    Player(Decimal am) : antimatter(am) {};
-    
-    bool buyDimension(Dimension& a, Decimal _amount) {
-        if (Decimal::gte(antimatter, a.cost)) {
-            Decimal::add(a.amountManual, {1,0});
-            a.cost = a.cost * a.scaling;
-            return true;
-        };
-        return false;
-    };
-};
-
 struct Dimension {
     Decimal scaling;
     Decimal production;
@@ -123,6 +108,21 @@ struct Dimensions {
     };
 };
 
+struct Player {
+    Decimal antimatter;
+
+    Player(Decimal am) : antimatter(am) {};
+    
+    bool buyDimension(Dimension& a, Decimal _amount) {
+        if (Decimal::gte(antimatter, a.cost)) {
+            Decimal::add(a.amountManual, {1,0});
+            a.cost = a.cost * a.scaling;
+            return true;
+        };
+        return false;
+    };
+};
+
 struct Tickspeed {
     Decimal cost;
     Decimal effect;
@@ -132,7 +132,7 @@ struct Tickspeed {
     
     bool buyTickspeed(Player& a) {
         if (Decimal::gte(a.antimatter, cost)) {
-            amount = amount + {1,0};
+            amount = amount + Decimal(1,0);
             cost = cost * costScaling;
             return true;
         }; 
@@ -150,7 +150,7 @@ struct Galaxy {
     bool buyGalaxy(Player& a) {
         bool bought = false;
         if (requirement) {
-            amount = amount + {1,0};
+            amount = amount + Decimal(1,0);
             return true;
         };
         return false;
@@ -161,7 +161,7 @@ int main() {
     Player player(Decimal(1,1));
     Dimensions dims;
     for (const auto& d : dims.dims) {
-        cout << "Currenct cost(" << d.cost.mantissa << ", " << d.cost.exponent << "), scaling(" << d.scaling.mantissa << ", " << d.scaling.exponent << ") "  << "\n";
+        cout << "Currency cost(" << d.cost.mantissa << ", " << d.cost.exponent << "), scaling(" << d.scaling.mantissa << ", " << d.scaling.exponent << ") "  << "\n";
     };
     return 0;
 };
