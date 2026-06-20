@@ -4,8 +4,8 @@ using namespace std;
 
 int main() {
     GameState gameState = GameState();
-    for (const auto& d : gameState.antimatterDimensions.dims) {
-        cout << "Currency cost(" << d.cost.mantissa << ", " << d.cost.exponent << "), scaling(" << d.scaling.mantissa << ", " << d.scaling.exponent << ") "  << "\n";
+    for (const Dimension& d : gameState.getVectorAD()) {
+        cout << "Currency cost(" << d.cost << "), scaling(" << d.scaling << ")\n";
     };
     return 0;
 };

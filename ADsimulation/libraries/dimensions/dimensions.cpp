@@ -28,3 +28,7 @@ AntimatterDimensions::AntimatterDimensions()
         Dimension(DC::D0,    DC::D1E24,  DC::D1E15,  DC::D0,     DC::D0,     false)
         })
     {};
+
+Dimension& AntimatterDimensions::operator[](int index) {
+    return dims[index];
+}

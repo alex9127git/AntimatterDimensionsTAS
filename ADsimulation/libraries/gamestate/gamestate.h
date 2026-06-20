@@ -4,10 +4,12 @@
 
 struct GameState {
     Decimal antimatter;
-    AntimatterDimensions antimatterDimensions;
+    AntimatterDimensions AD;
     Tickspeed tickspeed;
 
     GameState();
 
     void tick();
+
+    vector<Dimension> getVectorAD();
 };

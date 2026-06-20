@@ -24,4 +24,6 @@ struct AntimatterDimensions {
     vector<Dimension> dims;
 
     AntimatterDimensions();
+
+    Dimension& operator[](int index);
 };

@@ -1,5 +1,7 @@
+#include <iostream>
 #include <cmath>
 #include "decimal.h"
+using namespace std;
 
 
 Decimal::Decimal(double _mant, int _exp) : mantissa(_mant), exponent(_exp) {};
@@ -7,9 +9,15 @@ Decimal::Decimal(double _mant, int _exp) : mantissa(_mant), exponent(_exp) {};
 Decimal Decimal::operator+(const Decimal& b) {
     return Decimal::add(*this, b);
 };
+
 Decimal Decimal::operator*(const Decimal& b) {
     return Decimal::multiply(*this, b);
 };
+
+ostream& operator<<(ostream& os, const Decimal& d) {
+    os << d.mantissa << "e" << d.exponent;
+    return os;
+}
 
 // note to Jade: 
 // do not use recursive behavior in C++... dummy
