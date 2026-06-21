@@ -1,27 +1,44 @@
 #include "gamestate.h"
 #include "../constants/constants.h"
+#include "../dimensions/dimensions.h"
+#include "../tickspeed/tickspeed.h"
 
 
 GameState::GameState()
-    :   antimatter(DC::D10),
-        AD(AntimatterDimensions()),
+    :   _antimatter(DC::D10),
+        _AD(AntimatterDimensions()),
         tickspeed(Tickspeed())
     {};
 
-void GameState::tick() {
+Decimal GameState::antimatter() {
+    return this->_antimatter;
+}
+
+AntimatterDimensions GameState::AD() {
+    return this->_AD;
+}
+
+vector<AntimatterDimension> GameState::getVectorAD() {
+    return _AD.getDims();
+}
+
+void GameState::tick(double diff) {
     // apply resources
-    for (int i = (int) getVectorAD().size() - 1; i >= 0; i--) {
-        if (i == 0) {
-                // note to jade: + operator is overwritten short hand for .add() Decimal method.
-                // it accepts the `this` which is the value to the left, 
-                // and the value on the right.
-            antimatter = antimatter + AD[0].production;
-        } else if (getVectorAD()[i].unlocked == true) {
-            AD[i - 1].amountAuto = AD[i - 1].amountAuto + AD[i].production;
+    for (int i = 8; i >= 1; i--) {
+        if (i == 1) {
+            _AD[i].produceCurrency(_antimatter, diff);
+        } else if (_AD[i].isUnlocked()) {
+            _AD[i].produceDimensions(_AD[i - 1], diff / 10);
         };
     };
 };
 
-vector<Dimension> GameState::getVectorAD() {
-    return AD.dims;
+bool GameState::buyOneDimension(int dim) {
+    cout << _antimatter << " " << _AD[dim].getCost() << endl;
+    if (_antimatter >= _AD[dim].getCost()) {
+        _antimatter -= _AD[dim].getCost();
+        _AD[dim].onPurchase();
+        return true;
+    }
+    return false;
 }

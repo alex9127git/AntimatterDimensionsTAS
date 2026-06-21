@@ -2,14 +2,22 @@
 #include "../tickspeed/tickspeed.h"
 
 
-struct GameState {
-    Decimal antimatter;
-    AntimatterDimensions AD;
-    Tickspeed tickspeed;
+class GameState {
+    private:
+        Decimal _antimatter;
+        AntimatterDimensions _AD;
+        Tickspeed tickspeed;
 
-    GameState();
+    public:
+        GameState();
 
-    void tick();
+        Decimal antimatter();
 
-    vector<Dimension> getVectorAD();
+        AntimatterDimensions AD();
+        vector<AntimatterDimension> getVectorAD();
+
+        void tick(double diff);
+
+        bool buyOneDimension(int dim);
+        bool buyTickspeed();
 };

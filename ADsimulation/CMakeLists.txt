@@ -9,6 +9,12 @@ target_sources(main
         main.cpp
 )
 
+add_executable(test)
+target_sources(test 
+    PRIVATE 
+        tests/test.cpp
+)
+
 add_library(decimal)
 target_sources(decimal
     PRIVATE
@@ -70,6 +76,15 @@ target_sources(gamestate
 )
 
 target_link_libraries(main
+    PRIVATE
+        decimal
+        constants
+        dimensions
+        tickspeed
+        gamestate
+)
+
+target_link_libraries(test
     PRIVATE
         decimal
         constants
