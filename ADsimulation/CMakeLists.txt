@@ -63,6 +63,18 @@ target_sources(tickspeed
             libraries/tickspeed/tickspeed.h
 )
 
+add_library(achievements)
+target_sources(achievements
+    PRIVATE
+        libraries/achievements/achievements.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/achievements
+        FILES
+            libraries/achievements/achievements.h
+)
+
 add_library(gamestate)
 target_sources(gamestate
     PRIVATE
@@ -81,6 +93,7 @@ target_link_libraries(main
         constants
         dimensions
         tickspeed
+        achievements
         gamestate
 )
 
@@ -90,6 +103,7 @@ target_link_libraries(test
         constants
         dimensions
         tickspeed
+        achievements
         gamestate
 )
 
@@ -105,7 +119,8 @@ target_link_libraries(tickspeed
 
 target_link_libraries(gamestate
     PRIVATE
+        decimal
         dimensions
         tickspeed
-        decimal
+        achievements
 )

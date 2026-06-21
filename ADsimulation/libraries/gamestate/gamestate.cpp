@@ -2,12 +2,14 @@
 #include "../constants/constants.h"
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
+#include "../achievements/achievements.h"
 
 
 GameState::GameState()
     :   _antimatter(DC::D10),
         _AD(AntimatterDimensions()),
-        tickspeed(Tickspeed())
+        _tickspeed(Tickspeed()),
+        _achievements(Achievements())
     {};
 
 Decimal GameState::antimatter() {
@@ -16,11 +18,11 @@ Decimal GameState::antimatter() {
 
 AntimatterDimensions GameState::AD() {
     return this->_AD;
-}
+};
 
-vector<AntimatterDimension> GameState::getVectorAD() {
-    return _AD.getDims();
-}
+Achievements GameState::achievements() {
+    return this->_achievements;
+};
 
 void GameState::tick(double diff) {
     // apply resources
@@ -30,7 +32,10 @@ void GameState::tick(double diff) {
         } else if (_AD[i].isUnlocked()) {
             _AD[i].produceDimensions(_AD[i - 1], diff / 10);
         };
-    };
+    }
+    for (Achievement ach : this->_achievements.achievements()) {
+        if (ach.checkUnlockCondition(*this)) ach.unlock();
+    }
 };
 
 bool GameState::buyOneDimension(int dim) {

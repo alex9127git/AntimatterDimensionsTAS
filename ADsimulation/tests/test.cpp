@@ -36,6 +36,26 @@ int main() {
     a = Decimal(694201337);
     b = Decimal(694201336);
     assert(a > b);
+    a = Decimal(0.003);
+    b = Decimal(0.1);
+    c = Decimal(1.5);
+    assert(a < b);
+    assert(a < c);
+    assert(b < c);
+    a = Decimal(-1);
+    b = Decimal(1);
+    assert(a < b);
+    a = Decimal(-10);
+    b = Decimal(1);
+    assert(a < b);
+    a = Decimal(-100);
+    b = Decimal(1);
+    assert(a < b);
+    a = Decimal(0.69);
+    b = Decimal(-0.69);
+    c = Decimal(0);
+    assert(a > c);
+    assert(b < c);
     cout << "All comparison tests passed" << endl << endl;
 
     cout << "Started math tests" << endl;
@@ -52,17 +72,30 @@ int main() {
     b = Decimal(1, 150);
     assert(a + b == Decimal(1, 150));
     assert(a * b == Decimal(1, 250));
+    a = Decimal(69);
+    b = DC::D1E5;
+    assert(Decimal::invert(a) == Decimal(1.0/69));
+    assert(Decimal::invert(b) == Decimal(1, -5));
+    a = Decimal(1001);
+    b = Decimal(7);
+    assert((a / b) == Decimal(143));
+    a = Decimal(9);
+    assert(Decimal::pow(a, a) == Decimal(387420489));
+    a = Decimal(10);
+    b = Decimal(0.5);
+    Decimal::pow(a, b).print();
+    assert(Decimal::pow(a, b) > Decimal(3.1622776));
+    assert(Decimal::pow(a, b) < Decimal(3.1622777));
     cout << "All math tests passed" << endl << endl;
 
     cout << "Started game state tests" << endl;
     GameState gameState = GameState();
     gameState.buyOneDimension(1);
-    cout << gameState.AD()[1].productionPerSecond() << endl;
     for (int i = 0; i < 30; i++) {
         gameState.tick(1.0 / 30);
     }
     cout << "You have " << gameState.antimatter() << " antimatter." << endl;
-    for (const Dimension& d : gameState.getVectorAD()) {
+    for (const Dimension& d : gameState.AD().getDims()) {
         cout << d << endl;
     };
 }

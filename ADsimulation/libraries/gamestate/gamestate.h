@@ -1,20 +1,22 @@
+#pragma once
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
+#include "../achievements/achievements.h"
 
 
 class GameState {
     private:
         Decimal _antimatter;
         AntimatterDimensions _AD;
-        Tickspeed tickspeed;
+        Tickspeed _tickspeed;
+        Achievements _achievements;
 
     public:
         GameState();
 
         Decimal antimatter();
-
         AntimatterDimensions AD();
-        vector<AntimatterDimension> getVectorAD();
+        Achievements achievements();
 
         void tick(double diff);
 

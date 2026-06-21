@@ -4,7 +4,7 @@ using namespace std;
 
 int main() {
     GameState gameState = GameState();
-    for (const Dimension& d : gameState.getVectorAD()) {
+    for (const Dimension& d : gameState.AD().getDims()) {
         cout << d << endl;
     };
     return 0;
