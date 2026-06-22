@@ -46,8 +46,18 @@ Decimal Decimal::operator*(const Decimal& b) {
     return Decimal::multiply(*this, b);
 };
 
+Decimal& Decimal::operator*=(const Decimal& b) {
+    *this = *this * b;
+    return *this;
+};
+
 Decimal Decimal::operator/(const Decimal& b) {
     return Decimal::multiply(*this, Decimal::invert(b));
+};
+
+Decimal& Decimal::operator/=(const Decimal& b) {
+    *this = *this / b;
+    return *this;
 };
 
 Decimal Decimal::operator-() {

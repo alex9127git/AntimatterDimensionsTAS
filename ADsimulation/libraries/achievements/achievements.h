@@ -33,7 +33,11 @@ class Achievement {
         void unlock();
         void lock();
 
+        int getId();
+        bool isUnlocked();
         bool checkUnlockCondition(GameState& st);
+
+        void print();
 };
 
 class Achievements {
@@ -43,7 +47,7 @@ class Achievements {
     public:
         Achievements();
 
-        vector<Achievement> achievements();
+        vector<Achievement>& achievements();
 
         Achievement& operator[](int index);
 };

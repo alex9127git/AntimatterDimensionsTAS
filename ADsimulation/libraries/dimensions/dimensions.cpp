@@ -1,5 +1,7 @@
+#include <cmath>
 #include "dimensions.h"
 #include "../constants/constants.h"
+#include "../gamestate/gamestate.h"
 
 
 Dimension::Dimension(
@@ -8,11 +10,12 @@ Dimension::Dimension(
     Decimal _scaling,
     bool _unlocked
 )   :   name(_name),
-        multiplier(DC::D1), 
-        cost(_cost), 
+        cost(_cost),
         scaling(_scaling),
         amount(DC::D0),
         purchases(DC::D0),
+        multiplier(DC::D1),
+        production(DC::D0),
         unlocked(_unlocked) 
     {};
 
@@ -22,8 +25,13 @@ ostream& operator<<(ostream& os, const Dimension& d) {
     return os;
 }
 
+void Dimension::update(GameState& st) {
+    this->production = DC::D0;
+    this->multiplier = DC::D1;
+}
+
 Decimal Dimension::productionPerSecond() {
-    return DC::D0;
+    return this->production;
 }
 
 Decimal Dimension::productionPerDiff(double diff) {
@@ -56,10 +64,14 @@ AntimatterDimension::AntimatterDimension(
 )   :   Dimension(_name, _cost, _scaling, _unlocked)
     {};
 
-Decimal AntimatterDimension::productionPerSecond() {
-    Decimal base = this->amount;
-    base = base * this->multiplier;
-    return base;
+void AntimatterDimension::update(GameState& st) {
+    Decimal prod = this->amount;
+    Decimal mult = DC::D1;
+    mult *= Decimal::pow(DC::D2, floor(Decimal::toNumber(purchases) / 10));
+    mult *= st.getAchievementBonus();
+    prod *= mult;
+    this->production = prod;
+    this->multiplier = mult;
 }
 
 void AntimatterDimension::onPurchase() {
@@ -80,10 +92,16 @@ AntimatterDimensions::AntimatterDimensions()
         })
     {};
 
-vector<AntimatterDimension> AntimatterDimensions::getDims() {
+vector<AntimatterDimension>& AntimatterDimensions::getDims() {
     return this->dims;
 }
 
 Dimension& AntimatterDimensions::operator[](int index) {
     return this->dims[index - 1];
+}
+
+void AntimatterDimensions::update(GameState& st) {
+    for (int i = 8; i >= 1; i--) {
+        (*this)[i].update(st);
+    }
 }

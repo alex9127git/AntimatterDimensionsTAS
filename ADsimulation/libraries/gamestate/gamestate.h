@@ -15,11 +15,13 @@ class GameState {
         GameState();
 
         Decimal antimatter();
-        AntimatterDimensions AD();
-        Achievements achievements();
+        AntimatterDimensions& AD();
+        Achievements& achievements();
 
         void tick(double diff);
 
         bool buyOneDimension(int dim);
         bool buyTickspeed();
+
+        Decimal getAchievementBonus();
 };

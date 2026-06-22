@@ -36,9 +36,21 @@ void Achievement::lock() {
     this->unlocked = false;
 };
 
+int Achievement::getId() {
+    return this->id;
+}
+
+bool Achievement::isUnlocked() {
+    return this->unlocked;
+}
+
 bool Achievement::checkUnlockCondition(GameState& st) {
     return this->unlockCondition(st);
 };
+
+void Achievement::print() {
+    cout << this->id << " " << this->unlocked << " " << this->isUnlocked() << endl;
+}
 
 Achievements::Achievements() {
     _achievements = {
@@ -173,7 +185,7 @@ Achievements::Achievements() {
     };
 };
 
-vector<Achievement> Achievements::achievements() {
+vector<Achievement>& Achievements::achievements() {
     return this->_achievements;
 }
 

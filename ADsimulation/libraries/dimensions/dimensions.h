@@ -4,14 +4,18 @@
 using namespace std;
 
 
+class GameState;
+
+
 class Dimension {
     protected:
         string name;
-        Decimal scaling;
-        Decimal multiplier;
         Decimal cost;
+        Decimal scaling;
         Decimal amount;
         Decimal purchases;
+        Decimal multiplier;
+        Decimal production;
         bool unlocked;
 
     public:
@@ -24,7 +28,8 @@ class Dimension {
 
         friend ostream& operator<<(ostream& os, const Dimension& d);
         
-        virtual Decimal productionPerSecond();
+        virtual void update(GameState& st);
+        Decimal productionPerSecond();
         Decimal productionPerDiff(double diff);
         Decimal getCost();
         bool isUnlocked();
@@ -43,7 +48,7 @@ class AntimatterDimension : public Dimension {
             bool _unlocked
         );
 
-        Decimal productionPerSecond() override;
+        void update(GameState& st) override;
         void onPurchase() override;
 };
 
@@ -56,5 +61,7 @@ class AntimatterDimensions {
 
         Dimension& operator[](int index);
 
-        vector<AntimatterDimension> getDims();
+        vector<AntimatterDimension>& getDims();
+
+        void update(GameState& st);
 };

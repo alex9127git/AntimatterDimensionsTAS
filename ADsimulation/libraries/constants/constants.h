@@ -8,6 +8,7 @@ struct DC {
 
     static Decimal D1_01;
     static Decimal D1_02;
+    static Decimal D1_03;
     static Decimal D1_05;
     static Decimal D1_1;
     static Decimal D1_25;

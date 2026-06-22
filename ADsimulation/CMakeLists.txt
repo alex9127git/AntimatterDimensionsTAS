@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.23)
+set(CMAKE_BUILD_TYPE Debug)
 project(J.A.D.E. VERSION 0.0.1
                  DESCRIPTION "Jade's (and Alex9127's) Antimatter Dimensions Estimator"
                  LANGUAGES CXX)

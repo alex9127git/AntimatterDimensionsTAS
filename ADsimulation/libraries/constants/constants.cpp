@@ -6,6 +6,7 @@ Decimal DC::D1 = Decimal(1);
 
 Decimal DC::D1_01 = Decimal(1.01);
 Decimal DC::D1_02 = Decimal(1.02);
+Decimal DC::D1_03 = Decimal(1.03);
 Decimal DC::D1_05 = Decimal(1.05);
 Decimal DC::D1_1 = Decimal(1.1);
 Decimal DC::D1_25 = Decimal(1.25);
