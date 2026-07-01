@@ -4,6 +4,9 @@ project(J.A.D.E. VERSION 0.0.1
                  DESCRIPTION "Jade's (and Alex9127's) Antimatter Dimensions Estimator"
                  LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 add_executable(main)
 target_sources(main 
     PRIVATE 
@@ -88,6 +91,18 @@ target_sources(gamestate
             libraries/gamestate/gamestate.h
 )
 
+add_library(permutations)
+target_sources(permutations
+    PRIVATE
+        libraries/permutations/permutations.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/permutations
+        FILES
+            libraries/permutations/permutations.h
+)
+
 target_link_libraries(main
     PRIVATE
         decimal
@@ -96,6 +111,7 @@ target_link_libraries(main
         tickspeed
         achievements
         gamestate
+        permutations
 )
 
 target_link_libraries(test
@@ -106,6 +122,7 @@ target_link_libraries(test
         tickspeed
         achievements
         gamestate
+        permutations
 )
 
 target_link_libraries(dimensions

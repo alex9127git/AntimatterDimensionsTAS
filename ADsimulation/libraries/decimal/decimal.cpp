@@ -80,7 +80,7 @@ bool Decimal::operator<(const Decimal& b) {
     return Decimal::gt(b, *this);
 };
 
-bool Decimal::operator==(const Decimal& b) {
+bool Decimal::operator==(const Decimal& b) const {
     return Decimal::eq(*this, b);
 };
 
@@ -197,6 +197,6 @@ void Decimal::normalize() {
     if (isNegative) this->mantissa = -this->mantissa;
 }
 
-void Decimal::print() {
+void Decimal::repr() {
     cout << "Decimal(" << this->mantissa << ", " << this->exponent << ")" << endl;
 }

@@ -25,7 +25,6 @@ Achievements& GameState::achievements() {
 };
 
 void GameState::tick(double diff) {
-    cout << this->getAchievementBonus() << endl;
     this->AD().update(*this);
     for (int i = 8; i >= 1; i--) {
         if (i == 1) {
@@ -42,7 +41,6 @@ void GameState::tick(double diff) {
 };
 
 bool GameState::buyOneDimension(int dim) {
-    cout << _antimatter << " " << _AD[dim].getCost() << endl;
     if (_antimatter >= _AD[dim].getCost()) {
         _antimatter -= _AD[dim].getCost();
         _AD[dim].onPurchase();

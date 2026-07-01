@@ -3,6 +3,7 @@
 #include "../libraries/constants/constants.h"
 #include "../libraries/decimal/decimal.h"
 #include "../libraries/gamestate/gamestate.h"
+#include "../libraries/permutations/permutations.h"
 using namespace std;
 
 
@@ -83,10 +84,50 @@ int main() {
     assert(Decimal::pow(a, a) == Decimal(387420489));
     a = Decimal(10);
     b = Decimal(0.5);
-    Decimal::pow(a, b).print();
+    //Decimal::pow(a, b).repr();
     assert(Decimal::pow(a, b) > Decimal(3.1622776));
     assert(Decimal::pow(a, b) < Decimal(3.1622777));
     cout << "All math tests passed" << endl << endl;
+
+    cout << "Started permutation tests" << endl;
+    map<int, int> permMap1;
+    permMap1[1] = 1;
+    permMap1[2] = 1;
+    permMap1[3] = 1;
+    vector<vector<int>> permutations = getPermutations(permMap1);
+    for (vector<int> permutation : permutations) {
+        for (int elem : permutation) {
+            cout << elem << " ";
+        }
+        cout << endl;
+    }
+    assert(permutations.size() == 6);
+
+    map<int, int> permMap2;
+    permMap2[15] = 1;
+    permMap2[16] = 1;
+    permMap2[17] = 1;
+    permMap2[8] = 10;
+    permMap2[9] = 1;
+    permutations = getPermutations(permMap2);
+    assert(permutations.size() == 24024);
+
+    map<int, int> permMap3;
+    permMap3[13] = 1;
+    permMap3[14] = 1;
+    permMap3[15] = 1;
+    permMap3[16] = 1;
+    permMap3[17] = 1;
+    permMap3[8] = 10;
+    permMap3[9] = 1;
+    permutations = getPermutations(permMap3);
+    assert(permutations.size() == 5765760);
+
+    map<int, int> permMap4;
+    permMap4[1] = 10;
+    permutations = getPermutations(permMap4);
+    assert(permutations.size() == 1);
+    cout << "All permutation tests passed" << endl << endl;
 
     cout << "Started game state tests" << endl;
     GameState gameState = GameState();

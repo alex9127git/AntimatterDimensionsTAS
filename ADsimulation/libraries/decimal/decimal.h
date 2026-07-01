@@ -26,7 +26,7 @@ class Decimal {
         bool operator>(const Decimal& b);
         bool operator<=(const Decimal& b);
         bool operator<(const Decimal& b);
-        bool operator==(const Decimal& b);
+        bool operator==(const Decimal& b) const;
         friend ostream& operator<<(ostream& os, const Decimal& d);
 
         double mant();
@@ -50,5 +50,5 @@ class Decimal {
 
         void normalize();
 
-        void print();
+        void repr();
 };
