@@ -1,4 +1,6 @@
 #include <iostream>
+#include <string>
+#include <format>
 #include <cmath>
 #include "decimal.h"
 #include "../constants/constants.h"
@@ -85,14 +87,13 @@ bool Decimal::operator==(const Decimal& b) const {
 };
 
 ostream& operator<<(ostream& os, const Decimal& d) {
-    char buffer[20];
+    string buffer;
     if (d.exponent < 3) {
-        sprintf(buffer, "%.1f", Decimal::toNumber(d));
-        os << buffer;
+        buffer = format("{:.2f}", Decimal::toNumber(d));
     } else {
-        sprintf(buffer, "%.2f", d.mantissa);
-        os << buffer << "e" << d.exponent;
+        buffer = format("{:.2f}e{:d}", d.mantissa, d.exponent);
     }
+    os << buffer;
     return os;
 };
 

@@ -21,6 +21,7 @@ class GameState {
         void tick(double diff);
 
         bool buyOneDimension(int dim);
+        bool buyDimUntil10(int dim);
         bool buyTickspeed();
 
         Decimal getAchievementBonus();

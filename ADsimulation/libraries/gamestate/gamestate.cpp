@@ -41,11 +41,21 @@ void GameState::tick(double diff) {
 };
 
 bool GameState::buyOneDimension(int dim) {
-    if (_antimatter >= _AD[dim].getCost()) {
+    if (_AD[dim].canPurchase(_antimatter)) {
         _antimatter -= _AD[dim].getCost();
         _AD[dim].onPurchase();
+        if (dim < 8) {
+            _AD[dim + 1].unlock();
+        }
         return true;
     }
+    return false;
+}
+
+bool GameState::buyDimUntil10(int dim) {
+    do {
+        buyOneDimension(dim);
+    } while (_AD[dim].getPurchases() % 10 == 0 && _AD[dim].canPurchase(_antimatter));
     return false;
 }
 

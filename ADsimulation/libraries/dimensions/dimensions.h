@@ -13,7 +13,7 @@ class Dimension {
         Decimal cost;
         Decimal scaling;
         Decimal amount;
-        Decimal purchases;
+        int purchases;
         Decimal multiplier;
         Decimal production;
         bool unlocked;
@@ -32,7 +32,11 @@ class Dimension {
         Decimal productionPerSecond();
         Decimal productionPerDiff(double diff);
         Decimal getCost();
+        int getPurchases();
         bool isUnlocked();
+        void unlock();
+        void lock();
+        bool canPurchase(Decimal resource);
         virtual void onPurchase();
         
         void produceCurrency(Decimal& currency, double diff);

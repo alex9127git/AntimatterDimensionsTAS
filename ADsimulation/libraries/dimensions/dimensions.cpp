@@ -13,7 +13,7 @@ Dimension::Dimension(
         cost(_cost),
         scaling(_scaling),
         amount(DC::D0),
-        purchases(DC::D0),
+        purchases(0),
         multiplier(DC::D1),
         production(DC::D0),
         unlocked(_unlocked) 
@@ -21,7 +21,7 @@ Dimension::Dimension(
 
 ostream& operator<<(ostream& os, const Dimension& d) {
     os << d.name << " (x" << d.multiplier << ") " << d.amount << endl;
-    os << "Purchases: " << d.amount << ", Cost: " << d.cost;
+    os << "Purchases: " << d.purchases << ", Cost: " << d.cost;
     return os;
 }
 
@@ -42,9 +42,25 @@ Decimal Dimension::getCost() {
     return this->cost;
 };
 
+int Dimension::getPurchases() {
+    return this->purchases;
+};
+
 bool Dimension::isUnlocked() {
     return this->unlocked;
 };
+
+void Dimension::unlock() {
+    this->unlocked = true;
+}
+
+void Dimension::lock() {
+    this->unlocked = false;
+}
+
+bool Dimension::canPurchase(Decimal resource) {
+    return this->isUnlocked() && resource >= this->getCost();
+}
 
 void Dimension::onPurchase() {};
 
@@ -67,7 +83,7 @@ AntimatterDimension::AntimatterDimension(
 void AntimatterDimension::update(GameState& st) {
     Decimal prod = this->amount;
     Decimal mult = DC::D1;
-    mult *= Decimal::pow(DC::D2, floor(Decimal::toNumber(purchases) / 10));
+    mult *= Decimal::pow(DC::D2, floor(purchases / 10));
     mult *= st.getAchievementBonus();
     prod *= mult;
     this->production = prod;
@@ -75,13 +91,16 @@ void AntimatterDimension::update(GameState& st) {
 }
 
 void AntimatterDimension::onPurchase() {
-    this->purchases += DC::D1;
+    this->purchases++;
     this->amount += DC::D1;
+    if (this->purchases % 10 == 0) {
+        this->cost *= this->scaling;
+    };
 }
 
 AntimatterDimensions::AntimatterDimensions() 
     :   dims({
-            AntimatterDimension("1st Antimatter Dimension",   DC::D10,    DC::D1E3,     true),
+            AntimatterDimension("1st Antimatter Dimension",   DC::D10,    DC::D1E3,     false),
             AntimatterDimension("2nd Antimatter Dimension",   DC::D100,   DC::D1E4,     false),
             AntimatterDimension("3rd Antimatter Dimension",   DC::D1E4,   DC::D1E5,     false),
             AntimatterDimension("4th Antimatter Dimension",   DC::D1E6,   DC::D1E6,     false),
@@ -90,7 +109,9 @@ AntimatterDimensions::AntimatterDimensions()
             AntimatterDimension("7th Antimatter Dimension",   DC::D1E18,  DC::D1E12,    false),
             AntimatterDimension("8th Antimatter Dimension",   DC::D1E24,  DC::D1E15,    false)
         })
-    {};
+{
+    (*this)[1].unlock();
+};
 
 vector<AntimatterDimension>& AntimatterDimensions::getDims() {
     return this->dims;

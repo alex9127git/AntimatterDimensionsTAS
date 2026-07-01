@@ -131,9 +131,9 @@ int main() {
 
     cout << "Started game state tests" << endl;
     GameState gameState = GameState();
-    gameState.buyOneDimension(1);
-    for (int i = 0; i < 30; i++) {
+    for (int i = 0; i < 10000; i++) {
         gameState.tick(1.0 / 30);
+        gameState.buyDimUntil10(1);
     }
     cout << "You have " << gameState.antimatter() << " antimatter." << endl;
     for (const Dimension& d : gameState.AD().getDims()) {
