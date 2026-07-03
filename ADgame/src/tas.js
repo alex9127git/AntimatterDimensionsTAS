@@ -181,6 +181,7 @@ export const TAS = {
         this.tickSwitch = true;
         this.instructions = [];
         this.currentInstruction = 0;
+        this.variables.tick = 0;
         return true;
     },
 
@@ -226,6 +227,7 @@ export const actions = {
 export function tasTick() {
     TAS.variables.tick++;
     TAS.runNextPendingInstruction();
+    console.log('%d %d', TAS.variables.tick, player.records.realTimePlayed)
     return true;
 };
 
