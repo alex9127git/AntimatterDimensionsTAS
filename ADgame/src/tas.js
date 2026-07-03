@@ -177,7 +177,7 @@ export const TAS = {
         this.importSave(save);
         this.startTime = null;
         this.pause();
-        this.startTime = player.records.totalTimePlayed;
+        this.startTime = player.records.realTimePlayed;
         this.tickSwitch = true;
         this.instructions = [];
         this.currentInstruction = 0;
