@@ -26,15 +26,15 @@ Achievement::Achievement(
         defaultEffect(_defaultEffect),
         unlockCondition(_unlockCondition),
         unlocked(false)
-    {};
+    {}
 
 void Achievement::unlock() {
     this->unlocked = true;
-};
+}
 
 void Achievement::lock() {
     this->unlocked = false;
-};
+}
 
 int Achievement::getId() {
     return this->id;
@@ -46,7 +46,7 @@ bool Achievement::isUnlocked() {
 
 bool Achievement::checkUnlockCondition(GameState& st) {
     return this->unlockCondition(st);
-};
+}
 
 void Achievement::print() {
     cout << this->id << " " << this->unlocked << " " << this->isUnlocked() << endl;
@@ -183,7 +183,7 @@ Achievements::Achievements() {
         Achievement(78, DC::D5E25, DC::D0,
             [](GameState& st) {return false;}),
     };
-};
+}
 
 vector<Achievement>& Achievements::achievements() {
     return this->_achievements;

@@ -9,8 +9,21 @@ GameState::GameState()
     :   _antimatter(DC::D10),
         _AD(AntimatterDimensions()),
         _tickspeed(Tickspeed()),
-        _achievements(Achievements())
-    {};
+        _achievements(Achievements()),
+        tickCounter(0),
+        realTimePlayed(0),
+        konamiCodeUsed(false)
+    {}
+
+ostream& operator<<(ostream& os, GameState& st) {
+    os << "You have " << st.antimatter() << " antimatter." << endl;
+    os << "You have been playing for " << st.realTimePlayed << " milliseconds." << endl;
+    os << "Tickspeed bonus: x" << st.tickspeed().perSecond() << " (x" << st.tickspeed().getDisplayMult(st).toString(3) << " per upgrade)" << endl;
+    for (const Dimension& d : st.AD().getDims()) {
+        os << d << endl;
+    };
+    return os;
+}
 
 Decimal GameState::antimatter() {
     return this->_antimatter;
@@ -18,13 +31,20 @@ Decimal GameState::antimatter() {
 
 AntimatterDimensions& GameState::AD() {
     return this->_AD;
-};
+}
+
+Tickspeed& GameState::tickspeed() {
+    return this->_tickspeed;
+}
 
 Achievements& GameState::achievements() {
     return this->_achievements;
-};
+}
 
 void GameState::tick(double diff) {
+    tickCounter++;
+    realTimePlayed += diff * 1000;
+    this->tickspeed().update(*this);
     this->AD().update(*this);
     for (int i = 8; i >= 1; i--) {
         if (i == 1) {
@@ -38,12 +58,15 @@ void GameState::tick(double diff) {
             ach.unlock();
         }
     }
-};
+}
 
 bool GameState::buyOneDimension(int dim) {
     if (_AD[dim].canPurchase(_antimatter)) {
         _antimatter -= _AD[dim].getCost();
         _AD[dim].onPurchase();
+        if (dim == 2) {
+            _tickspeed.unlock();
+        }
         if (dim < 8) {
             _AD[dim + 1].unlock();
         }
@@ -56,6 +79,15 @@ bool GameState::buyDimUntil10(int dim) {
     do {
         buyOneDimension(dim);
     } while (_AD[dim].getPurchases() % 10 == 0 && _AD[dim].canPurchase(_antimatter));
+    return false;
+}
+
+bool GameState::buyTickspeed() {
+    if (_tickspeed.canPurchase(_antimatter)) {
+        _antimatter -= _tickspeed.getCost();
+        _tickspeed.onPurchase();
+        return true;
+    }
     return false;
 }
 
@@ -78,4 +110,10 @@ Decimal GameState::getAchievementBonus() {
         }
     }
     return result;
+}
+
+void GameState::handleKonamiCode() {
+    if (konamiCodeUsed) return; 
+    this->_antimatter = Decimal(30);
+    konamiCodeUsed = true;
 }

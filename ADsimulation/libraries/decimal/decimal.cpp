@@ -11,56 +11,56 @@ Decimal::Decimal(double _mant, int _exp) {
     this->mantissa = _mant;
     this->exponent = _exp;
     this->normalize();
-};
+}
 
 Decimal::Decimal(double _mant, double _exp) {
     int expFloor = std::floor(_exp);
     this->mantissa = _mant * std::pow(10, _exp - expFloor);
     this->exponent = expFloor;
     this->normalize();
-};
+}
 
 Decimal::Decimal(double _val) {
     this->mantissa = _val;
     this->exponent = 0;
     this->normalize();
-};
+}
 
 Decimal Decimal::operator+(const Decimal& b) {
     return Decimal::add(*this, b);
-};
+}
 
 Decimal& Decimal::operator+=(const Decimal& b) {
     *this = *this + b;
     return *this;
-};
+}
 
 Decimal Decimal::operator-(const Decimal& b) {
     return Decimal::add(*this, Decimal::unary_negate(b));
-};
+}
 
 Decimal& Decimal::operator-=(const Decimal& b) {
     *this = *this - b;
     return *this;
-};
+}
 
 Decimal Decimal::operator*(const Decimal& b) {
     return Decimal::multiply(*this, b);
-};
+}
 
 Decimal& Decimal::operator*=(const Decimal& b) {
     *this = *this * b;
     return *this;
-};
+}
 
 Decimal Decimal::operator/(const Decimal& b) {
     return Decimal::multiply(*this, Decimal::invert(b));
-};
+}
 
 Decimal& Decimal::operator/=(const Decimal& b) {
     *this = *this / b;
     return *this;
-};
+}
 
 Decimal Decimal::operator-() {
     return Decimal::unary_negate(*this);
@@ -68,34 +68,28 @@ Decimal Decimal::operator-() {
 
 bool Decimal::operator>=(const Decimal& b) {
     return Decimal::gte(*this, b);
-};
+}
 
 bool Decimal::operator>(const Decimal& b) {
     return Decimal::gt(*this, b);
-};
+}
 
 bool Decimal::operator<=(const Decimal& b) {
     return Decimal::gte(b, *this);
-};
+}
 
 bool Decimal::operator<(const Decimal& b) {
     return Decimal::gt(b, *this);
-};
+}
 
 bool Decimal::operator==(const Decimal& b) const {
     return Decimal::eq(*this, b);
-};
+}
 
 ostream& operator<<(ostream& os, const Decimal& d) {
-    string buffer;
-    if (d.exponent < 3) {
-        buffer = format("{:.2f}", Decimal::toNumber(d));
-    } else {
-        buffer = format("{:.2f}e{:d}", d.mantissa, d.exponent);
-    }
-    os << buffer;
+    os << Decimal::toString(d, 2);
     return os;
-};
+}
 
 double Decimal::mant() {
     return this->mantissa;
@@ -124,7 +118,7 @@ Decimal Decimal::add(const Decimal& a, const Decimal& b) {
     };
     result.normalize();
     return result;
-};
+}
 
 // note to Jade: 
 // do not use recursive behavior in C++... dummy
@@ -138,38 +132,38 @@ Decimal Decimal::multiply(const Decimal& a, const Decimal& b) {
     );
     result.normalize();
     return result;
-};
+}
 
 Decimal Decimal::unary_negate(const Decimal& a) {
     return Decimal(-a.mantissa, a.exponent);
-};
+}
 
 Decimal Decimal::invert(const Decimal& a) {
     return Decimal(1.0 / a.mantissa, -a.exponent);
-};
+}
 
 Decimal Decimal::pow(const Decimal& base, const Decimal& power) {
     return Decimal::pow(base, Decimal::toNumber(power));
-};
+}
 
 Decimal Decimal::pow(const Decimal& base, const double& power) {
     return Decimal(
         std::pow(base.mantissa, power),
         base.exponent * power
     );
-};
+}
 
 Decimal Decimal::max(const Decimal& a, const Decimal& b) {
     return Decimal::gt(a, b) ? a : b;
-};
+}
 
 Decimal Decimal::min(const Decimal& a, const Decimal& b) {
     return Decimal::gt(a, b) ? b : a;
-};
+}
 
 bool Decimal::gte(const Decimal& a, const Decimal& b) {
     return Decimal::gt(a, b) || Decimal::eq(a, b);
-};
+}
 
 bool Decimal::gt(const Decimal& a, const Decimal& b) {
     if (Decimal::eq(a, DC::D0)) return b.mantissa < 0;
@@ -178,7 +172,7 @@ bool Decimal::gt(const Decimal& a, const Decimal& b) {
     if (b.mantissa > 0 && a.mantissa < 0) return false;
     if (a.exponent != b.exponent) return a.exponent > b.exponent; 
     return a.mantissa > b.mantissa; 
-};
+}
 
 bool Decimal::eq(const Decimal& a, const Decimal& b) {
     return abs(a.mantissa - b.mantissa) < 1e-12 && a.exponent == b.exponent;
@@ -200,4 +194,22 @@ void Decimal::normalize() {
 
 void Decimal::repr() {
     cout << "Decimal(" << this->mantissa << ", " << this->exponent << ")" << endl;
+}
+
+string Decimal::toString(const Decimal& d, int precision) {
+    string buffer;
+    string fmt;
+    if (d.exponent < 3) {
+        fmt = "{:." + to_string(precision) + "f}";
+        double output = Decimal::toNumber(d);
+        buffer = vformat(fmt, make_format_args(output));
+    } else {
+        fmt = "{:." + to_string(precision) + "f}e{:d}";
+        buffer = vformat(fmt, make_format_args(d.mantissa, d.exponent));
+    }
+    return buffer;
+}
+
+string Decimal::toString(int precision) {
+    return Decimal::toString(*this, precision);
 }

@@ -17,7 +17,7 @@ Dimension::Dimension(
         multiplier(DC::D1),
         production(DC::D0),
         unlocked(_unlocked) 
-    {};
+    {}
 
 ostream& operator<<(ostream& os, const Dimension& d) {
     os << d.name << " (x" << d.multiplier << ") " << d.amount << endl;
@@ -36,19 +36,19 @@ Decimal Dimension::productionPerSecond() {
 
 Decimal Dimension::productionPerDiff(double diff) {
     return this->productionPerSecond() * Decimal(diff);
-};
+}
 
 Decimal Dimension::getCost() {
     return this->cost;
-};
+}
 
 int Dimension::getPurchases() {
     return this->purchases;
-};
+}
 
 bool Dimension::isUnlocked() {
     return this->unlocked;
-};
+}
 
 void Dimension::unlock() {
     this->unlocked = true;
@@ -62,15 +62,17 @@ bool Dimension::canPurchase(Decimal resource) {
     return this->isUnlocked() && resource >= this->getCost();
 }
 
-void Dimension::onPurchase() {};
+void Dimension::onPurchase() {
+
+}
 
 void Dimension::produceCurrency(Decimal& currency, double diff) {
     currency += this->productionPerDiff(diff);
-};
+}
 
 void Dimension::produceDimensions(Dimension& dimension, double diff) {
     dimension.amount += this->productionPerDiff(diff);
-};
+}
 
 AntimatterDimension::AntimatterDimension(
     string _name,
@@ -78,7 +80,7 @@ AntimatterDimension::AntimatterDimension(
     Decimal _scaling,
     bool _unlocked
 )   :   Dimension(_name, _cost, _scaling, _unlocked)
-    {};
+    {}
 
 void AntimatterDimension::update(GameState& st) {
     Decimal prod = this->amount;
@@ -86,6 +88,7 @@ void AntimatterDimension::update(GameState& st) {
     mult *= Decimal::pow(DC::D2, floor(purchases / 10));
     mult *= st.getAchievementBonus();
     prod *= mult;
+    prod *= st.tickspeed().perSecond();
     this->production = prod;
     this->multiplier = mult;
 }
@@ -111,7 +114,7 @@ AntimatterDimensions::AntimatterDimensions()
         })
 {
     (*this)[1].unlock();
-};
+}
 
 vector<AntimatterDimension>& AntimatterDimensions::getDims() {
     return this->dims;

@@ -131,12 +131,71 @@ int main() {
 
     cout << "Started game state tests" << endl;
     GameState gameState = GameState();
-    for (int i = 0; i < 10000; i++) {
+
+    cout << "Checking impossible action assertions" << endl;
+    gameState.buyDimUntil10(2);
+    gameState.buyTickspeed();
+    cout << "Assertions checked; entering manual verification check" << endl << endl;
+
+    assert(gameState.AD()[2].getPurchases() == 0);
+    assert(gameState.tickspeed().getPurchases() == 0);
+
+    bool canDimboost = false;
+    while (!canDimboost) {
         gameState.tick(1.0 / 30);
-        gameState.buyDimUntil10(1);
+        if (gameState.AD()[1].getPurchases() < 10) {
+            gameState.buyDimUntil10(1);
+            if (gameState.AD()[1].getPurchases() == 1) {
+                gameState.handleKonamiCode();
+            }
+        } else if (gameState.AD()[2].getPurchases() < 10) {
+            gameState.buyDimUntil10(2);
+        } else if (gameState.tickspeed().getPurchases() < 1) {
+            gameState.buyTickspeed();
+        } else if (gameState.AD()[3].getPurchases() < 2) {
+            gameState.buyOneDimension(3);
+        } else if (gameState.tickspeed().getPurchases() < 2) {
+            gameState.buyTickspeed();
+        } else if (gameState.AD()[3].getPurchases() < 10) {
+            gameState.buyDimUntil10(3);
+        } else if (gameState.AD()[1].getPurchases() < 20) {
+            gameState.buyDimUntil10(1);
+        } else if (gameState.tickspeed().getPurchases() < 3) {
+            gameState.buyTickspeed();
+        } else if (gameState.AD()[4].getPurchases() < 1) {
+            gameState.buyOneDimension(4);
+        } else if (gameState.tickspeed().getPurchases() < 4) {
+            gameState.buyTickspeed();
+        } else if (gameState.AD()[4].getPurchases() < 10) {
+            gameState.buyDimUntil10(4);
+        } else if (gameState.tickspeed().getPurchases() < 5) {
+            gameState.buyTickspeed();
+        } else if (gameState.AD()[2].getPurchases() < 20) {
+            gameState.buyDimUntil10(2);
+        } else if (gameState.tickspeed().getPurchases() < 6) {
+            gameState.buyTickspeed();
+        } else if (gameState.AD()[1].getPurchases() < 30) {
+            gameState.buyDimUntil10(1);
+        } else if (gameState.tickspeed().getPurchases() < 7) {
+            gameState.buyTickspeed();
+        } else if (gameState.AD()[3].getPurchases() < 20) {
+            gameState.buyDimUntil10(3);
+        } else if (gameState.tickspeed().getPurchases() < 8) {
+            gameState.buyTickspeed();
+        } else if (gameState.AD()[2].getPurchases() < 30) {
+            gameState.buyDimUntil10(2);
+        } else if (gameState.AD()[1].getPurchases() < 40) {
+            gameState.buyDimUntil10(1);
+        } else if (gameState.tickspeed().getPurchases() < 10) {
+            gameState.buyTickspeed();
+        } else if (gameState.AD()[4].getPurchases() < 20) {
+            gameState.buyDimUntil10(4);
+            if (gameState.AD()[4].getPurchases() == 20) {
+                canDimboost = true;
+            }
+        }
     }
-    cout << "You have " << gameState.antimatter() << " antimatter." << endl;
-    for (const Dimension& d : gameState.AD().getDims()) {
-        cout << d << endl;
-    };
+    cout << gameState << endl;
+
+    cout << "Simulated a certain amount of ticks: check that this output is looking correctly" << endl;
 }

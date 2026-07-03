@@ -33,7 +33,8 @@ export const TAS = {
     -- --69: console.log calls for instruction completions. 
     */
     variables: {
-        debug: 0
+        debug: 0,
+        tick: 0
     },
     intervals: {},
 
@@ -47,8 +48,9 @@ export const TAS = {
                     console.log(`
                         Instruction : ${TAS.currentInstruction}, 
                         cycleCounter: ${TAS.cycleCounter},
+                        tick: ${TAS.variables.tick},
                         timestamp   :realtime: ${(performance.now() - this.startTime).toFixed(0)},
-                                     gametime: ${player.records.totalTimePlayed}
+                                     gametime: ${player.records.realTimePlayed}
                         `);
                 };
 	            this.currentInstruction += 1;
@@ -222,6 +224,7 @@ export const actions = {
 };
 
 export function tasTick() {
+    TAS.variables.tick++;
     TAS.runNextPendingInstruction();
     return true;
 };

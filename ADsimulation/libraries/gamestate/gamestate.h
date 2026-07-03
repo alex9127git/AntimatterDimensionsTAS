@@ -10,12 +10,18 @@ class GameState {
         AntimatterDimensions _AD;
         Tickspeed _tickspeed;
         Achievements _achievements;
+        long tickCounter;
+        double realTimePlayed;
+        bool konamiCodeUsed;
 
     public:
         GameState();
 
+        friend ostream& operator<<(ostream& os, GameState& st);
+
         Decimal antimatter();
         AntimatterDimensions& AD();
+        Tickspeed& tickspeed();
         Achievements& achievements();
 
         void tick(double diff);
@@ -25,4 +31,6 @@ class GameState {
         bool buyTickspeed();
 
         Decimal getAchievementBonus();
+
+        void handleKonamiCode();
 };

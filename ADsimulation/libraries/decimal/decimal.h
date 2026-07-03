@@ -51,4 +51,7 @@ class Decimal {
         void normalize();
 
         void repr();
+
+        static string toString(const Decimal& d, int precision);
+        string toString(int precision);
 };
