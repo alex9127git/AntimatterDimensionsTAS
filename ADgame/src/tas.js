@@ -227,7 +227,6 @@ export const actions = {
 export function tasTick() {
     TAS.variables.tick++;
     TAS.runNextPendingInstruction();
-    console.log('%d %d', TAS.variables.tick, player.records.realTimePlayed)
     return true;
 };
 
