@@ -17,7 +17,7 @@ GameState::GameState()
 
 ostream& operator<<(ostream& os, GameState& st) {
     os << "You have " << st.antimatter() << " antimatter." << endl;
-    os << "You have been playing for " << st.realTimePlayed << " milliseconds." << endl;
+    os << "You have been playing for " << (long) st.realTimePlayed << " milliseconds." << endl;
     os << "Tickspeed bonus: x" << st.tickspeed().perSecond() << " (x" << st.tickspeed().getDisplayMult(st).toString(3) << " per upgrade)" << endl;
     for (const Dimension& d : st.AD().getDims()) {
         os << d << endl;
@@ -63,6 +63,7 @@ void GameState::tick(double diff) {
 bool GameState::buyOneDimension(int dim) {
     if (_AD[dim].canPurchase(_antimatter)) {
         _antimatter -= _AD[dim].getCost();
+        _achievements[10 + dim].unlock();
         _AD[dim].onPurchase();
         if (dim == 2) {
             _tickspeed.unlock();
@@ -79,7 +80,7 @@ bool GameState::buyDimUntil10(int dim) {
     do {
         buyOneDimension(dim);
     } while (_AD[dim].getPurchases() % 10 == 0 && _AD[dim].canPurchase(_antimatter));
-    return false;
+    return _AD[dim].getPurchases() % 10 == 0;
 }
 
 bool GameState::buyTickspeed() {
@@ -89,6 +90,13 @@ bool GameState::buyTickspeed() {
         return true;
     }
     return false;
+}
+
+bool GameState::handleKonamiCode() {
+    if (konamiCodeUsed) return false; 
+    this->_antimatter = Decimal(30);
+    konamiCodeUsed = true;
+    return true;
 }
 
 Decimal GameState::getAchievementBonus() {
@@ -112,8 +120,36 @@ Decimal GameState::getAchievementBonus() {
     return result;
 }
 
-void GameState::handleKonamiCode() {
-    if (konamiCodeUsed) return; 
-    this->_antimatter = Decimal(30);
-    konamiCodeUsed = true;
+void GameState::addInstructions(list<int> instructions) {
+    for (int instruction : instructions) {
+        if (10 <= instruction && instruction <= 99) {
+            int type = instruction / 10;
+            int times = instruction % 10 + 10;
+            if (times > 10) times -= 10;
+            for (int i = 0; i < times; i++) {
+                this->instructions.push_back(type);
+            }
+        } else {
+            this->instructions.push_back(instruction);
+        }
+    }
+}
+
+bool GameState::runInstruction(int instruction) {
+    if (1 <= instruction && instruction <= 8) {
+        return this->buyOneDimension(instruction);
+    } else if (instruction == 9) {
+        return this->buyTickspeed();
+    } else if (instruction == 130) {
+        return this->handleKonamiCode();
+    } else {
+        return false;
+    }
+}
+
+void GameState::runNextInstructions() {
+    while (this->runInstruction(this->instructions.front())) {
+        this->instructions.pop_front();
+        cout << tickCounter << endl;
+    }
 }

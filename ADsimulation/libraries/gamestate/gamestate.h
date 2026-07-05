@@ -1,4 +1,5 @@
 #pragma once
+#include "list"
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
 #include "../achievements/achievements.h"
@@ -13,6 +14,7 @@ class GameState {
         long tickCounter;
         double realTimePlayed;
         bool konamiCodeUsed;
+        list<int> instructions;
 
     public:
         GameState();
@@ -29,8 +31,11 @@ class GameState {
         bool buyOneDimension(int dim);
         bool buyDimUntil10(int dim);
         bool buyTickspeed();
+        bool handleKonamiCode();
 
         Decimal getAchievementBonus();
 
-        void handleKonamiCode();
+        void addInstructions(list<int> instructions);
+        bool runInstruction(int instruction);
+        void runNextInstructions();
 };

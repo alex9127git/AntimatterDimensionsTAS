@@ -114,7 +114,7 @@ Achievements::Achievements() {
             DC::D1,
             [](GameState& st) {return false;}),
         Achievement(44, DC::D1, DC::D1,
-            [](GameState& st) {return true;}),
+            [](GameState& st) {return false;}),
         Achievement(45, DC::D1_02, DC::D1,
             [](GameState& st) {return false;}),
         Achievement(46, DC::D1, DC::D1,

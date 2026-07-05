@@ -135,65 +135,18 @@ int main() {
     cout << "Checking impossible action assertions" << endl;
     gameState.buyDimUntil10(2);
     gameState.buyTickspeed();
-    cout << "Assertions checked; entering manual verification check" << endl << endl;
 
     assert(gameState.AD()[2].getPurchases() == 0);
     assert(gameState.tickspeed().getPurchases() == 0);
+    cout << "Assertions checked; entering manual verification check" << endl << endl;
 
-    bool canDimboost = false;
-    while (!canDimboost) {
-        gameState.tick(1.0 / 30);
-        if (gameState.AD()[1].getPurchases() < 10) {
-            gameState.buyDimUntil10(1);
-            if (gameState.AD()[1].getPurchases() == 1) {
-                gameState.handleKonamiCode();
-            }
-        } else if (gameState.AD()[2].getPurchases() < 10) {
-            gameState.buyDimUntil10(2);
-        } else if (gameState.tickspeed().getPurchases() < 1) {
-            gameState.buyTickspeed();
-        } else if (gameState.AD()[3].getPurchases() < 2) {
-            gameState.buyOneDimension(3);
-        } else if (gameState.tickspeed().getPurchases() < 2) {
-            gameState.buyTickspeed();
-        } else if (gameState.AD()[3].getPurchases() < 10) {
-            gameState.buyDimUntil10(3);
-        } else if (gameState.AD()[1].getPurchases() < 20) {
-            gameState.buyDimUntil10(1);
-        } else if (gameState.tickspeed().getPurchases() < 3) {
-            gameState.buyTickspeed();
-        } else if (gameState.AD()[4].getPurchases() < 1) {
-            gameState.buyOneDimension(4);
-        } else if (gameState.tickspeed().getPurchases() < 4) {
-            gameState.buyTickspeed();
-        } else if (gameState.AD()[4].getPurchases() < 10) {
-            gameState.buyDimUntil10(4);
-        } else if (gameState.tickspeed().getPurchases() < 5) {
-            gameState.buyTickspeed();
-        } else if (gameState.AD()[2].getPurchases() < 20) {
-            gameState.buyDimUntil10(2);
-        } else if (gameState.tickspeed().getPurchases() < 6) {
-            gameState.buyTickspeed();
-        } else if (gameState.AD()[1].getPurchases() < 30) {
-            gameState.buyDimUntil10(1);
-        } else if (gameState.tickspeed().getPurchases() < 7) {
-            gameState.buyTickspeed();
-        } else if (gameState.AD()[3].getPurchases() < 20) {
-            gameState.buyDimUntil10(3);
-        } else if (gameState.tickspeed().getPurchases() < 8) {
-            gameState.buyTickspeed();
-        } else if (gameState.AD()[2].getPurchases() < 30) {
-            gameState.buyDimUntil10(2);
-        } else if (gameState.AD()[1].getPurchases() < 40) {
-            gameState.buyDimUntil10(1);
-        } else if (gameState.tickspeed().getPurchases() < 10) {
-            gameState.buyTickspeed();
-        } else if (gameState.AD()[4].getPurchases() < 20) {
-            gameState.buyDimUntil10(4);
-            if (gameState.AD()[4].getPurchases() == 20) {
-                canDimboost = true;
-            }
-        }
+    gameState.addInstructions({
+        11, 19, 20, 91, 32, 91, 38, 10, 91, 41, 91, 49, 91, 20, 91, 10, 91, 30, 91, 20, 10, 92, 40
+    });
+
+    while (gameState.AD()[4].getPurchases() < 20) {
+        gameState.tick(0.033);
+        gameState.runNextInstructions();
     }
     cout << gameState << endl;
 
