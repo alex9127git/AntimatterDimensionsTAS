@@ -141,8 +141,9 @@ int main() {
     cout << "Assertions checked; entering manual verification check" << endl << endl;
 
     gameState.addInstructions({
-        11, 19, 20, 91, 32, 91, 38, 10, 91, 41, 91, 49, 91, 20, 91, 10, 91, 30, 91, 20, 10, 92, 40
+        11, 130, 19, 20, 91, 32, 91, 38, 10, 91, 41, 91, 49, 91, 20, 91, 10, 91, 30, 91, 20, 10, 92, 40
     });
+    gameState.runNextInstructions();
 
     while (gameState.AD()[4].getPurchases() < 20) {
         gameState.tick(0.033);

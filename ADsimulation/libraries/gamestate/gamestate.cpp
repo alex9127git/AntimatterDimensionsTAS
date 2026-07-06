@@ -13,11 +13,28 @@ GameState::GameState()
         tickCounter(0),
         realTimePlayed(0),
         konamiCodeUsed(false)
-    {}
+    {};
+
+GameState::GameState(
+    Decimal antimatter, 
+    long tickCounter, 
+    long realTimePlayed, 
+    bool konamiCodeUsed, 
+    list<int> startingInstructions,
+    list<int> startingAchievements
+)   :   _antimatter(_antimatter),
+        _AD(AntimatterDimensions()),
+        _tickspeed(Tickspeed()),
+        _achievements(Achievements()),
+        tickCounter(tickCounter),
+        realTimePlayed(realTimePlayed),
+        konamiCodeUsed(konamiCodeUsed)
+    {};
+
 
 ostream& operator<<(ostream& os, GameState& st) {
     os << "You have " << st.antimatter() << " antimatter." << endl;
-    os << "You have been playing for " << (long) st.realTimePlayed << " milliseconds." << endl;
+    os << "You have been playing for " << st.realTimePlayed << " milliseconds." << endl;
     os << "Tickspeed bonus: x" << st.tickspeed().perSecond() << " (x" << st.tickspeed().getDisplayMult(st).toString(3) << " per upgrade)" << endl;
     for (const Dimension& d : st.AD().getDims()) {
         os << d << endl;
@@ -45,8 +62,8 @@ void GameState::tick(double diff) {
     tickCounter++;
     realTimePlayed += diff * 1000;
     this->tickspeed().update(*this);
-    this->AD().update(*this);
     for (int i = 8; i >= 1; i--) {
+        this->AD()[i].update(*this);
         if (i == 1) {
             _AD[i].produceCurrency(_antimatter, diff);
         } else if (_AD[i].isUnlocked()) {
@@ -63,7 +80,6 @@ void GameState::tick(double diff) {
 bool GameState::buyOneDimension(int dim) {
     if (_AD[dim].canPurchase(_antimatter)) {
         _antimatter -= _AD[dim].getCost();
-        _achievements[10 + dim].unlock();
         _AD[dim].onPurchase();
         if (dim == 2) {
             _tickspeed.unlock();
@@ -150,6 +166,6 @@ bool GameState::runInstruction(int instruction) {
 void GameState::runNextInstructions() {
     while (this->runInstruction(this->instructions.front())) {
         this->instructions.pop_front();
-        cout << tickCounter << endl;
+        //cout << tickCounter << endl;
     }
 }

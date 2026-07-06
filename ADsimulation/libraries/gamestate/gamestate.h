@@ -5,6 +5,28 @@
 #include "../achievements/achievements.h"
 
 
+template <typename T>
+class GameStateProperty {
+    private:
+        T value;
+        T& operator=(const T& newValue) {
+            value = newValue;
+            return value;
+        }
+
+    public:
+        GameStateProperty(T _value) : value(_value) {};
+
+        operator T() const {
+            return get();
+        }
+
+        T& get() {
+            return value;
+        }
+};
+
+
 class GameState {
     private:
         Decimal _antimatter;
@@ -12,12 +34,20 @@ class GameState {
         Tickspeed _tickspeed;
         Achievements _achievements;
         long tickCounter;
-        double realTimePlayed;
+        long realTimePlayed;
         bool konamiCodeUsed;
         list<int> instructions;
 
     public:
         GameState();
+        GameState(
+            Decimal antimatter, 
+            long tickCounter, 
+            long realTimePlayed, 
+            bool konamiCodeUsed, 
+            list<int> startingInstructions,
+            list<int> startingAchievements
+        );
 
         friend ostream& operator<<(ostream& os, GameState& st);
 
