@@ -1,30 +1,8 @@
 #pragma once
-#include "list"
+#include <vector>
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
 #include "../achievements/achievements.h"
-
-
-template <typename T>
-class GameStateProperty {
-    private:
-        T value;
-        T& operator=(const T& newValue) {
-            value = newValue;
-            return value;
-        }
-
-    public:
-        GameStateProperty(T _value) : value(_value) {};
-
-        operator T() const {
-            return get();
-        }
-
-        T& get() {
-            return value;
-        }
-};
 
 
 class GameState {
@@ -33,20 +11,22 @@ class GameState {
         AntimatterDimensions _AD;
         Tickspeed _tickspeed;
         Achievements _achievements;
-        long tickCounter;
-        long realTimePlayed;
-        bool konamiCodeUsed;
-        list<int> instructions;
+        int _dimensionBoosts;
+        long _tickCounter;
+        long _realTimePlayed;
+        bool _canUseKonami;
+
+        vector<int> instructions;
 
     public:
         GameState();
         GameState(
-            Decimal antimatter, 
-            long tickCounter, 
-            long realTimePlayed, 
-            bool konamiCodeUsed, 
-            list<int> startingInstructions,
-            list<int> startingAchievements
+            Decimal _antimatter,
+            int _dimensionBoosts,
+            long _tickCounter, 
+            long _realTimePlayed, 
+            bool _canUseKonami,
+            vector<int> _startingAchievements
         );
 
         friend ostream& operator<<(ostream& os, GameState& st);
@@ -55,6 +35,8 @@ class GameState {
         AntimatterDimensions& AD();
         Tickspeed& tickspeed();
         Achievements& achievements();
+        bool canUseKonami();
+        long realTimePlayed();
 
         void tick(double diff);
 
@@ -65,7 +47,12 @@ class GameState {
 
         Decimal getAchievementBonus();
 
-        void addInstructions(list<int> instructions);
+        void addInstructions(vector<int> instructions);
         bool runInstruction(int instruction);
         void runNextInstructions();
+        bool hasNextInstruction();
+
+        GameState copy();
+
+        static int compare(GameState& st1, GameState& st2);
 };

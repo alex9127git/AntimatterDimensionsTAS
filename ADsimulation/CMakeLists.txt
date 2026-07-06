@@ -103,6 +103,18 @@ target_sources(permutations
             libraries/permutations/permutations.h
 )
 
+add_library(simulation)
+target_sources(simulation
+    PRIVATE
+        libraries/simulation/simulation.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/simulation
+        FILES
+            libraries/simulation/simulation.h
+)
+
 target_link_libraries(main
     PRIVATE
         decimal
@@ -112,6 +124,7 @@ target_link_libraries(main
         achievements
         gamestate
         permutations
+        simulation
 )
 
 target_link_libraries(test
@@ -123,6 +136,7 @@ target_link_libraries(test
         achievements
         gamestate
         permutations
+        simulation
 )
 
 target_link_libraries(dimensions
@@ -141,4 +155,9 @@ target_link_libraries(gamestate
         dimensions
         tickspeed
         achievements
+)
+
+target_link_libraries(simulation
+    PRIVATE
+        gamestate
 )

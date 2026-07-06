@@ -32,6 +32,7 @@ class Dimension {
         Decimal productionPerSecond();
         Decimal productionPerDiff(double diff);
         Decimal getCost();
+        Decimal getAmount();
         int getPurchases();
         bool isUnlocked();
         void unlock();

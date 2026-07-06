@@ -4,6 +4,7 @@
 #include "../libraries/decimal/decimal.h"
 #include "../libraries/gamestate/gamestate.h"
 #include "../libraries/permutations/permutations.h"
+#include "../libraries/simulation/simulation.h"
 using namespace std;
 
 
@@ -132,14 +133,16 @@ int main() {
     cout << "Started game state tests" << endl;
     GameState gameState = GameState();
 
-    cout << "Checking impossible action assertions" << endl;
+    cout << "Checking default state assertions" << endl;
     gameState.buyDimUntil10(2);
     gameState.buyTickspeed();
 
     assert(gameState.AD()[2].getPurchases() == 0);
     assert(gameState.tickspeed().getPurchases() == 0);
-    cout << "Assertions checked; entering manual verification check" << endl << endl;
+    assert(gameState.getAchievementBonus() == Decimal::pow(DC::D1_03, 4));
+    cout << "Assertions checked; entering fixed order check" << endl;
 
+    gameState = GameState();
     gameState.addInstructions({
         11, 130, 19, 20, 91, 32, 91, 38, 10, 91, 41, 91, 49, 91, 20, 91, 10, 91, 30, 91, 20, 10, 92, 40
     });
@@ -150,6 +153,11 @@ int main() {
         gameState.runNextInstructions();
     }
     cout << gameState << endl;
-
-    cout << "Simulated a certain amount of ticks: check that this output is looking correctly" << endl;
+    assert(gameState.realTimePlayed() == 1080816);
+    cout << "Fixed order check done" << endl;
+    
+    cout << "Starting test simulation" << endl;
+    gameState = GameState();
+    gameState = run(gameState, [](GameState& st) {return st.AD()[4].getPurchases() >= 20;});
+    cout << gameState << endl;
 }

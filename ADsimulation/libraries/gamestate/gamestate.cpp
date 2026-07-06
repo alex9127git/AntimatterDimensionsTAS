@@ -5,36 +5,47 @@
 #include "../achievements/achievements.h"
 
 
-GameState::GameState()
-    :   _antimatter(DC::D10),
-        _AD(AntimatterDimensions()),
-        _tickspeed(Tickspeed()),
-        _achievements(Achievements()),
-        tickCounter(0),
-        realTimePlayed(0),
-        konamiCodeUsed(false)
+GameState::GameState() : 
+    GameState::GameState(
+        DC::D10,
+        0,
+        0,
+        0,
+        true,
+        {}
+    ) 
     {};
 
 GameState::GameState(
-    Decimal antimatter, 
-    long tickCounter, 
-    long realTimePlayed, 
-    bool konamiCodeUsed, 
-    list<int> startingInstructions,
-    list<int> startingAchievements
+    Decimal _antimatter,
+    int _dimensionBoosts,
+    long _tickCounter,
+    long _realTimePlayed,
+    bool _canUseKonami,
+    vector<int> _startingAchievements
 )   :   _antimatter(_antimatter),
         _AD(AntimatterDimensions()),
         _tickspeed(Tickspeed()),
         _achievements(Achievements()),
-        tickCounter(tickCounter),
-        realTimePlayed(realTimePlayed),
-        konamiCodeUsed(konamiCodeUsed)
-    {};
+        _dimensionBoosts(_dimensionBoosts),
+        _tickCounter(_tickCounter),
+        _realTimePlayed(_realTimePlayed),
+        _canUseKonami(_canUseKonami)
+{
+    for (Achievement& ach : this->achievements().achievements()) {
+        if (ach.checkUnlockCondition(*this)) {
+            ach.unlock();
+        }
+    }
+    for (int ach : _startingAchievements) {
+        this->achievements()[ach].unlock();
+    }
+};
 
 
 ostream& operator<<(ostream& os, GameState& st) {
     os << "You have " << st.antimatter() << " antimatter." << endl;
-    os << "You have been playing for " << st.realTimePlayed << " milliseconds." << endl;
+    os << "You have been playing for " << st._realTimePlayed << " milliseconds." << endl;
     os << "Tickspeed bonus: x" << st.tickspeed().perSecond() << " (x" << st.tickspeed().getDisplayMult(st).toString(3) << " per upgrade)" << endl;
     for (const Dimension& d : st.AD().getDims()) {
         os << d << endl;
@@ -58,9 +69,17 @@ Achievements& GameState::achievements() {
     return this->_achievements;
 }
 
+bool GameState::canUseKonami() {
+    return this->_canUseKonami;
+}
+
+long GameState::realTimePlayed() {
+    return this->_realTimePlayed;
+}
+
 void GameState::tick(double diff) {
-    tickCounter++;
-    realTimePlayed += diff * 1000;
+    _tickCounter++;
+    _realTimePlayed += diff * 1000;
     this->tickspeed().update(*this);
     for (int i = 8; i >= 1; i--) {
         this->AD()[i].update(*this);
@@ -84,7 +103,7 @@ bool GameState::buyOneDimension(int dim) {
         if (dim == 2) {
             _tickspeed.unlock();
         }
-        if (dim < 8) {
+        if (dim < 8 && _dimensionBoosts >= dim - 3) {
             _AD[dim + 1].unlock();
         }
         return true;
@@ -109,10 +128,12 @@ bool GameState::buyTickspeed() {
 }
 
 bool GameState::handleKonamiCode() {
-    if (konamiCodeUsed) return false; 
-    this->_antimatter = Decimal(30);
-    konamiCodeUsed = true;
-    return true;
+    if (canUseKonami()) { 
+        this->_antimatter = Decimal(30);
+        _canUseKonami = false;
+        return true;
+    }
+    return false;
 }
 
 Decimal GameState::getAchievementBonus() {
@@ -136,7 +157,7 @@ Decimal GameState::getAchievementBonus() {
     return result;
 }
 
-void GameState::addInstructions(list<int> instructions) {
+void GameState::addInstructions(vector<int> instructions) {
     for (int instruction : instructions) {
         if (10 <= instruction && instruction <= 99) {
             int type = instruction / 10;
@@ -164,8 +185,44 @@ bool GameState::runInstruction(int instruction) {
 }
 
 void GameState::runNextInstructions() {
-    while (this->runInstruction(this->instructions.front())) {
-        this->instructions.pop_front();
-        //cout << tickCounter << endl;
+    while (hasNextInstruction() && this->runInstruction(*(this->instructions.begin()))) {
+        this->instructions.erase(this->instructions.begin());
+        //cout << _tickCounter << endl;
     }
+}
+
+bool GameState::hasNextInstruction() {
+    return !this->instructions.empty();
+}
+
+GameState GameState::copy() {
+    return *this;
+}
+
+int GameState::compare(GameState& st1, GameState& st2) {
+    // Compare the two game states together.
+    // If a first game state has a property bigger, score variable shifts positive.
+    // Otherwise it shifts negative. This value is then used to determine the return value.
+    // If st1 is strictly better than st2, this function should return 1.
+    // If st2 is strictly better than st2, this function should return -1.
+    // Otherwise, return 0.
+    int score = 0;
+    int totalFeatures = 28;
+    score += st1.antimatter() > st2.antimatter() ? 1 : -1;
+    for (int i = 1; i <= 8; i++) {
+        Dimension dim1 = st1.AD()[i];
+        Dimension dim2 = st2.AD()[i];
+        score += dim1.getAmount() > dim2.getAmount() ? 1 : -1;
+        score += dim1.getPurchases() > dim2.getPurchases() ? 1 : -1;
+        score += dim1.productionPerSecond() > dim2.productionPerSecond() ? 1 : -1;
+    }
+    score += st1.tickspeed().getPurchases() > st2.tickspeed().getPurchases() ? 1 : -1;
+    score += st1.tickspeed().perSecond() > st2.tickspeed().perSecond() ? 1 : -1;
+    score += st1.getAchievementBonus() > st2.getAchievementBonus() ? 1 : -1;
+    if (score == totalFeatures) {
+        return 1;
+    } else if (score == -totalFeatures) {
+        return -1;
+    }
+    return 0;
 }

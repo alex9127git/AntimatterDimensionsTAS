@@ -42,6 +42,10 @@ Decimal Dimension::getCost() {
     return this->cost;
 }
 
+Decimal Dimension::getAmount() {
+    return this->amount;
+}
+
 int Dimension::getPurchases() {
     return this->purchases;
 }
