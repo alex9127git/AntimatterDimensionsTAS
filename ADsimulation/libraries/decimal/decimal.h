@@ -38,8 +38,8 @@ class Decimal {
         static Decimal multiply(const Decimal& a, const Decimal& b);
         static Decimal unary_negate(const Decimal& a);
         static Decimal invert(const Decimal& a);
-        static Decimal pow(const Decimal& base, const Decimal& power);
-        static Decimal pow(const Decimal& base, const double& power);
+        static Decimal pow(const Decimal base, const Decimal power);
+        static Decimal pow(const Decimal base, const double power);
 
         static Decimal max(const Decimal& a, const Decimal& b);
         static Decimal min(const Decimal& a, const Decimal& b);

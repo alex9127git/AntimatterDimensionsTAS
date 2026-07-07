@@ -39,4 +39,6 @@ struct DC {
     static Decimal D1E18;
     static Decimal D1E24;
     static Decimal D5E25;
+
+    static Decimal INFINITY;
 };

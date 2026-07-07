@@ -55,6 +55,4 @@ class GameState {
         list<int> getCompletedInstructions();
 
         GameState copy();
-
-        static int compare(GameState& st1, GameState& st2);
 };

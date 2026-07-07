@@ -160,4 +160,5 @@ target_link_libraries(gamestate
 target_link_libraries(simulation
     PRIVATE
         gamestate
+        permutations
 )

@@ -88,6 +88,8 @@ int main() {
     //Decimal::pow(a, b).repr();
     assert(Decimal::pow(a, b) > Decimal(3.1622776));
     assert(Decimal::pow(a, b) < Decimal(3.1622777));
+    a = Decimal(2);
+    assert(Decimal::pow(a, 1024) > Decimal(1, 308));
     cout << "All math tests passed" << endl << endl;
 
     cout << "Started permutation tests" << endl;
@@ -152,17 +154,23 @@ int main() {
         gameState.tick(0.033);
         gameState.runNextInstructions();
     }
-    cout << gameState << endl;
+    cout << endl << gameState << endl;
     assert(gameState.realTimePlayed() == 1080816);
-    cout << "Fixed order check done" << endl;
+    cout << "Fixed order check done; time taken is optimal" << endl << endl;
     
     cout << "Starting test simulation" << endl;
     gameState = GameState();
-    gameState = run(gameState, [](GameState& st) {return st.AD()[4].getPurchases() >= 20;});
-    cout << gameState;
+    gameState = run(gameState, [](GameState& st) {return st.AD()[4].getPurchases() >= 20;}, true);
+    cout << endl << gameState << endl;
     list<int> instructions = gameState.getCompletedInstructions();
     for (int instruction : instructions) {
         cout << instruction << " ";
     }
+    assert(gameState.realTimePlayed() == 1080816);
     cout << endl;
+    cout << "Time taken is optimal" << endl;
+    cout << "All game state tests passed" << endl << endl;
+
+    cout << "All tests passed" << endl;
+    return 0;
 }

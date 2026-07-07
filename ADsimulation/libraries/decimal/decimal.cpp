@@ -142,15 +142,22 @@ Decimal Decimal::invert(const Decimal& a) {
     return Decimal(1.0 / a.mantissa, -a.exponent);
 }
 
-Decimal Decimal::pow(const Decimal& base, const Decimal& power) {
+Decimal Decimal::pow(const Decimal base, const Decimal power) {
     return Decimal::pow(base, Decimal::toNumber(power));
 }
 
-Decimal Decimal::pow(const Decimal& base, const double& power) {
-    return Decimal(
-        std::pow(base.mantissa, power),
-        base.exponent * power
-    );
+Decimal Decimal::pow(const Decimal base, const double power) {
+    if (power <= 2) {
+        return Decimal(
+            std::pow(base.mantissa, power),
+            base.exponent * power
+        );
+    } else {
+        return Decimal::pow(
+            Decimal::pow(base, 2),
+            power / 2
+        );
+    }
 }
 
 Decimal Decimal::max(const Decimal& a, const Decimal& b) {

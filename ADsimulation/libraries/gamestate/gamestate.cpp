@@ -188,10 +188,8 @@ bool GameState::runInstruction(int instruction) {
 
 void GameState::runNextInstructions() {
     while (hasNextInstruction() && this->runInstruction((this->instructions.front()))) {
-        //this->instructions.erase(this->instructions.begin());
         this->completedInstructions.push_back(this->instructions.front());
         this->instructions.pop_front();
-        //cout << _tickCounter << endl;
     }
 }
 
@@ -205,32 +203,4 @@ list<int> GameState::getCompletedInstructions() {
 
 GameState GameState::copy() {
     return *this;
-}
-
-int GameState::compare(GameState& st1, GameState& st2) {
-    // Compare the two game states together.
-    // If a first game state has a property bigger, score variable shifts positive.
-    // Otherwise it shifts negative. This value is then used to determine the return value.
-    // If st1 is strictly better than st2, this function should return 1.
-    // If st2 is strictly better than st2, this function should return -1.
-    // Otherwise, return 0.
-    int score = 0;
-    int totalFeatures = 28;
-    score += st1.antimatter() > st2.antimatter() ? 1 : -1;
-    for (int i = 1; i <= 8; i++) {
-        Dimension dim1 = st1.AD()[i];
-        Dimension dim2 = st2.AD()[i];
-        score += dim1.getAmount() > dim2.getAmount() ? 1 : -1;
-        score += dim1.getPurchases() > dim2.getPurchases() ? 1 : -1;
-        score += dim1.productionPerSecond() > dim2.productionPerSecond() ? 1 : -1;
-    }
-    score += st1.tickspeed().getPurchases() > st2.tickspeed().getPurchases() ? 1 : -1;
-    score += st1.tickspeed().perSecond() > st2.tickspeed().perSecond() ? 1 : -1;
-    score += st1.getAchievementBonus() > st2.getAchievementBonus() ? 1 : -1;
-    if (score == totalFeatures) {
-        return 1;
-    } else if (score == -totalFeatures) {
-        return -1;
-    }
-    return 0;
 }
