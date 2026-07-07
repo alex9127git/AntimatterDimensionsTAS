@@ -201,6 +201,10 @@ list<int> GameState::getCompletedInstructions() {
     return this->completedInstructions;
 }
 
+int GameState::instructionsExecuted() {
+    return this->completedInstructions.size();
+}
+
 GameState GameState::copy() {
     return *this;
 }

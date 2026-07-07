@@ -36,6 +36,7 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
     map<int, int> purchases;
     vector<vector<int>> permutations;
     bool hasWinner;
+    int maxInstructions = st.instructionsExecuted();
     Timer timer;
     while (true) {
         if (verbose) cout << "Simulating price range " << priceRange << endl;
@@ -81,6 +82,7 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
         // A winner is a savestate that managed to complete all queued purchases the earliest.
         hasWinner = false;
         while (!hasWinner) {
+            int currInstructions = 0;
             for (GameState& gst : aliveGameStates) {
                 gst.tick(0.033);
                 gst.runNextInstructions();
@@ -98,6 +100,13 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
                     }
                     hasWinner = true;
                 }
+                if (gst.instructionsExecuted() > currInstructions) {
+                    currInstructions = gst.instructionsExecuted();
+                }
+            }
+            if (currInstructions > maxInstructions) {
+                maxInstructions = currInstructions;
+                aliveGameStates = purge(aliveGameStates, verbose);
             }
         }
         if (verbose) {
@@ -137,12 +146,15 @@ int compare(GameState& st1, GameState& st2) {
     compareValues(st1.tickspeed().getPurchases(), st2.tickspeed().getPurchases(), score, totalFeatures);
     compareValues(st1.tickspeed().perSecond(), st2.tickspeed().perSecond(), score, totalFeatures);
     compareValues(st1.getAchievementBonus(), st2.getAchievementBonus(), score, totalFeatures);
-    if (score == totalFeatures) {
+    if (totalFeatures == 0) {
+        return 0;
+    } else if (score == totalFeatures) {
         return 1;
     } else if (score == -totalFeatures) {
         return -1;
+    } else {
+        return 0;
     }
-    return 0;
 }
 
 void compareValues(Decimal v1, Decimal v2, int& score, int& totalFeatures) {

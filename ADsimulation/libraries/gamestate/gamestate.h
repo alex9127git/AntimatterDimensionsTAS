@@ -53,6 +53,7 @@ class GameState {
         void runNextInstructions();
         bool hasNextInstruction();
         list<int> getCompletedInstructions();
+        int instructionsExecuted();
 
         GameState copy();
 };
