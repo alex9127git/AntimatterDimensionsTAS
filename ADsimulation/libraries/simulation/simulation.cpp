@@ -2,10 +2,13 @@
 #include "../constants/constants.h"
 #include "../permutations/permutations.h"
 #include <vector>
+#include <chrono>
+#include <list>
 #include <set>
+using namespace std;
 
 
-GameState& run(GameState& st, function<bool(GameState&)> stopCondition) {
+GameState run(GameState& st, function<bool(GameState&)> stopCondition) {
     Decimal priceRange = DC::D10;
     // If Konami code exploit isn't used, assume this is the starting game state 
     // and add some default instructions.
@@ -31,6 +34,7 @@ GameState& run(GameState& st, function<bool(GameState&)> stopCondition) {
     vector<vector<int>> permutations;
     set<int> toBeRemoved;
     bool hasWinner;
+    Timer timer;
     while (true) {
         // Creates all possible permutations of purchases accessible at this price range.
         purchases.clear();
@@ -51,10 +55,7 @@ GameState& run(GameState& st, function<bool(GameState&)> stopCondition) {
             }
         }
         permutations = getPermutations(purchases);
-        for (int elem : permutations[0]) {
-            cout << elem << " ";
-        }
-        cout << endl;
+        timer.reset();
         // For each already present save state creates branches for every permutation
         // of possible purchases.
         newGameStates.clear();
@@ -66,6 +67,7 @@ GameState& run(GameState& st, function<bool(GameState&)> stopCondition) {
             }
         }
         aliveGameStates = newGameStates;
+        timer.reset();
         // Runs all savestate branches until a winner is found.
         // A winner is a savestate that managed to complete all queued purchases the earliest.
         hasWinner = false;
@@ -74,6 +76,7 @@ GameState& run(GameState& st, function<bool(GameState&)> stopCondition) {
                 gst.tick(0.033);
                 gst.runNextInstructions();
                 if (stopCondition(gst)) {
+                    timer.reset();
                     return gst;
                 }
                 if (!gst.hasNextInstruction()) {
@@ -86,6 +89,7 @@ GameState& run(GameState& st, function<bool(GameState&)> stopCondition) {
                 }
             }
         }
+        timer.reset();
         // Removes all savestates that are behind at least one other savestate
         // in all comparable values.
         toBeRemoved.clear();
@@ -94,14 +98,17 @@ GameState& run(GameState& st, function<bool(GameState&)> stopCondition) {
                 int cmp = GameState::compare(aliveGameStates[i], aliveGameStates[j]);
                 if (cmp > 0) {
                     toBeRemoved.emplace(j);
-                } else {
+                } else if (cmp < 0) {
                     toBeRemoved.emplace(i);
                 }
             }
         }
+        timer.reset();
         for (auto iter = toBeRemoved.rbegin(); iter != toBeRemoved.rend(); iter++) {
             aliveGameStates.erase(aliveGameStates.begin() + (*iter));
         }
+        timer.reset();
         priceRange *= DC::D10;
+        cout << endl;
     }
 }

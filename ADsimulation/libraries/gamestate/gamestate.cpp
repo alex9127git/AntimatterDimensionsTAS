@@ -40,6 +40,7 @@ GameState::GameState(
     for (int ach : _startingAchievements) {
         this->achievements()[ach].unlock();
     }
+    completedInstructions = {};
 };
 
 
@@ -99,6 +100,7 @@ void GameState::tick(double diff) {
 bool GameState::buyOneDimension(int dim) {
     if (_AD[dim].canPurchase(_antimatter)) {
         _antimatter -= _AD[dim].getCost();
+        _achievements[10 + dim].unlock();
         _AD[dim].onPurchase();
         if (dim == 2) {
             _tickspeed.unlock();
@@ -185,14 +187,20 @@ bool GameState::runInstruction(int instruction) {
 }
 
 void GameState::runNextInstructions() {
-    while (hasNextInstruction() && this->runInstruction(*(this->instructions.begin()))) {
-        this->instructions.erase(this->instructions.begin());
+    while (hasNextInstruction() && this->runInstruction((this->instructions.front()))) {
+        //this->instructions.erase(this->instructions.begin());
+        this->completedInstructions.push_back(this->instructions.front());
+        this->instructions.pop_front();
         //cout << _tickCounter << endl;
     }
 }
 
 bool GameState::hasNextInstruction() {
     return !this->instructions.empty();
+}
+
+list<int> GameState::getCompletedInstructions() {
+    return this->completedInstructions;
 }
 
 GameState GameState::copy() {

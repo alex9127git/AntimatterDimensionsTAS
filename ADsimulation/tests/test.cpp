@@ -159,5 +159,10 @@ int main() {
     cout << "Starting test simulation" << endl;
     gameState = GameState();
     gameState = run(gameState, [](GameState& st) {return st.AD()[4].getPurchases() >= 20;});
-    cout << gameState << endl;
+    cout << gameState;
+    list<int> instructions = gameState.getCompletedInstructions();
+    for (int instruction : instructions) {
+        cout << instruction << " ";
+    }
+    cout << endl;
 }
