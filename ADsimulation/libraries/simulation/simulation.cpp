@@ -17,8 +17,7 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
     // and add some default instructions.
     // Otherwise, buy the first dimension - this is likely an unavoidable purchase.
     if (st.canUseKonami()) {
-        st.addInstructions({11, 130, 19});
-        priceRange = DC::D100;
+        st.addInstructions({11, 130, 13});
     } else {
         st.addInstructions({11});
     }
@@ -50,7 +49,7 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
             int p = bestState.AD()[i].getPurchases();
             if (p < 10) {
                 if (bestState.AD()[i].getCost() == priceRange) {
-                    purchases[i] = 10;
+                    purchases[i] = 10 - p;
                 }
             } else {
                 if (bestState.AD()[i].getCost() == priceRange / DC::D10) {
