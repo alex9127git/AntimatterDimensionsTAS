@@ -35,7 +35,6 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
     vector<GameState> newGameStates;
     map<int, int> purchases;
     vector<vector<int>> permutations;
-    set<int> toBeRemoved;
     bool hasWinner;
     Timer timer;
     while (true) {
@@ -59,7 +58,10 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
             }
         }
         permutations = getPermutations(purchases);
-        if (verbose) timer.reset();
+        if (verbose) {
+            cout << "Got all possible variants for available purchases | ";
+            timer.reset();
+        }
         // For each already present save state creates branches for every permutation
         // of possible purchases.
         newGameStates.clear();
@@ -71,7 +73,10 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
             }
         }
         aliveGameStates = newGameStates;
-        if (verbose) timer.reset();
+        if (verbose) {
+            cout << "Populated game states; currently " << aliveGameStates.size() << " | ";
+            timer.reset();
+        }
         // Runs all savestate branches until a winner is found.
         // A winner is a savestate that managed to complete all queued purchases the earliest.
         hasWinner = false;
@@ -80,6 +85,8 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
                 gst.tick(0.033);
                 gst.runNextInstructions();
                 if (stopCondition(gst)) {
+                    if (verbose) cout << "Finished! | ";
+                    else cout << "Total time elapsed: ";
                     timer.reset();
                     return gst;
                 }
@@ -93,38 +100,18 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
                 }
             }
         }
-        if (verbose) timer.reset();
+        if (verbose) {
+            cout << "Simulated all gamestates | ";
+            timer.reset();
+        }
         // Removes all savestates that are behind at least one other savestate
         // in all comparable values.
-        toBeRemoved.clear();
-        for (int i = 0; i < aliveGameStates.size(); i++) {
-            for (int j = i + 1; j < aliveGameStates.size(); j++) {
-                if (i == j) continue;
-                int cmp = compare(aliveGameStates[i], aliveGameStates[j]);
-                if (cmp > 0) {
-                    toBeRemoved.emplace(j);
-                } else if (cmp < 0) {
-                    toBeRemoved.emplace(i);
-                }
-            }
+        int beforeSize = aliveGameStates.size();
+        aliveGameStates = purge(aliveGameStates, verbose);
+        if (verbose) {
+            cout << "Purged " << beforeSize - aliveGameStates.size() << " gamestates; " << aliveGameStates.size() << " remain | ";
+            timer.reset();
         }
-        if (verbose) timer.reset();
-        // for (auto iter = toBeRemoved.rbegin(); iter != toBeRemoved.rend(); iter++) {
-        //     aliveGameStates.erase(aliveGameStates.begin() + (*iter));
-        // }
-        newGameStates.clear();
-        int i = 0;
-        auto removedIter = toBeRemoved.begin();
-        for (auto stIter = aliveGameStates.begin(); stIter != aliveGameStates.end(); stIter++) {
-            if (i == *removedIter && removedIter != toBeRemoved.end()) {
-                removedIter++;
-            } else {
-                newGameStates.push_back(*stIter);
-            }
-            i++;
-        }
-        aliveGameStates = newGameStates;
-        if (verbose) timer.reset();
         priceRange *= DC::D10;
         if (verbose) cout << endl;
     }
@@ -176,4 +163,31 @@ void compareValues(int v1, int v2, int& score, int& totalFeatures) {
     } else {
         totalFeatures -= 1;
     }
+}
+
+vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
+    set<int> toBeRemoved;
+    for (int i = 0; i < gamestates.size(); i++) {
+        for (int j = i + 1; j < gamestates.size(); j++) {
+            if (i == j) continue;
+            int cmp = compare(gamestates[i], gamestates[j]);
+            if (cmp > 0) {
+                toBeRemoved.emplace(j);
+            } else if (cmp < 0) {
+                toBeRemoved.emplace(i);
+            }
+        }
+    }
+    vector<GameState> result;
+    int i = 0;
+    auto removedIter = toBeRemoved.begin();
+    for (auto stIter = gamestates.begin(); stIter != gamestates.end(); stIter++) {
+        if (i == *removedIter && removedIter != toBeRemoved.end()) {
+            removedIter++;
+        } else {
+            result.push_back(*stIter);
+        }
+        i++;
+    }
+    return result;
 }

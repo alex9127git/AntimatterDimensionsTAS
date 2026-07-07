@@ -7,6 +7,7 @@ using namespace std;
 int main() {
     GameState gameState = GameState();
     gameState = run(gameState, 
-        [](GameState& st) {return st.AD()[4].getPurchases() >= 20;}, true);
+        [](GameState& st) {return st.AD()[4].getPurchases() >= 20;}, false);
+    cout << endl << gameState << endl;
     return 0;
 };

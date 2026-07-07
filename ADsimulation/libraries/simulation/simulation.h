@@ -14,7 +14,7 @@ class Timer {
             auto end = chrono::steady_clock::now();
             chrono::duration<double, std::milli> elapsed = end - start;
             start = end;
-            std::cout << "Elapsed: " << elapsed.count() << " ms" << endl;
+            std::cout << elapsed.count() << " ms" << endl;
         }
 };
 
@@ -26,4 +26,4 @@ int compare(GameState& st1, GameState& st2);
 void compareValues(Decimal v1, Decimal v2, int& score, int& totalFeatures);
 void compareValues(int v1, int v2, int& score, int& totalFeatures);
 
-vector<GameState> purge(vector<GameState> gamestates, bool verbose);
+vector<GameState> purge(vector<GameState>& gamestates, bool verbose);
