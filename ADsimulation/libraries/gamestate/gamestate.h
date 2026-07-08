@@ -1,5 +1,5 @@
 #pragma once
-#include <list>
+#include <vector>
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
 #include "../achievements/achievements.h"
@@ -16,8 +16,8 @@ class GameState {
         long _realTimePlayed;
         bool _canUseKonami;
 
-        list<int> instructions;
-        list<int> completedInstructions;
+        vector<int> instructions;
+        vector<int> completedInstructions;
 
     public:
         GameState();
@@ -52,7 +52,7 @@ class GameState {
         bool runInstruction(int instruction);
         void runNextInstructions();
         bool hasNextInstruction();
-        list<int> getCompletedInstructions();
+        vector<int> getCompletedInstructions();
         int instructionsExecuted();
 
         GameState copy();

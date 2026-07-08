@@ -162,12 +162,12 @@ int main() {
     gameState = GameState();
     gameState = run(gameState, [](GameState& st) {return st.AD()[4].getPurchases() >= 20;}, true);
     cout << endl << gameState << endl;
-    list<int> instructions = gameState.getCompletedInstructions();
+    vector<int> instructions = gameState.getCompletedInstructions();
     for (int instruction : instructions) {
         cout << instruction << " ";
     }
-    assert(gameState.realTimePlayed() == 1080816);
     cout << endl;
+    assert(gameState.realTimePlayed() == 1080816);
     cout << "Time taken is optimal" << endl;
     cout << "All game state tests passed" << endl << endl;
 

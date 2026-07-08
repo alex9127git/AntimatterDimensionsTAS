@@ -189,7 +189,7 @@ bool GameState::runInstruction(int instruction) {
 void GameState::runNextInstructions() {
     while (hasNextInstruction() && this->runInstruction((this->instructions.front()))) {
         this->completedInstructions.push_back(this->instructions.front());
-        this->instructions.pop_front();
+        this->instructions.erase(this->instructions.begin());
     }
 }
 
@@ -197,7 +197,7 @@ bool GameState::hasNextInstruction() {
     return !this->instructions.empty();
 }
 
-list<int> GameState::getCompletedInstructions() {
+vector<int> GameState::getCompletedInstructions() {
     return this->completedInstructions;
 }
 

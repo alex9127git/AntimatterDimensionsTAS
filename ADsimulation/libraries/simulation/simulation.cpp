@@ -22,106 +22,68 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
         st.addInstructions({11});
     }
     st.runNextInstructions();
-    while (st.hasNextInstruction()) {
-        st.tick(0.033);
-        st.runNextInstructions();
-    }
     // The function will have a list of all game states that are currently running;
     // at the start there should be only the starting game state passed to the function
     GameState& bestState = st;
-    vector<GameState> aliveGameStates;
-    aliveGameStates.push_back(st.copy());
+    vector<GameState> gameStates;
     vector<GameState> newGameStates;
-    map<int, int> purchases;
-    vector<vector<int>> permutations;
-    bool hasWinner;
-    int maxInstructions = st.instructionsExecuted();
     Timer timer;
+    gameStates.push_back(st.copy());
+    int ticks = 0;
     while (true) {
-        if (verbose) cout << "Simulating price range " << priceRange << endl;
-        // Creates all possible permutations of purchases accessible at this price range.
-        purchases.clear();
-        if (bestState.tickspeed().getCost() == priceRange) {
-            purchases[9] = 1;
-        }
-        for (int i = 1; i <= 8; i++) {
-            if (!bestState.AD()[i].isUnlocked()) continue;
-            int p = bestState.AD()[i].getPurchases();
-            if (p < 10) {
-                if (bestState.AD()[i].getCost() == priceRange) {
-                    purchases[i] = 10 - p;
-                }
-            } else {
-                if (bestState.AD()[i].getCost() == priceRange / DC::D10) {
-                    purchases[i * 10] = 1;
-                }
-            }
-        }
-        permutations = getPermutations(purchases);
-        if (verbose) {
-            cout << "Got all possible variants for available purchases | ";
-            timer.reset();
-        }
-        // For each already present save state creates branches for every permutation
-        // of possible purchases.
-        newGameStates.clear();
-        for (GameState& ref : aliveGameStates) {
-            for (vector<int> perm : permutations) {
-                GameState gst = ref.copy();
-                gst.addInstructions(perm);
-                newGameStates.push_back(gst);
-            }
-        }
-        aliveGameStates = newGameStates;
-        if (verbose) {
-            cout << "Populated game states; currently " << aliveGameStates.size() << " | ";
-            timer.reset();
-        }
-        // Runs all savestate branches until a winner is found.
-        // A winner is a savestate that managed to complete all queued purchases the earliest.
-        hasWinner = false;
-        while (!hasWinner) {
-            int currInstructions = 0;
-            for (GameState& gst : aliveGameStates) {
-                gst.tick(0.033);
-                gst.runNextInstructions();
-                if (stopCondition(gst)) {
-                    if (verbose) cout << "Finished! | ";
-                    else cout << "Total time elapsed: ";
-                    timer.reset();
-                    return gst;
-                }
-                if (!gst.hasNextInstruction()) {
-                    if (!hasWinner) {
-                        bestState = gst;
-                    } else if (hasWinner && gst.realTimePlayed() <= bestState.realTimePlayed()) {
-                        bestState = gst;
+        for (GameState& gst : gameStates) {
+            if (gst.hasNextInstruction()) continue;
+            vector<int> variants;
+            for (int i = 1; i <= 8; i++) {
+                int purchases = gst.AD()[i].getPurchases();
+                if (purchases < 10) {
+                    if (gst.AD()[i].canPurchase(gst.antimatter() * DC::D10)) {
+                        variants.push_back(i);
                     }
-                    hasWinner = true;
-                }
-                if (gst.instructionsExecuted() > currInstructions) {
-                    currInstructions = gst.instructionsExecuted();
+                } else {
+                    if (gst.AD()[i].canPurchase(gst.antimatter())) {
+                        variants.push_back(i * 10);
+                    }
                 }
             }
-            if (currInstructions > maxInstructions) {
-                maxInstructions = currInstructions;
-                aliveGameStates = purge(aliveGameStates, verbose);
+            if (gst.tickspeed().canPurchase(gst.antimatter() * DC::D10)) {
+                variants.push_back(9);
+            }
+            if (variants.empty()) {
+                continue;
+            } else if (variants.size() == 1) {
+                gst.addInstructions(variants);
+            } else {
+                for (int i = 1; i < variants.size(); i++) {
+                    GameState newGst = gst.copy();
+                    newGst.addInstructions({variants[i]});
+                    newGameStates.push_back(newGst);
+                }
+                gst.addInstructions({variants[0]});
             }
         }
-        if (verbose) {
-            cout << "Simulated all gamestates | ";
-            timer.reset();
+        for (GameState& gst : newGameStates) {
+            gameStates.push_back(gst);
         }
-        // Removes all savestates that are behind at least one other savestate
-        // in all comparable values.
-        int beforeSize = aliveGameStates.size();
-        aliveGameStates = purge(aliveGameStates, verbose);
-        if (verbose) {
-            cout << "Purged " << beforeSize - aliveGameStates.size() << " gamestates; " << aliveGameStates.size() << " remain | ";
-            timer.reset();
+        newGameStates.clear();
+        for (GameState& gst : gameStates) {
+            gst.runNextInstructions();
+            if (stopCondition(gst)) {
+                cout << "Finished! Total time elapsed: ";
+                timer.reset();
+                return gst;
+            }
         }
-        priceRange *= DC::D10;
-        if (verbose) cout << endl;
+        for (GameState& gst : gameStates) {
+            gst.tick(0.033);
+            gst.runNextInstructions();
+        }
+        ticks++;
+        if (ticks == 100) {
+            ticks = 0;
+            int beforeSize = gameStates.size();
+            gameStates = purge(gameStates, verbose);
+        }
     }
 }
 
@@ -192,6 +154,9 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
     vector<GameState> result;
     int i = 0;
     auto removedIter = toBeRemoved.begin();
+    if (toBeRemoved.size() > 0) {
+        //cout << "lol\n";
+    }
     for (auto stIter = gamestates.begin(); stIter != gamestates.end(); stIter++) {
         if (i == *removedIter && removedIter != toBeRemoved.end()) {
             removedIter++;
