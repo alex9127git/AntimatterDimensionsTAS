@@ -9,7 +9,7 @@ class GameState;
 
 class Dimension {
     protected:
-        string name;
+        int tier;
         Decimal cost;
         Decimal scaling;
         Decimal amount;
@@ -20,13 +20,11 @@ class Dimension {
 
     public:
         Dimension(
-            string _name,
+            int _tier,
             Decimal _cost, 
             Decimal _scaling,
             bool _unlocked
         );
-
-        friend ostream& operator<<(ostream& os, const Dimension& d);
         
         virtual void update(GameState& st);
         Decimal productionPerSecond();
@@ -47,12 +45,13 @@ class Dimension {
 class AntimatterDimension : public Dimension {
     public:
         AntimatterDimension(
-            string _name,
+            int _tier,
             Decimal _cost, 
             Decimal _scaling,
             bool _unlocked
         );
 
+        friend ostream& operator<<(ostream& os, const AntimatterDimension& d);
         void update(GameState& st) override;
         void onPurchase() override;
 };

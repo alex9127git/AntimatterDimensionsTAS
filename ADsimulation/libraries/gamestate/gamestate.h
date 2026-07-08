@@ -19,6 +19,12 @@ class GameState {
         vector<int> instructions;
         vector<int> completedInstructions;
 
+        vector<Decimal> prices;
+        Decimal nextPurchase;
+        Decimal currPriceRange;
+
+        void calcNextPurchase();
+
     public:
         GameState();
         GameState(
@@ -38,6 +44,7 @@ class GameState {
         Achievements& achievements();
         bool canUseKonami();
         long realTimePlayed();
+        int dimensionBoosts();
 
         void tick(double diff);
 
@@ -54,6 +61,8 @@ class GameState {
         bool hasNextInstruction();
         vector<int> getCompletedInstructions();
         int instructionsExecuted();
+        bool canBranch();
+        Decimal getPriceRange();
 
         GameState copy();
 };

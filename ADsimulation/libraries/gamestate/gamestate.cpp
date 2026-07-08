@@ -30,7 +30,9 @@ GameState::GameState(
         _dimensionBoosts(_dimensionBoosts),
         _tickCounter(_tickCounter),
         _realTimePlayed(_realTimePlayed),
-        _canUseKonami(_canUseKonami)
+        _canUseKonami(_canUseKonami),
+        nextPurchase(DC::D0),
+        currPriceRange(DC::D0)
 {
     for (Achievement& ach : this->achievements().achievements()) {
         if (ach.checkUnlockCondition(*this)) {
@@ -41,14 +43,37 @@ GameState::GameState(
         this->achievements()[ach].unlock();
     }
     completedInstructions = {};
+    prices.push_back(_tickspeed.getCost());
+    for (int i = 1; i <= 8; i++) {
+        prices.push_back(_AD[i].getCost());
+    }
+    calcNextPurchase();
 };
 
+void GameState::calcNextPurchase() {
+    Decimal minStackPrice = prices[0];
+    this->currPriceRange = prices[0];
+    this->nextPurchase = prices[0];
+    for (int i = 1; i <= min(_dimensionBoosts + 4, 8); i++) {
+        Decimal price = _AD[i].getPurchases() < 10 || i == min(_dimensionBoosts + 4, 8) 
+                ? prices[i] : prices[i] * DC::D10;
+        if (price < minStackPrice) {
+            minStackPrice = price;
+            currPriceRange = price;
+            this->nextPurchase = prices[i];
+        } else if (price == minStackPrice) {
+            if (prices[i] < this->nextPurchase) {
+                this->nextPurchase = prices[i];
+            }
+        }
+    }
+}
 
 ostream& operator<<(ostream& os, GameState& st) {
     os << "You have " << st.antimatter() << " antimatter." << endl;
     os << "You have been playing for " << st._realTimePlayed << " milliseconds." << endl;
     os << "Tickspeed bonus: x" << st.tickspeed().perSecond() << " (x" << st.tickspeed().getDisplayMult(st).toString(3) << " per upgrade)" << endl;
-    for (const Dimension& d : st.AD().getDims()) {
+    for (const AntimatterDimension& d : st.AD().getDims()) {
         os << d << endl;
     };
     return os;
@@ -78,6 +103,10 @@ long GameState::realTimePlayed() {
     return this->_realTimePlayed;
 }
 
+int GameState::dimensionBoosts() {
+    return this->_dimensionBoosts;
+}
+
 void GameState::tick(double diff) {
     _tickCounter++;
     _realTimePlayed += diff * 1000;
@@ -102,6 +131,8 @@ bool GameState::buyOneDimension(int dim) {
         _antimatter -= _AD[dim].getCost();
         _achievements[10 + dim].unlock();
         _AD[dim].onPurchase();
+        prices[dim] = _AD[dim].getCost();
+        calcNextPurchase();
         if (dim == 2) {
             _tickspeed.unlock();
         }
@@ -124,6 +155,8 @@ bool GameState::buyTickspeed() {
     if (_tickspeed.canPurchase(_antimatter)) {
         _antimatter -= _tickspeed.getCost();
         _tickspeed.onPurchase();
+        prices[0] = _tickspeed.getCost();
+        calcNextPurchase();
         return true;
     }
     return false;
@@ -203,6 +236,14 @@ vector<int> GameState::getCompletedInstructions() {
 
 int GameState::instructionsExecuted() {
     return this->completedInstructions.size();
+}
+
+bool GameState::canBranch() {
+    return this->_antimatter > this->nextPurchase;
+}
+
+Decimal GameState::getPriceRange() {
+    return this->currPriceRange;
 }
 
 GameState GameState::copy() {

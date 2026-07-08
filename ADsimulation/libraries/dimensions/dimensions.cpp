@@ -5,11 +5,11 @@
 
 
 Dimension::Dimension(
-    string _name,
+    int _tier,
     Decimal _cost, 
     Decimal _scaling,
     bool _unlocked
-)   :   name(_name),
+)   :   tier(_tier),
         cost(_cost),
         scaling(_scaling),
         amount(DC::D0),
@@ -18,12 +18,6 @@ Dimension::Dimension(
         production(DC::D0),
         unlocked(_unlocked) 
     {}
-
-ostream& operator<<(ostream& os, const Dimension& d) {
-    os << d.name << " (x" << d.multiplier << ") " << d.amount << endl;
-    os << "Purchases: " << d.purchases << ", Cost: " << d.cost;
-    return os;
-}
 
 void Dimension::update(GameState& st) {
     this->production = DC::D0;
@@ -79,18 +73,39 @@ void Dimension::produceDimensions(Dimension& dimension, double diff) {
 }
 
 AntimatterDimension::AntimatterDimension(
-    string _name,
+    int _tier,
     Decimal _cost, 
     Decimal _scaling,
     bool _unlocked
-)   :   Dimension(_name, _cost, _scaling, _unlocked)
+)   :   Dimension(_tier, _cost, _scaling, _unlocked)
     {}
+
+ostream& operator<<(ostream& os, const AntimatterDimension& d) {
+    string suffix;
+    switch (d.tier) {
+        case 1:
+            suffix = "st";
+            break;
+        case 2:
+            suffix = "nd";
+            break;
+        case 3:
+            suffix = "rd";
+            break;
+        default:
+            suffix = "th";
+    }
+    os << d.tier << suffix << " Antimatter Dimension (x" << d.multiplier << ") " << d.amount << endl;
+    os << "Purchases: " << d.purchases << ", Cost: " << d.cost;
+    return os;
+}
 
 void AntimatterDimension::update(GameState& st) {
     Decimal prod = this->amount;
     Decimal mult = DC::D1;
     mult *= Decimal::pow(DC::D2, floor(purchases / 10));
     mult *= st.getAchievementBonus();
+    mult *= Decimal::pow(DC::D2, max(0, st.dimensionBoosts() - tier + 1));
     prod *= mult;
     prod *= st.tickspeed().perSecond();
     this->production = prod;
@@ -107,14 +122,14 @@ void AntimatterDimension::onPurchase() {
 
 AntimatterDimensions::AntimatterDimensions() 
     :   dims({
-            AntimatterDimension("1st Antimatter Dimension",   DC::D10,    DC::D1E3,     false),
-            AntimatterDimension("2nd Antimatter Dimension",   DC::D100,   DC::D1E4,     false),
-            AntimatterDimension("3rd Antimatter Dimension",   DC::D1E4,   DC::D1E5,     false),
-            AntimatterDimension("4th Antimatter Dimension",   DC::D1E6,   DC::D1E6,     false),
-            AntimatterDimension("5th Antimatter Dimension",   DC::D1E9,   DC::D1E8,     false),
-            AntimatterDimension("6th Antimatter Dimension",   DC::D1E13,  DC::D1E10,    false),
-            AntimatterDimension("7th Antimatter Dimension",   DC::D1E18,  DC::D1E12,    false),
-            AntimatterDimension("8th Antimatter Dimension",   DC::D1E24,  DC::D1E15,    false)
+            AntimatterDimension(1,   DC::D10,    DC::D1E3,     false),
+            AntimatterDimension(2,   DC::D100,   DC::D1E4,     false),
+            AntimatterDimension(3,   DC::D1E4,   DC::D1E5,     false),
+            AntimatterDimension(4,   DC::D1E6,   DC::D1E6,     false),
+            AntimatterDimension(5,   DC::D1E9,   DC::D1E8,     false),
+            AntimatterDimension(6,   DC::D1E13,  DC::D1E10,    false),
+            AntimatterDimension(7,   DC::D1E18,  DC::D1E12,    false),
+            AntimatterDimension(8,   DC::D1E24,  DC::D1E15,    false)
         })
 {
     (*this)[1].unlock();

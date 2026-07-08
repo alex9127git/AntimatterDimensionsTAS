@@ -16,6 +16,13 @@ class Timer {
             start = end;
             std::cout << elapsed.count() << " ms" << endl;
         }
+
+        double silentReset() {
+            auto end = chrono::steady_clock::now();
+            chrono::duration<double, std::milli> elapsed = end - start;
+            start = end;
+            return elapsed.count();
+        }
 };
 
 

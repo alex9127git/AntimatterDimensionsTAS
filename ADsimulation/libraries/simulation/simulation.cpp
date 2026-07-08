@@ -24,30 +24,37 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
     st.runNextInstructions();
     // The function will have a list of all game states that are currently running;
     // at the start there should be only the starting game state passed to the function
-    GameState& bestState = st;
     vector<GameState> gameStates;
     vector<GameState> newGameStates;
     Timer timer;
+    Timer branchTimer;
+    Timer tickTimer;
+    Timer purgeTimer;
+    double branchTime;
+    double tickTime;
+    double purgeTime;
     gameStates.push_back(st.copy());
     int ticks = 0;
     while (true) {
+        branchTimer.silentReset();
         for (GameState& gst : gameStates) {
-            if (gst.hasNextInstruction()) continue;
+            if (!gst.canBranch() || gst.hasNextInstruction()) continue;
+            Decimal priceRange = gst.getPriceRange();
             vector<int> variants;
+            if (gst.tickspeed().canPurchase(priceRange)) {
+                variants.push_back(9);
+            }
             for (int i = 1; i <= 8; i++) {
                 int purchases = gst.AD()[i].getPurchases();
-                if (purchases < 10) {
-                    if (gst.AD()[i].canPurchase(gst.antimatter() * DC::D10)) {
+                if (purchases < 10 || i == min(gst.dimensionBoosts() + 4, 8)) {
+                    if (gst.AD()[i].canPurchase(priceRange)) {
                         variants.push_back(i);
                     }
                 } else {
-                    if (gst.AD()[i].canPurchase(gst.antimatter())) {
+                    if (gst.AD()[i].canPurchase(priceRange / DC::D10)) {
                         variants.push_back(i * 10);
                     }
                 }
-            }
-            if (gst.tickspeed().canPurchase(gst.antimatter() * DC::D10)) {
-                variants.push_back(9);
             }
             if (variants.empty()) {
                 continue;
@@ -65,12 +72,17 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
         for (GameState& gst : newGameStates) {
             gameStates.push_back(gst);
         }
+        branchTime += branchTimer.silentReset();
         newGameStates.clear();
+        tickTimer.silentReset();
         for (GameState& gst : gameStates) {
             gst.runNextInstructions();
             if (stopCondition(gst)) {
                 cout << "Finished! Total time elapsed: ";
                 timer.reset();
+                cout << "branch: " << branchTime << " ms" << endl;
+                cout << "tick: " << tickTime << " ms" << endl;
+                cout << "purge: " << purgeTime << " ms" << endl;
                 return gst;
             }
         }
@@ -78,11 +90,14 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
             gst.tick(0.033);
             gst.runNextInstructions();
         }
+        tickTime += tickTimer.silentReset();
         ticks++;
         if (ticks == 100) {
+            purgeTimer.silentReset();
             ticks = 0;
             int beforeSize = gameStates.size();
             gameStates = purge(gameStates, verbose);
+            purgeTime += purgeTimer.silentReset();
         }
     }
 }
