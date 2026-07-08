@@ -32,15 +32,16 @@ GameState::GameState(
         _realTimePlayed(_realTimePlayed),
         _canUseKonami(_canUseKonami),
         nextPurchase(DC::D0),
-        currPriceRange(DC::D0)
+        currPriceRange(DC::D0),
+        achievementBonus(DC::D1)
 {
     for (Achievement& ach : this->achievements().achievements()) {
         if (ach.checkUnlockCondition(*this)) {
-            ach.unlock();
+            this->unlockAchievement(ach.getId(), true);
         }
     }
     for (int ach : _startingAchievements) {
-        this->achievements()[ach].unlock();
+        this->unlockAchievement(ach, true);
     }
     completedInstructions = {};
     prices.push_back(_tickspeed.getCost());
@@ -67,6 +68,27 @@ void GameState::calcNextPurchase() {
             }
         }
     }
+}
+
+void GameState::recalcAchievementBonus() {
+    Decimal result = DC::D1;
+    int rowCounter = 0;
+    int cycle = 0;
+    for (Achievement& ach : this->achievements().achievements()) {
+        if (ach.isUnlocked()) {
+            result *= DC::D1_03;
+            rowCounter++;
+        }
+        cycle++;
+        if (cycle >= 8) {
+            cycle = 0;
+            if (rowCounter == 8) {
+                result *= DC::D1_25;
+            }
+            rowCounter = 0;
+        }
+    }
+    this->achievementBonus = result;
 }
 
 ostream& operator<<(ostream& os, GameState& st) {
@@ -119,19 +141,17 @@ void GameState::tick(double diff) {
             _AD[i].produceDimensions(_AD[i - 1], diff / 10);
         };
     }
-    for (Achievement& ach : this->achievements().achievements()) {
-        if (ach.checkUnlockCondition(*this)) {
-            ach.unlock();
-        }
+    for (int ach : Achievements::afterTickAchievements) {
+        this->unlockAchievement(ach, false);
     }
 }
 
 bool GameState::buyOneDimension(int dim) {
     if (_AD[dim].canPurchase(_antimatter)) {
         _antimatter -= _AD[dim].getCost();
-        _achievements[10 + dim].unlock();
         _AD[dim].onPurchase();
         prices[dim] = _AD[dim].getCost();
+        unlockAchievement(10 + dim, true);
         calcNextPurchase();
         if (dim == 2) {
             _tickspeed.unlock();
@@ -171,25 +191,15 @@ bool GameState::handleKonamiCode() {
     return false;
 }
 
-Decimal GameState::getAchievementBonus() {
-    Decimal result = DC::D1;
-    int rowCounter = 0;
-    int cycle = 0;
-    for (Achievement& ach : this->achievements().achievements()) {
-        if (ach.isUnlocked()) {
-            result *= DC::D1_03;
-            rowCounter++;
-        }
-        cycle++;
-        if (cycle >= 8) {
-            cycle = 0;
-            if (rowCounter == 8) {
-                result *= DC::D1_25;
-            }
-            rowCounter = 0;
-        }
+void GameState::unlockAchievement(int ach, bool force) {
+    if (force || this->achievements()[ach].checkUnlockCondition(*this)) {
+        this->achievements()[ach].unlock();
+        this->recalcAchievementBonus();
     }
-    return result;
+}
+
+Decimal GameState::getAchievementBonus() {
+    return this->achievementBonus;
 }
 
 void GameState::addInstructions(vector<int> instructions) {

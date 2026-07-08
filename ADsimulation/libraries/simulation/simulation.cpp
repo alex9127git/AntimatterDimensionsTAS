@@ -109,47 +109,41 @@ int compare(GameState& st1, GameState& st2) {
     // If st1 is strictly better than st2, this function should return 1.
     // If st2 is strictly better than st2, this function should return -1.
     // Otherwise, return 0.
-    int score = 0;
-    int totalFeatures = 28;
-    compareValues(st1.antimatter(), st2.antimatter(), score, totalFeatures);
+    int score1 = 0;
+    int score2 = 0;
+    compareValues(st1.antimatter(), st2.antimatter(), score1, score2);
     for (int i = 1; i <= 8; i++) {
         Dimension dim1 = st1.AD()[i];
         Dimension dim2 = st2.AD()[i];
-        compareValues(dim1.getAmount(), dim2.getAmount(), score, totalFeatures);
-        compareValues(dim1.getPurchases(), dim2.getPurchases(), score, totalFeatures);
-        compareValues(dim1.productionPerSecond(), dim2.productionPerSecond(), score, totalFeatures);
+        compareValues(dim1.getAmount(), dim2.getAmount(), score1, score2);
+        compareValues(dim1.getPurchases(), dim2.getPurchases(), score1, score2);
+        compareValues(dim1.productionPerSecond(), dim2.productionPerSecond(), score1, score2);
     }
-    compareValues(st1.tickspeed().getPurchases(), st2.tickspeed().getPurchases(), score, totalFeatures);
-    compareValues(st1.tickspeed().perSecond(), st2.tickspeed().perSecond(), score, totalFeatures);
-    compareValues(st1.getAchievementBonus(), st2.getAchievementBonus(), score, totalFeatures);
-    if (totalFeatures == 0) {
-        return 0;
-    } else if (score == totalFeatures) {
+    compareValues(st1.tickspeed().getPurchases(), st2.tickspeed().getPurchases(), score1, score2);
+    compareValues(st1.tickspeed().perSecond(), st2.tickspeed().perSecond(), score1, score2);
+    compareValues(st1.getAchievementBonus(), st2.getAchievementBonus(), score1, score2);
+    if (score1 > 0 && score2 == 0) {
         return 1;
-    } else if (score == -totalFeatures) {
+    } else if (score2 > 0 && score1 == 0) {
         return -1;
     } else {
         return 0;
     }
 }
 
-void compareValues(Decimal v1, Decimal v2, int& score, int& totalFeatures) {
+void compareValues(Decimal v1, Decimal v2, int& score1, int& score2) {
     if (v1 > v2) {
-        score += 1;
+        score1 += 1;
     } else if (v1 < v2) {
-        score -= 1;
-    } else {
-        totalFeatures -= 1;
+        score2 += 1;
     }
 }
 
-void compareValues(int v1, int v2, int& score, int& totalFeatures) {
+void compareValues(int v1, int v2, int& score1, int& score2) {
     if (v1 > v2) {
-        score += 1;
+        score1 += 1;
     } else if (v1 < v2) {
-        score -= 1;
-    } else {
-        totalFeatures -= 1;
+        score2 += 1;
     }
 }
 

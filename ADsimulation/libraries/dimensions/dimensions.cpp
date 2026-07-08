@@ -40,6 +40,10 @@ Decimal Dimension::getAmount() {
     return this->amount;
 }
 
+Decimal Dimension::getMult() {
+    return this->multiplier;
+}
+
 int Dimension::getPurchases() {
     return this->purchases;
 }

@@ -45,6 +45,10 @@ class Achievements {
         vector<Achievement> _achievements;
 
     public:
+        inline static const vector<int> afterTickAchievements = {
+            24, 31, 42, 43, 45, 46
+        };
+
         Achievements();
 
         vector<Achievement>& achievements();

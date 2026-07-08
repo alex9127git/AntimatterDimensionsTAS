@@ -22,8 +22,10 @@ class GameState {
         vector<Decimal> prices;
         Decimal nextPurchase;
         Decimal currPriceRange;
+        Decimal achievementBonus;
 
         void calcNextPurchase();
+        void recalcAchievementBonus();
 
     public:
         GameState();
@@ -52,6 +54,7 @@ class GameState {
         bool buyDimUntil10(int dim);
         bool buyTickspeed();
         bool handleKonamiCode();
+        void unlockAchievement(int ach, bool force);
 
         Decimal getAchievementBonus();
 
