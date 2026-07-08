@@ -39,6 +39,8 @@ struct DC {
     static Decimal D1E18;
     static Decimal D1E24;
     static Decimal D5E25;
+    static Decimal D1E26;
+    static Decimal D1E31;
     static Decimal D1E63;
     static Decimal D1E80;
 

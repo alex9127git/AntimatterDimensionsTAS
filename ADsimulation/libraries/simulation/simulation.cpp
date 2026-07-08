@@ -102,7 +102,7 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
     }
 }
 
-int compare(GameState& st1, GameState& st2) {
+int compare(vector<Decimal>& st1, vector<Decimal>& st2) {
     // Compare the two game states together.
     // If a first game state has a property bigger, score variable shifts positive.
     // Otherwise it shifts negative. This value is then used to determine the return value.
@@ -111,17 +111,13 @@ int compare(GameState& st1, GameState& st2) {
     // Otherwise, return 0.
     int score1 = 0;
     int score2 = 0;
-    compareValues(st1.antimatter(), st2.antimatter(), score1, score2);
-    for (int i = 1; i <= 8; i++) {
-        Dimension dim1 = st1.AD()[i];
-        Dimension dim2 = st2.AD()[i];
-        compareValues(dim1.getAmount(), dim2.getAmount(), score1, score2);
-        compareValues(dim1.getPurchases(), dim2.getPurchases(), score1, score2);
-        compareValues(dim1.productionPerSecond(), dim2.productionPerSecond(), score1, score2);
+    for (int i = 0; i < st1.size(); i++) {
+        Decimal v1 = st1[i];
+        Decimal v2 = st2[i];
+        if (v1 > v2) score1++;
+        if (v1 < v2) score2++;
+        if (score1 > 0 & score2 > 0) return 0;
     }
-    compareValues(st1.tickspeed().getPurchases(), st2.tickspeed().getPurchases(), score1, score2);
-    compareValues(st1.tickspeed().perSecond(), st2.tickspeed().perSecond(), score1, score2);
-    compareValues(st1.getAchievementBonus(), st2.getAchievementBonus(), score1, score2);
     if (score1 > 0 && score2 == 0) {
         return 1;
     } else if (score2 > 0 && score1 == 0) {
@@ -131,28 +127,25 @@ int compare(GameState& st1, GameState& st2) {
     }
 }
 
-void compareValues(Decimal v1, Decimal v2, int& score1, int& score2) {
-    if (v1 > v2) {
-        score1 += 1;
-    } else if (v1 < v2) {
-        score2 += 1;
-    }
-}
-
-void compareValues(int v1, int v2, int& score1, int& score2) {
-    if (v1 > v2) {
-        score1 += 1;
-    } else if (v1 < v2) {
-        score2 += 1;
-    }
-}
-
 vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
+    vector<vector<Decimal>> values;
+    for (GameState& gst : gamestates) {
+        vector<Decimal> valueRow;
+        valueRow.push_back(gst.antimatter());
+        for (int i = 1; i <= 8; i++) {
+            valueRow.push_back(gst.AD()[i].getAmount());
+            valueRow.push_back(Decimal(gst.AD()[i].getPurchases()));
+        }
+        valueRow.push_back(Decimal(gst.tickspeed().getPurchases()));
+        valueRow.push_back(gst.tickspeed().perSecond());
+        valueRow.push_back(gst.getAchievementBonus());
+        values.push_back(valueRow);
+    }
     set<int> toBeRemoved;
-    for (int i = 0; i < gamestates.size(); i++) {
-        for (int j = i + 1; j < gamestates.size(); j++) {
+    for (int i = 0; i < values.size(); i++) {
+        for (int j = i + 1; j < values.size(); j++) {
             if (i == j) continue;
-            int cmp = compare(gamestates[i], gamestates[j]);
+            int cmp = compare(values[i], values[j]);
             if (cmp > 0) {
                 toBeRemoved.emplace(j);
             } else if (cmp < 0) {
@@ -163,9 +156,6 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
     vector<GameState> result;
     int i = 0;
     auto removedIter = toBeRemoved.begin();
-    if (toBeRemoved.size() > 0) {
-        //cout << "lol\n";
-    }
     for (auto stIter = gamestates.begin(); stIter != gamestates.end(); stIter++) {
         if (i == *removedIter && removedIter != toBeRemoved.end()) {
             removedIter++;

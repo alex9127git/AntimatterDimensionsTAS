@@ -76,9 +76,9 @@ Achievements::Achievements() {
         Achievement(22, DC::D1, DC::D1,
             [](GameState& st) {return true;}),
         Achievement(23, DC::D1_1, DC::D1,
-            [](GameState& st) {return st.antimatter() >= DC::D1E80;}),
-        Achievement(24, DC::D1, DC::D1,
             [](GameState& st) {return false;}),
+        Achievement(24, DC::D1, DC::D1,
+            [](GameState& st) {return st.antimatter() >= DC::D1E80;}),
         Achievement(25, DC::D1, DC::D1,
             [](GameState& st) {return false;}),
         Achievement(26, DC::D1, DC::D1,
@@ -89,7 +89,14 @@ Achievements::Achievements() {
             [](GameState& st) {return false;}),
 
         Achievement(31, DC::D1_05, DC::D1,
-            [](GameState& st) {return false;}),
+            [](GameState& st) {
+                for (int i = 1; i <= 8; i++) {
+                    if (st.AD()[i].getMult() >= DC::D1E31) {
+                        return true;
+                    }
+                }
+                return false;
+            }),
         Achievement(32, DC::D1_1, DC::D1,
             [](GameState& st) {return false;}),
         Achievement(33, DC::D1, DC::D1,
@@ -108,17 +115,25 @@ Achievements::Achievements() {
         Achievement(41, DC::D1, DC::D1,
             [](GameState& st) {return false;}),
         Achievement(42, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
+            [](GameState& st) {
+                return st.antimatter() >= DC::D1E63 && 
+                    st.AD()[1].productionPerSecond() > st.antimatter();
+            }),
         Achievement(43, 
             [](Decimal tier) {return DC::D1_01 * tier;}, 
             DC::D1,
-            [](GameState& st) {return false;}),
+            [](GameState& st) {
+                for (int i = 1; i <= 7; i++) {
+                    if (st.AD()[i].getMult() >= st.AD()[i+1].getMult()) return false;
+                }
+                return true;
+            }),
         Achievement(44, DC::D1, DC::D1,
             [](GameState& st) {return true;}),
         Achievement(45, DC::D1_02, DC::D1,
-            [](GameState& st) {return false;}),
+            [](GameState& st) {return st.tickspeed().perSecond() >= DC::D1E26;}),
         Achievement(46, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
+            [](GameState& st) {return st.AD()[7].getAmount() >= DC::D1E12;}),
         Achievement(47, DC::D1, DC::D1,
             [](GameState& st) {return false;}),
         Achievement(48, DC::D1_1, DC::D1,

@@ -32,7 +32,6 @@ class GameState {
         GameState(
             Decimal _antimatter,
             int _dimensionBoosts,
-            long _tickCounter, 
             long _realTimePlayed, 
             bool _canUseKonami,
             vector<int> _startingAchievements

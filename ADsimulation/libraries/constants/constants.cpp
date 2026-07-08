@@ -37,6 +37,8 @@ Decimal DC::D1E15 = Decimal(1, 15);
 Decimal DC::D1E18 = Decimal(1, 18);
 Decimal DC::D1E24 = Decimal(1, 24);
 Decimal DC::D5E25 = Decimal(5, 25);
+Decimal DC::D1E26 = Decimal(1, 26);
+Decimal DC::D1E31 = Decimal(1, 31);
 Decimal DC::D1E63 = Decimal(1, 63);
 Decimal DC::D1E80 = Decimal(1, 80);
 

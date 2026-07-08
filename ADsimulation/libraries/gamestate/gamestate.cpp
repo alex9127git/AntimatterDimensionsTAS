@@ -10,7 +10,6 @@ GameState::GameState() :
         DC::D10,
         0,
         0,
-        0,
         true,
         {}
     ) 
@@ -19,7 +18,6 @@ GameState::GameState() :
 GameState::GameState(
     Decimal _antimatter,
     int _dimensionBoosts,
-    long _tickCounter,
     long _realTimePlayed,
     bool _canUseKonami,
     vector<int> _startingAchievements
@@ -28,8 +26,8 @@ GameState::GameState(
         _tickspeed(Tickspeed()),
         _achievements(Achievements()),
         _dimensionBoosts(_dimensionBoosts),
-        _tickCounter(_tickCounter),
         _realTimePlayed(_realTimePlayed),
+        _tickCounter(_realTimePlayed / 33),
         _canUseKonami(_canUseKonami),
         nextPurchase(DC::D0),
         currPriceRange(DC::D0),
@@ -193,8 +191,10 @@ bool GameState::handleKonamiCode() {
 
 void GameState::unlockAchievement(int ach, bool force) {
     if (force || this->achievements()[ach].checkUnlockCondition(*this)) {
-        this->achievements()[ach].unlock();
-        this->recalcAchievementBonus();
+        if (!this->achievements()[ach].isUnlocked()) {
+            this->achievements()[ach].unlock();
+            this->recalcAchievementBonus();
+        }
     }
 }
 
