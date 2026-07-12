@@ -38,35 +38,37 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
     while (true) {
         branchTimer.silentReset();
         for (GameState& gst : gameStates) {
-            if (!gst.canBranch() || gst.hasNextInstruction()) continue;
-            Decimal priceRange = gst.getPriceRange();
-            vector<int> variants;
-            if (gst.tickspeed().canPurchase(priceRange)) {
-                variants.push_back(9);
-            }
-            for (int i = 1; i <= 8; i++) {
-                int purchases = gst.AD()[i].getPurchases();
-                if (purchases < 10 || i == min(gst.dimensionBoosts() + 4, 8)) {
-                    if (gst.AD()[i].canPurchase(priceRange)) {
-                        variants.push_back(i);
+            while (gst.canBranch() && !gst.hasNextInstruction()) {
+                Decimal priceRange = gst.getPriceRange();
+                vector<int> variants;
+                if (gst.tickspeed().canPurchase(priceRange)) {
+                    variants.push_back(9);
+                }
+                for (int i = 1; i <= 8; i++) {
+                    int purchases = gst.AD()[i].getPurchases();
+                    if (purchases < 10 || i == min(gst.dimensionBoosts() + 4, 8)) {
+                        if (gst.AD()[i].canPurchase(priceRange)) {
+                            variants.push_back(i);
+                        }
+                    } else {
+                        if (gst.AD()[i].canPurchase(priceRange / DC::D10)) {
+                            variants.push_back(i * 10);
+                        }
                     }
+                }
+                if (variants.empty()) {
+                    continue;
+                } else if (variants.size() == 1) {
+                    gst.addInstructions(variants);
                 } else {
-                    if (gst.AD()[i].canPurchase(priceRange / DC::D10)) {
-                        variants.push_back(i * 10);
+                    for (int i = 1; i < variants.size(); i++) {
+                        GameState newGst = gst.copy();
+                        newGst.addInstructions({variants[i]});
+                        newGameStates.push_back(newGst);
                     }
+                    gst.addInstructions({variants[0]});
                 }
-            }
-            if (variants.empty()) {
-                continue;
-            } else if (variants.size() == 1) {
-                gst.addInstructions(variants);
-            } else {
-                for (int i = 1; i < variants.size(); i++) {
-                    GameState newGst = gst.copy();
-                    newGst.addInstructions({variants[i]});
-                    newGameStates.push_back(newGst);
-                }
-                gst.addInstructions({variants[0]});
+                gst.runNextInstructions();
             }
         }
         for (GameState& gst : newGameStates) {
