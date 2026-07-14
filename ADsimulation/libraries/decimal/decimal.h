@@ -1,9 +1,10 @@
 #pragma once
+#include "../interfaces/interfaces.h"
 #include <iostream>
 using namespace std;
 
 
-class Decimal {
+class Decimal : public ISerializable {
     private:
         double mantissa;
         int exponent;
@@ -12,6 +13,7 @@ class Decimal {
         Decimal(double _mant, int _exp);
         Decimal(double _mant, double _exp);
         Decimal(double _val);
+        Decimal(json& j);
 
         Decimal operator+(const Decimal& b);
         Decimal& operator+=(const Decimal& b);
@@ -54,4 +56,7 @@ class Decimal {
 
         static string toString(const Decimal& d, int precision);
         string toString(int precision);
+
+        json to_json() override;
+        void from_json(json& j) override;
 };

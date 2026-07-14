@@ -11,6 +11,10 @@ Tickspeed::Tickspeed()
         unlocked(false)
     {};
 
+Tickspeed::Tickspeed(json& j) : Tickspeed::Tickspeed() {
+    this->from_json(j);
+}
+
 Decimal Tickspeed::getTickspeedMultiplier(GameState& st) {
     return Decimal(1 / 1.1245);
 }
@@ -56,4 +60,20 @@ bool Tickspeed::canPurchase(Decimal resource) {
 void Tickspeed::onPurchase() {
     this->purchases++;
     this->cost *= this->scaling;
+}
+
+json Tickspeed::to_json() {
+    json j;
+    j["cost"] = this->cost.to_json();
+    j["scaling"] = this->scaling.to_json();
+    j["purchases"] = this->purchases;
+    j["unlocked"] = this->unlocked;
+    return j;
+}
+
+void Tickspeed::from_json(json& j) {
+    this->cost = Decimal(j["cost"]);
+    this->scaling = Decimal(j["scaling"]);
+    this->purchases = j["purchases"];
+    this->unlocked = j["unlocked"];
 }

@@ -200,10 +200,31 @@ Achievements::Achievements() {
     };
 }
 
+Achievements::Achievements(json& j) : Achievements::Achievements() {
+    this->from_json(j);
+}
+
 vector<Achievement>& Achievements::achievements() {
     return this->_achievements;
 }
 
 Achievement& Achievements::operator[] (int index) {
     return this->_achievements[(index / 10 - 1) * 8 + (index % 10 - 1)];
+}
+
+json Achievements::to_json() {
+    json j;
+    vector<int> ids;
+    for (Achievement& ach : this->achievements()) {
+        if (ach.isUnlocked()) ids.push_back(ach.getId());
+    }
+    j["unlockedAchievements"] = ids;
+    return j;
+}
+
+void Achievements::from_json(json& j) {
+    vector<int> ids = j["unlockedAchievements"];
+    for (int id : ids) {
+        (*this)[id].unlock();
+    }
 }

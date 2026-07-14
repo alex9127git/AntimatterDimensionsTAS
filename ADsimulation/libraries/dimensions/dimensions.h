@@ -1,22 +1,28 @@
 #pragma once
 #include <vector>
 #include "../decimal/decimal.h"
+#include "../interfaces/interfaces.h"
+#include <nlohmann/json.hpp>
+
 using namespace std;
+using json = nlohmann::json;
 
 
 class GameState;
 
 
-class Dimension {
+class Dimension : public ISerializable {
     protected:
         int tier;
         Decimal cost;
         Decimal scaling;
         Decimal amount;
         int purchases;
+        bool unlocked;
+
+        // volatile, shouldn't be serialized
         Decimal multiplier;
         Decimal production;
-        bool unlocked;
 
     public:
         Dimension(
@@ -25,6 +31,7 @@ class Dimension {
             Decimal _scaling,
             bool _unlocked
         );
+        Dimension();
         
         virtual void update(GameState& st);
         Decimal productionPerSecond();
@@ -51,22 +58,30 @@ class AntimatterDimension : public Dimension {
             Decimal _scaling,
             bool _unlocked
         );
+        AntimatterDimension(json& j);
 
         friend ostream& operator<<(ostream& os, const AntimatterDimension& d);
         void update(GameState& st) override;
         void onPurchase() override;
+
+        json to_json() override;
+        void from_json(json& j) override;
 };
 
-class AntimatterDimensions {
+class AntimatterDimensions : ISerializable {
     private:
         vector<AntimatterDimension> dims;
 
     public:
         AntimatterDimensions();
+        AntimatterDimensions(json& j);
 
         Dimension& operator[](int index);
 
         vector<AntimatterDimension>& getDims();
 
         void update(GameState& st);
+
+        json to_json() override;
+        void from_json(json& j) override;
 };

@@ -5,7 +5,9 @@
 #include "../libraries/gamestate/gamestate.h"
 #include "../libraries/permutations/permutations.h"
 #include "../libraries/simulation/simulation.h"
+#include <nlohmann/json.hpp>
 using namespace std;
+using json = nlohmann::json;
 
 
 int main() {
@@ -160,7 +162,7 @@ int main() {
     
     cout << "Starting test simulation" << endl;
     gameState = GameState();
-    gameState = run(gameState, [](GameState& st) {return st.AD()[4].getPurchases() >= 20;}, true);
+    gameState = run(gameState, [](GameState& st) {return st.canBuyNextDimboost();}, true);
     cout << endl << gameState << endl;
     vector<int> instructions = gameState.getCompletedInstructions();
     for (int instruction : instructions) {
@@ -170,6 +172,17 @@ int main() {
     assert(gameState.realTimePlayed() == 1080816);
     cout << "Time taken is optimal" << endl;
     cout << "All game state tests passed" << endl << endl;
+
+    cout << "Started serialization tests" << endl;
+    a = Decimal(69);
+    json j = a.to_json();
+    b = Decimal(j);
+    assert(a == b);
+    j = gameState.to_json();
+    GameState gsCopy = GameState(j);
+    assert(gsCopy.realTimePlayed() == gameState.realTimePlayed());
+    assert(gsCopy.getAchievementBonus() == gameState.getAchievementBonus());
+    cout << "All serialization tests passed" << endl << endl;
 
     cout << "All tests passed" << endl;
     return 0;

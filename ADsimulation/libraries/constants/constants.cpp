@@ -42,4 +42,4 @@ Decimal DC::D1E31 = Decimal(1, 31);
 Decimal DC::D1E63 = Decimal(1, 63);
 Decimal DC::D1E80 = Decimal(1, 80);
 
-Decimal DC::INFINITY = Decimal::pow(DC::D2, 1024);
+Decimal DC::INF = Decimal::pow(DC::D2, 1024);

@@ -19,6 +19,17 @@ Dimension::Dimension(
         unlocked(_unlocked) 
     {}
 
+Dimension::Dimension() :
+        tier(1),
+        cost(DC::D10),
+        scaling(DC::D1E3),
+        amount(DC::D0),
+        purchases(0),
+        multiplier(DC::D1),
+        production(DC::D0),
+        unlocked(true) 
+    {}
+
 void Dimension::update(GameState& st) {
     this->production = DC::D0;
     this->multiplier = DC::D1;
@@ -84,6 +95,10 @@ AntimatterDimension::AntimatterDimension(
 )   :   Dimension(_tier, _cost, _scaling, _unlocked)
     {}
 
+AntimatterDimension::AntimatterDimension(json& j) {
+    this->from_json(j);
+}
+
 ostream& operator<<(ostream& os, const AntimatterDimension& d) {
     string suffix;
     switch (d.tier) {
@@ -124,6 +139,27 @@ void AntimatterDimension::onPurchase() {
     };
 }
 
+json AntimatterDimension::to_json() {
+    json j;
+    j["tier"] = this->tier;
+    j["cost"] = this->cost.to_json();
+    j["scaling"] = this->scaling.to_json();
+    j["amount"] = this->amount.to_json();
+    j["purchases"] = this->purchases;
+    j["unlocked"] = this->unlocked;
+    return j;
+}
+
+void AntimatterDimension::from_json(json& j) {
+    this->tier = j["tier"];
+    this->cost = Decimal(j["cost"]);
+    this->scaling = Decimal(j["scaling"]);
+    this->amount = Decimal(j["amount"]);
+    this->purchases = j["purchases"];
+    this->unlocked = j["unlocked"];
+}
+
+
 AntimatterDimensions::AntimatterDimensions() 
     :   dims({
             AntimatterDimension(1,   DC::D10,    DC::D1E3,     false),
@@ -139,6 +175,10 @@ AntimatterDimensions::AntimatterDimensions()
     (*this)[1].unlock();
 }
 
+AntimatterDimensions::AntimatterDimensions(json& j) : AntimatterDimensions::AntimatterDimensions() {
+    this->from_json(j);
+}
+
 vector<AntimatterDimension>& AntimatterDimensions::getDims() {
     return this->dims;
 }
@@ -150,5 +190,23 @@ Dimension& AntimatterDimensions::operator[](int index) {
 void AntimatterDimensions::update(GameState& st) {
     for (int i = 8; i >= 1; i--) {
         (*this)[i].update(st);
+    }
+}
+
+json AntimatterDimensions::to_json() {
+    json j;
+    vector<json> jsons;
+    for (AntimatterDimension& dim : dims) {
+        jsons.push_back(dim.to_json());
+    }
+    j["dims"] = jsons;
+    return j;
+}
+
+void AntimatterDimensions::from_json(json& j) {
+    vector<json> jsons = j["dims"];
+    dims.clear();
+    for (json& item : jsons) {
+        dims.push_back(AntimatterDimension(item));
     }
 }

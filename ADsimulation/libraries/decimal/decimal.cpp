@@ -26,6 +26,10 @@ Decimal::Decimal(double _val) {
     this->normalize();
 }
 
+Decimal::Decimal(json& j) {
+    this->from_json(j);
+}
+
 Decimal Decimal::operator+(const Decimal& b) {
     return Decimal::add(*this, b);
 }
@@ -219,4 +223,16 @@ string Decimal::toString(const Decimal& d, int precision) {
 
 string Decimal::toString(int precision) {
     return Decimal::toString(*this, precision);
+}
+
+json Decimal::to_json() {
+    json j;
+    j["mantissa"] = this->mantissa;
+    j["exponent"] = this->exponent;
+    return j;
+}
+
+void Decimal::from_json(json& j) {
+    this->mantissa = j["mantissa"];
+    this->exponent = j["exponent"];
 }

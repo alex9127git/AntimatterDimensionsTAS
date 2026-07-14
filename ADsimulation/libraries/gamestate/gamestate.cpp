@@ -3,43 +3,36 @@
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
 #include "../achievements/achievements.h"
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 
 GameState::GameState() : 
-    GameState::GameState(
-        DC::D10,
-        0,
-        0,
-        true,
-        {}
-    ) 
-    {};
-
-GameState::GameState(
-    Decimal _antimatter,
-    int _dimensionBoosts,
-    long _realTimePlayed,
-    bool _canUseKonami,
-    vector<int> _startingAchievements
-)   :   _antimatter(_antimatter),
-        _AD(AntimatterDimensions()),
-        _tickspeed(Tickspeed()),
-        _achievements(Achievements()),
-        _dimensionBoosts(_dimensionBoosts),
-        _realTimePlayed(_realTimePlayed),
-        _tickCounter(_realTimePlayed / 33),
-        _canUseKonami(_canUseKonami),
-        nextPurchase(DC::D0),
-        currPriceRange(DC::D0),
-        achievementBonus(DC::D1)
+    _antimatter(DC::D10),
+    _AD(AntimatterDimensions()),
+    _tickspeed(Tickspeed()),
+    _achievements(Achievements()),
+    _dimensionBoosts(0),
+    _realTimePlayed(0),
+    _canUseKonami(true),
+    nextPurchase(DC::D0),
+    currPriceRange(DC::D0),
+    achievementBonus(DC::D1)
 {
+    this->prepare();
+};
+
+GameState::GameState(json& j) : GameState()
+{
+    this->from_json(j);
+};
+
+void GameState::prepare() {
     for (Achievement& ach : this->achievements().achievements()) {
         if (ach.checkUnlockCondition(*this)) {
             this->unlockAchievement(ach.getId(), true);
         }
-    }
-    for (int ach : _startingAchievements) {
-        this->unlockAchievement(ach, true);
     }
     completedInstructions = {};
     prices.push_back(_tickspeed.getCost());
@@ -47,7 +40,12 @@ GameState::GameState(
         prices.push_back(_AD[i].getCost());
     }
     calcNextPurchase();
-};
+    recalcAchievementBonus();
+    this->tickspeed().update(*this);
+    for (int i = 8; i >= 1; i--) {
+        this->AD()[i].update(*this);
+    }
+}
 
 void GameState::calcNextPurchase() {
     Decimal minStackPrice = prices[0];
@@ -128,7 +126,6 @@ int GameState::dimensionBoosts() {
 }
 
 void GameState::tick(double diff) {
-    _tickCounter++;
     _realTimePlayed += diff * 1000;
     this->tickspeed().update(*this);
     for (int i = 8; i >= 1; i--) {
@@ -256,6 +253,44 @@ Decimal GameState::getPriceRange() {
     return this->currPriceRange;
 }
 
+bool GameState::requestDimboost() {
+    if (canBuyNextDimboost()) {
+        _dimensionBoosts += 1;
+        _AD = AntimatterDimensions();
+        _tickspeed = Tickspeed();
+        _antimatter = DC::D10;
+        return true;
+    }
+    return false;
+}
+
+bool GameState::canBuyNextDimboost() {
+    return this->AD()[min(8, 4 + _dimensionBoosts)].getPurchases() >= 20 + 15 * max(0, _dimensionBoosts - 4);
+}
+
 GameState GameState::copy() {
     return *this;
+}
+
+json GameState::to_json() {
+    json j;
+    j["antimatter"] = this->_antimatter.to_json();
+    j["antimatterDimensionState"] = this->_AD.to_json();
+    j["tickspeedState"] = this->_tickspeed.to_json();
+    j["achievementState"] = this->_achievements.to_json();
+    j["dimensionBoosts"] = this->_dimensionBoosts;
+    j["realTimePlayed"] = this->_realTimePlayed;
+    j["canUseKonami"] = this->_canUseKonami;
+    return j;
+}
+
+void GameState::from_json(json& j) {
+    this->_antimatter = Decimal(j["antimatter"]);
+    this->_AD = AntimatterDimensions(j["antimatterDimensionState"]);
+    this->_tickspeed = Tickspeed(j["tickspeedState"]);
+    this->_achievements = Achievements(j["achievementState"]);
+    this->_dimensionBoosts = j["dimensionBoosts"];
+    this->_realTimePlayed = j["realTimePlayed"];
+    this->_canUseKonami = j["canUseKonami"];
+    this->prepare();
 }

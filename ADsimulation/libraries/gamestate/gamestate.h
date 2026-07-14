@@ -3,39 +3,34 @@
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
 #include "../achievements/achievements.h"
+#include "../interfaces/interfaces.h"
 
 
-class GameState {
+class GameState : public ISerializable {
     private:
         Decimal _antimatter;
         AntimatterDimensions _AD;
         Tickspeed _tickspeed;
         Achievements _achievements;
         int _dimensionBoosts;
-        long _tickCounter;
         long _realTimePlayed;
         bool _canUseKonami;
 
+        // volatile, shouldn't be serialized
         vector<int> instructions;
         vector<int> completedInstructions;
-
         vector<Decimal> prices;
         Decimal nextPurchase;
         Decimal currPriceRange;
         Decimal achievementBonus;
 
+        void prepare();
         void calcNextPurchase();
         void recalcAchievementBonus();
 
     public:
         GameState();
-        GameState(
-            Decimal _antimatter,
-            int _dimensionBoosts,
-            long _realTimePlayed, 
-            bool _canUseKonami,
-            vector<int> _startingAchievements
-        );
+        GameState(json& j);
 
         friend ostream& operator<<(ostream& os, GameState& st);
 
@@ -66,5 +61,11 @@ class GameState {
         bool canBranch();
         Decimal getPriceRange();
 
+        bool requestDimboost();
+        bool canBuyNextDimboost();
+
         GameState copy();
+
+        json to_json() override;
+        void from_json(json& j) override;
 };

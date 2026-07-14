@@ -2,6 +2,7 @@
 #include <vector>
 #include <functional>
 #include "../decimal/decimal.h"
+#include "../interfaces/interfaces.h"
 using namespace std;
 
 
@@ -40,7 +41,7 @@ class Achievement {
         void print();
 };
 
-class Achievements {
+class Achievements : public ISerializable {
     private:
         vector<Achievement> _achievements;
 
@@ -50,8 +51,12 @@ class Achievements {
         };
 
         Achievements();
+        Achievements(json& j);
 
         vector<Achievement>& achievements();
 
         Achievement& operator[](int index);
+
+        json to_json() override;
+        void from_json(json& j) override;
 };

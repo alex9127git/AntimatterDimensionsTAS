@@ -18,7 +18,7 @@ vector<vector<int>> getPermutations(map<int, int>& items) {
     }
     getPermutations(keys, values, stack, result, total);
     return result;
-};
+}
 
 void getPermutations(
     vector<int>& keys,
@@ -41,4 +41,4 @@ void getPermutations(
         values[i]++;
         stack.pop_back();
     }
-};
+}
