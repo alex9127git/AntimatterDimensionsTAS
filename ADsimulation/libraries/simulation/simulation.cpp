@@ -118,7 +118,7 @@ int compare(vector<Decimal>& st1, vector<Decimal>& st2) {
         Decimal v2 = st2[i];
         if (v1 > v2) score1++;
         if (v1 < v2) score2++;
-        if (score1 > 0 & score2 > 0) return 0;
+        if (score1 > 0 && score2 > 0) return 0;
     }
     if (score1 > 0 && score2 == 0) {
         return 1;
@@ -143,25 +143,27 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
         valueRow.push_back(gst.getAchievementBonus());
         values.push_back(valueRow);
     }
-    set<int> toBeRemoved;
+    int canBeRemoved[values.size()];
     for (int i = 0; i < values.size(); i++) {
+        canBeRemoved[i] = 0;
+    }
+    for (int i = 0; i < values.size(); i++) {
+        if (canBeRemoved[i] == 1) continue;
         for (int j = i + 1; j < values.size(); j++) {
             if (i == j) continue;
+            if (canBeRemoved[i] == 1) continue;
             int cmp = compare(values[i], values[j]);
             if (cmp > 0) {
-                toBeRemoved.emplace(j);
+                canBeRemoved[j] = 1;
             } else if (cmp < 0) {
-                toBeRemoved.emplace(i);
+                canBeRemoved[i] = 1;
             }
         }
     }
     vector<GameState> result;
     int i = 0;
-    auto removedIter = toBeRemoved.begin();
     for (auto stIter = gamestates.begin(); stIter != gamestates.end(); stIter++) {
-        if (i == *removedIter && removedIter != toBeRemoved.end()) {
-            removedIter++;
-        } else {
+        if (canBeRemoved[i] == 0) {
             result.push_back(*stIter);
         }
         i++;

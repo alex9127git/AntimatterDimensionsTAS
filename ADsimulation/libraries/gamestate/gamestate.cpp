@@ -30,9 +30,7 @@ GameState::GameState(json& j) : GameState()
 
 void GameState::prepare() {
     for (Achievement& ach : this->achievements().achievements()) {
-        if (ach.checkUnlockCondition(*this)) {
-            this->unlockAchievement(ach.getId(), true);
-        }
+        this->unlockAchievement(ach.getId(), false);
     }
     completedInstructions = {};
     prices.push_back(_tickspeed.getCost());
@@ -42,9 +40,7 @@ void GameState::prepare() {
     calcNextPurchase();
     recalcAchievementBonus();
     this->tickspeed().update(*this);
-    for (int i = 8; i >= 1; i--) {
-        this->AD()[i].update(*this);
-    }
+    this->AD().update(*this);
 }
 
 void GameState::calcNextPurchase() {
@@ -85,6 +81,7 @@ void GameState::recalcAchievementBonus() {
         }
     }
     this->achievementBonus = result;
+    this->AD().update(*this);
 }
 
 ostream& operator<<(ostream& os, GameState& st) {
@@ -127,9 +124,7 @@ int GameState::dimensionBoosts() {
 
 void GameState::tick(double diff) {
     _realTimePlayed += diff * 1000;
-    this->tickspeed().update(*this);
     for (int i = 8; i >= 1; i--) {
-        this->AD()[i].update(*this);
         if (i == 1) {
             _AD[i].produceCurrency(_antimatter, diff);
         } else if (_AD[i].isUnlocked()) {
@@ -141,35 +136,40 @@ void GameState::tick(double diff) {
     }
 }
 
-bool GameState::buyOneDimension(int dim) {
-    if (_AD[dim].canPurchase(_antimatter)) {
-        _antimatter -= _AD[dim].getCost();
-        _AD[dim].onPurchase();
-        prices[dim] = _AD[dim].getCost();
-        unlockAchievement(10 + dim, true);
+bool GameState::buyOneDimension(int tier) {
+    if (_AD[tier].canPurchase(_antimatter)) {
+        _antimatter -= _AD[tier].getCost();
+        _AD[tier].onPurchase();
+        if (_AD[tier].getPurchases() % 10 == 0) {
+            _AD[tier].update(*this);
+        }
+        prices[tier] = _AD[tier].getCost();
+        unlockAchievement(10 + tier, true);
         calcNextPurchase();
-        if (dim == 2) {
+        if (tier == 2) {
             _tickspeed.unlock();
         }
-        if (dim < 8 && _dimensionBoosts >= dim - 3) {
-            _AD[dim + 1].unlock();
+        if (tier < 8 && _dimensionBoosts >= tier - 3) {
+            _AD[tier + 1].unlock();
         }
         return true;
     }
     return false;
 }
 
-bool GameState::buyDimUntil10(int dim) {
+bool GameState::buyDimUntil10(int tier) {
     do {
-        buyOneDimension(dim);
-    } while (_AD[dim].getPurchases() % 10 == 0 && _AD[dim].canPurchase(_antimatter));
-    return _AD[dim].getPurchases() % 10 == 0;
+        buyOneDimension(tier);
+    } while (_AD[tier].getPurchases() % 10 == 0 && _AD[tier].canPurchase(_antimatter));
+    return _AD[tier].getPurchases() % 10 == 0;
 }
 
 bool GameState::buyTickspeed() {
     if (_tickspeed.canPurchase(_antimatter)) {
         _antimatter -= _tickspeed.getCost();
         _tickspeed.onPurchase();
+        _tickspeed.update(*this);
+        _AD.update(*this);
         prices[0] = _tickspeed.getCost();
         calcNextPurchase();
         return true;
@@ -259,6 +259,8 @@ bool GameState::requestDimboost() {
         _AD = AntimatterDimensions();
         _tickspeed = Tickspeed();
         _antimatter = DC::D10;
+        _tickspeed.update(*this);
+        _AD.update(*this);
         return true;
     }
     return false;

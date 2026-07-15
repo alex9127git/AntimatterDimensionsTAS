@@ -22,7 +22,6 @@ class Dimension : public ISerializable {
 
         // volatile, shouldn't be serialized
         Decimal multiplier;
-        Decimal production;
 
     public:
         Dimension(
