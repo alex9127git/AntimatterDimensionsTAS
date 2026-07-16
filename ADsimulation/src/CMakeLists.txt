@@ -101,6 +101,8 @@ target_sources(dimensions
 target_link_libraries(dimensions
     PRIVATE
         constants
+        interfaces
+        nlohmann_json::nlohmann_json
 )
 
 add_library(tickspeed)

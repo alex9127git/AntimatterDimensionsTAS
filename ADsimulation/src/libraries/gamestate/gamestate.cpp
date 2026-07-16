@@ -3,6 +3,7 @@
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
 #include "../achievements/achievements.h"
+#include <fstream>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -237,7 +238,7 @@ bool GameState::hasNextInstruction() {
     return !this->instructions.empty();
 }
 
-vector<int> GameState::getCompletedInstructions() {
+vector<double> GameState::getCompletedInstructions() {
     return this->completedInstructions;
 }
 
@@ -295,4 +296,39 @@ void GameState::from_json(json& j) {
     this->_realTimePlayed = j["realTimePlayed"];
     this->_canUseKonami = j["canUseKonami"];
     this->prepare();
+}
+
+void GameState::writeInstructions(ofstream& f) {
+    f << "[\n";
+    int dim_tier = 0;
+    int dim_bulk = 0;
+    this->completedInstructions.push_back(0);
+    vector<string> lines;
+    for (double instruction : completedInstructions) {
+        if (1 <= instruction && instruction <= 8) {
+            if (dim_tier != 0 && dim_tier != instruction && dim_bulk > 0) {
+                lines.push_back("[\"buyDimension\",[" + to_string(dim_tier) + "," + to_string(dim_bulk) + "]]");
+                dim_bulk = 0;
+            }
+            dim_tier = instruction;
+            dim_bulk++;
+        } else {
+            if (dim_bulk > 0) {
+                lines.push_back("[\"buyDimension\",[" + to_string(dim_tier) + "," + to_string(dim_bulk) + "]]");
+                dim_bulk = 0;
+            }
+            if (instruction == 9) {
+                lines.push_back("[\"buyTickspeed\",[0]]");
+            }
+        }
+    }
+    if (dim_bulk > 0) {
+        lines.push_back("[\"buyDimension\",[" + to_string(dim_tier) + "," + to_string(dim_bulk) + "]]");
+        dim_bulk = 0;
+    }
+    for (int i = 0; i < lines.size(); i++) {
+        f << lines[i];
+        if (i != lines.size() - 1) f << ",\n";
+    }
+    f << "\n]\n";
 }

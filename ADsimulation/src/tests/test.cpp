@@ -164,8 +164,8 @@ int main() {
     gameState = GameState();
     gameState = run(gameState, [](GameState& st) {return st.canBuyNextDimboost();}, true);
     cout << endl << gameState << endl;
-    vector<int> instructions = gameState.getCompletedInstructions();
-    for (int instruction : instructions) {
+    vector<double> instructions = gameState.getCompletedInstructions();
+    for (double instruction : instructions) {
         cout << instruction << " ";
     }
     cout << endl;

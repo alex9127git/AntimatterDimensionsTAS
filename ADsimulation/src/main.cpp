@@ -15,6 +15,7 @@ int main(int argc, char* argv[]) {
     json j;
     ifstream i;
     ofstream o;
+    ofstream cmd_o;
 
     if (argc == 1) {
         cout << "Enter input filename, or leave blank to use default game state:" << endl;
@@ -26,11 +27,9 @@ int main(int argc, char* argv[]) {
         }
         cout << "Enter output filename:" << endl;
         getline(cin, outputFile);
-        o = ofstream(outputFile);
     } else if (argc == 3) {
         cout << "Command line arguments detected: using first argument as an input file and second argument as an output file" << endl;
         i = ifstream(argv[1]);
-        o = ofstream(argv[2]);
         outputFile = argv[2];
         i >> j;
         gameState = GameState(j);
@@ -41,17 +40,15 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    vector<int> instructions;
+    o = ofstream(outputFile);
+    vector<double> instructions;
     gameState = run(gameState, 
         [](GameState& st) {return st.canBuyNextDimboost();}, false);
     gameState.requestDimboost();
     cout << "Finished simulation; dumping result game state into " << outputFile << endl;
     o << gameState.to_json();
-    cout << "Resulting instruction sequence:" << endl;
-    instructions = gameState.getCompletedInstructions();
-    for (int instruction : instructions) {
-        cout << instruction << " ";
-    }
-    cout << endl;
+    cout << "Dumping instruction sequence into " << outputFile.substr(0, outputFile.size() - 5) << "_cmd.json" << endl;
+    cmd_o = ofstream(outputFile.substr(0, outputFile.size() - 5) + "_cmd.json");
+    gameState.writeInstructions(cmd_o);
     return 0;
 };

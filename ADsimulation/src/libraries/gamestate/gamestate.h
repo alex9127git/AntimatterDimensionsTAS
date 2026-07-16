@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <fstream>
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
 #include "../achievements/achievements.h"
@@ -17,8 +18,8 @@ class GameState : public ISerializable {
         bool _canUseKonami;
 
         // volatile, shouldn't be serialized
-        vector<int> instructions;
-        vector<int> completedInstructions;
+        vector<double> instructions;
+        vector<double> completedInstructions;
         vector<Decimal> prices;
         Decimal nextPurchase;
         Decimal currPriceRange;
@@ -56,7 +57,7 @@ class GameState : public ISerializable {
         bool runInstruction(int instruction);
         void runNextInstructions();
         bool hasNextInstruction();
-        vector<int> getCompletedInstructions();
+        vector<double> getCompletedInstructions();
         int instructionsExecuted();
         bool canBranch();
         Decimal getPriceRange();
@@ -68,4 +69,6 @@ class GameState : public ISerializable {
 
         json to_json() override;
         void from_json(json& j) override;
+
+        void writeInstructions(ofstream& f);
 };
