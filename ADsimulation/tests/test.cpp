@@ -17,14 +17,14 @@ int main() {
 
     cout << "Started equivalence tests" << endl;
     a = Decimal(5);
-    b = Decimal(5, 0);
+    b = Decimal(5, 0LL);
     assert(a == b);
     a = Decimal(37);
-    b = Decimal(3.7, 1);
+    b = Decimal(3.7, 1LL);
     assert(a == b);
     a = Decimal(69420);
-    b = Decimal(6.942, 4);
-    c = Decimal(694.2, 2);
+    b = Decimal(6.942, 4LL);
+    c = Decimal(694.2, 2LL);
     assert(a == b);
     assert(b == c);
     assert(a == c);
@@ -72,14 +72,14 @@ int main() {
     a = Decimal(69420);
     b = Decimal(1337);
     assert(a * b == Decimal(69420 * 1337));
-    a = Decimal(1, 100);
-    b = Decimal(1, 150);
-    assert(a + b == Decimal(1, 150));
-    assert(a * b == Decimal(1, 250));
+    a = Decimal(1, 100LL);
+    b = Decimal(1, 150LL);
+    assert(a + b == Decimal(1, 150LL));
+    assert(a * b == Decimal(1, 250LL));
     a = Decimal(69);
     b = DC::D1E5;
     assert(Decimal::invert(a) == Decimal(1.0/69));
-    assert(Decimal::invert(b) == Decimal(1, -5));
+    assert(Decimal::invert(b) == Decimal(1, -5LL));
     a = Decimal(1001);
     b = Decimal(7);
     assert((a / b) == Decimal(143));
@@ -91,7 +91,7 @@ int main() {
     assert(Decimal::pow(a, b) > Decimal(3.1622776));
     assert(Decimal::pow(a, b) < Decimal(3.1622777));
     a = Decimal(2);
-    assert(Decimal::pow(a, 1024) > Decimal(1, 308));
+    assert(Decimal::pow(a, 1024) > Decimal(1, 308LL));
     cout << "All math tests passed" << endl << endl;
 
     cout << "Started permutation tests" << endl;

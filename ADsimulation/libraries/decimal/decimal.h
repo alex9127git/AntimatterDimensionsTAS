@@ -7,10 +7,10 @@ using namespace std;
 class Decimal : public ISerializable {
     private:
         double mantissa;
-        int exponent;
+        long long exponent;
 
     public:
-        Decimal(double _mant, int _exp);
+        Decimal(double _mant, long long _exp);
         Decimal(double _mant, double _exp);
         Decimal(double _val);
         Decimal(json& j);
@@ -32,7 +32,7 @@ class Decimal : public ISerializable {
         friend ostream& operator<<(ostream& os, const Decimal& d);
 
         double mant();
-        int exp();
+        long long exp();
 
         static double toNumber(const Decimal& d);
 

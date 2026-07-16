@@ -7,7 +7,7 @@
 using namespace std;
 
 
-Decimal::Decimal(double _mant, int _exp) {
+Decimal::Decimal(double _mant, long long _exp) {
     this->mantissa = _mant;
     this->exponent = _exp;
     this->normalize();
@@ -99,7 +99,7 @@ double Decimal::mant() {
     return this->mantissa;
 }
 
-int Decimal::exp() {
+long long Decimal::exp() {
     return this->exponent;
 }
 

@@ -28,13 +28,18 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
     vector<GameState> newGameStates;
     Timer timer;
     Timer branchTimer;
+    Timer checkTimer;
     Timer tickTimer;
+    Timer buyTimer;
     Timer purgeTimer;
     double branchTime;
+    double checkTime;
     double tickTime;
+    double buyTime;
     double purgeTime;
     gameStates.push_back(st.copy());
     int ticks = 0;
+    int maxStates = 0;
     while (true) {
         branchTimer.silentReset();
         for (GameState& gst : gameStates) {
@@ -76,28 +81,36 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
         }
         branchTime += branchTimer.silentReset();
         newGameStates.clear();
-        tickTimer.silentReset();
+        checkTimer.silentReset();
         for (GameState& gst : gameStates) {
             gst.runNextInstructions();
             if (stopCondition(gst)) {
                 cout << "Finished! Total time elapsed: ";
                 timer.reset();
+                cout << "Max States: " << maxStates << endl;
                 cout << "branch: " << branchTime << " ms" << endl;
+                cout << "check: " << checkTime << " ms" << endl;
                 cout << "tick: " << tickTime << " ms" << endl;
+                cout << "buy: " << buyTime << " ms" << endl;
                 cout << "purge: " << purgeTime << " ms" << endl;
                 return gst;
             }
         }
+        checkTime += checkTimer.silentReset();
         for (GameState& gst : gameStates) {
+            tickTimer.silentReset();
             gst.tick(0.033);
+            tickTime += tickTimer.silentReset();
+            buyTimer.silentReset();
             gst.runNextInstructions();
+            buyTime += buyTimer.silentReset();
         }
-        tickTime += tickTimer.silentReset();
         ticks++;
         if (ticks == 100) {
             purgeTimer.silentReset();
             ticks = 0;
             int beforeSize = gameStates.size();
+            maxStates = max(maxStates, beforeSize);
             gameStates = purge(gameStates, verbose);
             purgeTime += purgeTimer.silentReset();
         }
