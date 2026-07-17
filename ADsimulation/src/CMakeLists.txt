@@ -55,7 +55,6 @@ target_link_libraries(testing
         permutations
         simulation
 )
-
 add_library(decimal)
 target_sources(decimal
     PRIVATE
@@ -192,7 +191,6 @@ target_link_libraries(simulation
         gamestate
         permutations
 )
-
 add_library(interfaces)
 target_sources(interfaces
     PRIVATE
@@ -205,6 +203,6 @@ target_sources(interfaces
             libraries/interfaces/interfaces.h
 )
 target_link_libraries(interfaces
-    PRIVATE
+    PUBLIC
         nlohmann_json::nlohmann_json
 )
