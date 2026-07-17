@@ -14,6 +14,7 @@ GameState::GameState() :
     _AD(AntimatterDimensions()),
     _tickspeed(Tickspeed()),
     _achievements(Achievements()),
+    _sacrificed(DC::D1),
     _dimensionBoosts(0),
     _realTimePlayed(0),
     _canUseKonami(true),
@@ -271,6 +272,12 @@ bool GameState::canBuyNextDimboost() {
     return this->AD()[min(8, 4 + _dimensionBoosts)].getPurchases() >= 20 + 15 * max(0, _dimensionBoosts - 4);
 }
 
+bool GameState::sacrificeReset() {
+    if (_dimensionBoosts < 5) return false;
+    if (_AD[8].getAmount() == DC::D0) return false;
+    return true;
+}
+
 GameState GameState::copy() {
     return *this;
 }
@@ -281,6 +288,7 @@ json GameState::to_json() {
     j["antimatterDimensionState"] = this->_AD.to_json();
     j["tickspeedState"] = this->_tickspeed.to_json();
     j["achievementState"] = this->_achievements.to_json();
+    j["sacrificed"] = this->_sacrificed.to_json();
     j["dimensionBoosts"] = this->_dimensionBoosts;
     j["realTimePlayed"] = this->_realTimePlayed;
     j["canUseKonami"] = this->_canUseKonami;
@@ -292,6 +300,7 @@ void GameState::from_json(json& j) {
     this->_AD = AntimatterDimensions(j["antimatterDimensionState"]);
     this->_tickspeed = Tickspeed(j["tickspeedState"]);
     this->_achievements = Achievements(j["achievementState"]);
+    this->_sacrificed = Decimal(j["sacrificed"]);
     this->_dimensionBoosts = j["dimensionBoosts"];
     this->_realTimePlayed = j["realTimePlayed"];
     this->_canUseKonami = j["canUseKonami"];

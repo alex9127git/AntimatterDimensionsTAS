@@ -1,3 +1,5 @@
+SET(FETCHCONTENT_QUIET FALSE)
+
 cmake_minimum_required(VERSION 3.23)
 set(CMAKE_BUILD_TYPE Debug)
 project(J.A.D.E. VERSION 0.0.1
@@ -14,6 +16,7 @@ FetchContent_Declare(
     nlohmann_json
     GIT_REPOSITORY https://github.com/nlohmann/json.git
     GIT_TAG        v3.12.0
+    GIT_PROGRESS   TRUE
 )
 
 FetchContent_MakeAvailable(nlohmann_json)
@@ -33,6 +36,7 @@ target_link_libraries(main
         gamestate
         permutations
         simulation
+        interfaces
 )
 
 add_executable(testing)
@@ -133,6 +137,11 @@ target_sources(achievements
             libraries/achievements
         FILES
             libraries/achievements/achievements.h
+)
+target_link_libraries(achievements
+    PRIVATE
+        interfaces
+        nlohmann_json::nlohmann_json
 )
 
 add_library(gamestate)

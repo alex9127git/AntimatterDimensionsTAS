@@ -16,8 +16,10 @@ class GameState : public ISerializable {
         int _dimensionBoosts;
         long _realTimePlayed;
         bool _canUseKonami;
+        Decimal _sacrificed;
 
         // volatile, shouldn't be serialized
+        
         vector<double> instructions;
         vector<double> completedInstructions;
         vector<Decimal> prices;
@@ -35,6 +37,8 @@ class GameState : public ISerializable {
 
         friend ostream& operator<<(ostream& os, GameState& st);
 
+        // getters
+
         Decimal antimatter();
         AntimatterDimensions& AD();
         Tickspeed& tickspeed();
@@ -45,13 +49,19 @@ class GameState : public ISerializable {
 
         void tick(double diff);
 
+        // purchase methods
+
         bool buyOneDimension(int dim);
         bool buyDimUntil10(int dim);
         bool buyTickspeed();
         bool handleKonamiCode();
         void unlockAchievement(int ach, bool force);
 
+        // getting cached data
+
         Decimal getAchievementBonus();
+
+        // simulation methods
 
         void addInstructions(vector<int> instructions);
         bool runInstruction(int instruction);
@@ -62,8 +72,13 @@ class GameState : public ISerializable {
         bool canBranch();
         Decimal getPriceRange();
 
+        // reset methods
+
         bool requestDimboost();
         bool canBuyNextDimboost();
+        bool sacrificeReset();
+
+        // data & i/o manipulation
 
         GameState copy();
 
