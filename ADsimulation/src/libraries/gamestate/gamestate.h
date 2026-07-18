@@ -77,6 +77,7 @@ class GameState : public ISerializable {
         int instructionsExecuted();
         bool canBranch();
         Decimal getPriceRange();
+        Decimal getAntimatterGoalForDimboost();
 
         // reset methods
 

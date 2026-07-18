@@ -10,6 +10,7 @@ Dimension::Dimension(
     Decimal _scaling,
     bool _unlocked
 )   :   tier(_tier),
+        initialCost(_cost),
         cost(_cost),
         scaling(_scaling),
         amount(DC::D0),
@@ -20,6 +21,7 @@ Dimension::Dimension(
 
 Dimension::Dimension() :
         tier(1),
+        initialCost(DC::D10),
         cost(DC::D10),
         scaling(DC::D1E3),
         amount(DC::D0),
@@ -42,6 +44,14 @@ Decimal Dimension::productionPerDiff(double diff) {
 
 Decimal Dimension::getCost() {
     return this->cost;
+}
+
+Decimal Dimension::getInitialCost() {
+    return this->initialCost;
+}
+
+Decimal Dimension::getScaling() {
+    return this->scaling;
 }
 
 Decimal Dimension::getAmount() {
@@ -143,7 +153,7 @@ void AntimatterDimension::onPurchase() {
 json AntimatterDimension::to_json() {
     json j;
     j["tier"] = this->tier;
-    j["cost"] = this->cost.to_json();
+    j["initialCost"] = this->initialCost.to_json();
     j["scaling"] = this->scaling.to_json();
     j["amount"] = this->amount.to_json();
     j["purchases"] = this->purchases;
@@ -153,8 +163,9 @@ json AntimatterDimension::to_json() {
 
 void AntimatterDimension::from_json(json& j) {
     this->tier = j["tier"];
-    this->cost = Decimal(j["cost"]);
+    this->initialCost = Decimal(j["initialCost"]);
     this->scaling = Decimal(j["scaling"]);
+    this->cost = this->initialCost * Decimal::pow(this->scaling, floor(purchases / 10));
     this->amount = Decimal(j["amount"]);
     this->purchases = j["purchases"];
     this->unlocked = j["unlocked"];

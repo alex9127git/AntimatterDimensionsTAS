@@ -182,6 +182,7 @@ bool Decimal::gt(const Decimal& a, const Decimal& b) {
 }
 
 bool Decimal::eq(const Decimal& a, const Decimal& b) {
+    if (abs(a.mantissa) < 1e-12 && abs(b.mantissa) < 1e-12) return true;
     return abs(a.mantissa - b.mantissa) < 1e-12 && a.exponent == b.exponent;
 }
 

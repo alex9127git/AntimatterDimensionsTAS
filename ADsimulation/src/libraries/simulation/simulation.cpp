@@ -7,8 +7,15 @@
 using namespace std;
 
 
+void renderProgressBar(double percentage) {
+    cout << format("{:>7.3f}%", percentage * 100);
+    int completedWidth = floor(percentage * 50);
+    cout << " [" << string(completedWidth, '#') << string(50 - completedWidth, ' ') << "]";
+    cout << "\r" << flush;
+}
+
 GameState run(GameState st, function<bool(GameState&)> stopCondition) {
-    return run(st, stopCondition, false);
+    return run(st, stopCondition, true);
 }
 
 GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbose) {
@@ -26,6 +33,8 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
     // at the start there should be only the starting game state passed to the function
     vector<GameState> gameStates;
     vector<GameState> newGameStates;
+    GameState bestState;
+    Decimal bestAntimatter = DC::D1;
     Timer timer;
     Timer branchTimer;
     Timer checkTimer;
@@ -41,10 +50,14 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
     int ticks = 0;
     int maxStates = 0;
     while (true) {
+        ticks++;
+        // Branching
         branchTimer.silentReset();
         for (GameState& gst : gameStates) {
+            // Savestate will branch if isn't currently busy with an instruction and can afford at least one purchase
             while (gst.canBranch() && !gst.hasNextInstruction()) {
                 Decimal priceRange = gst.getPriceRange();
+                // Gets all possible purchases at current price range and populates the game states accordingly
                 vector<double> variants;
                 if (gst.tickspeed().canPurchase(priceRange)) {
                     variants.push_back(9);
@@ -81,10 +94,13 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
         }
         branchTime += branchTimer.silentReset();
         newGameStates.clear();
+        // Checking for condition
         checkTimer.silentReset();
         for (GameState& gst : gameStates) {
             gst.runNextInstructions();
             if (stopCondition(gst)) {
+                renderProgressBar(1);
+                cout << endl;
                 cout << "Finished! Total time elapsed: ";
                 timer.reset();
                 cout << "Max States: " << maxStates << endl;
@@ -95,8 +111,20 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
                 cout << "purge: " << purgeTime << " ms" << endl;
                 return gst;
             }
+            if (ticks == 100 && verbose) {
+                if (gst.antimatter() > bestAntimatter) {
+                    bestAntimatter = Decimal::max(bestAntimatter, gst.antimatter());
+                    bestState = gst;
+                }
+            }
+        }
+        if (ticks == 100 && verbose) {
+            Decimal currLog = Decimal::max(bestAntimatter, DC::D1).log10();
+            Decimal goalLog = bestState.getAntimatterGoalForDimboost().log10();
+            renderProgressBar(Decimal::toNumber(currLog / goalLog));
         }
         checkTime += checkTimer.silentReset();
+        // Tick and purchases
         for (GameState& gst : gameStates) {
             tickTimer.silentReset();
             gst.tick(0.033);
@@ -105,7 +133,7 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
             gst.runNextInstructions();
             buyTime += buyTimer.silentReset();
         }
-        ticks++;
+        // Purge and updating progress
         if (ticks == 100) {
             purgeTimer.silentReset();
             ticks = 0;

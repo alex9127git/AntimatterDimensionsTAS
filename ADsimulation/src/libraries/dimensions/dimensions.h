@@ -14,13 +14,14 @@ class GameState;
 class Dimension : public ISerializable {
     protected:
         int tier;
-        Decimal cost;
+        Decimal initialCost;
         Decimal scaling;
         Decimal amount;
         int purchases;
         bool unlocked;
 
         // volatile, shouldn't be serialized
+        Decimal cost;
         Decimal multiplier;
 
     public:
@@ -36,6 +37,8 @@ class Dimension : public ISerializable {
         Decimal productionPerSecond();
         Decimal productionPerDiff(double diff);
         Decimal getCost();
+        Decimal getInitialCost();
+        Decimal getScaling();
         Decimal getAmount();
         Decimal getMult();
         int getPurchases();

@@ -243,7 +243,7 @@ void GameState::addInstructions(vector<double> instructions) {
 
 bool GameState::runInstruction(double instruction) {
     if (this->isNextCmdSacrifice) {
-        if (Decimal(instruction) < nextSacrificeBoost()) return false;
+        if (nextSacrificeBoost() < Decimal(instruction)) return false;
         this->isNextCmdSacrifice = false;
         return sacrificeReset();
     } else if (1 <= instruction && instruction <= 8 && floor(instruction) == instruction) {
@@ -287,6 +287,12 @@ Decimal GameState::getPriceRange() {
     return this->currPriceRange;
 }
 
+Decimal GameState::getAntimatterGoalForDimboost() {
+    Dimension& dimNeeded = this->AD()[min(8, 4 + _dimensionBoosts)];
+    int scalingNeeded = ceil((double) (20 + 15 * max(0, _dimensionBoosts - 4)) / 10) - 1;
+    return dimNeeded.getInitialCost() * Decimal::pow(dimNeeded.getScaling(), scalingNeeded);
+}
+
 bool GameState::requestDimboost() {
     if (canBuyNextDimboost()) {
         _dimensionBoosts += 1;
@@ -310,6 +316,7 @@ bool GameState::sacrificeReset() {
     if (_AD[8].getAmount() == DC::D0) return false;
     if (_AD[1].getAmount() <= _sacrificed) return false;
     _sacrificed += _AD[1].getAmount();
+    cout << _realTimePlayed << endl;
     this->recalcSacrificeBonus();
     for (int i = 1; i <= 7; i++) {
         _AD[i].resetAmount();
@@ -335,14 +342,22 @@ json GameState::to_json() {
 }
 
 void GameState::from_json(json& j) {
-    this->_antimatter = Decimal(j["antimatter"]);
-    this->_AD = AntimatterDimensions(j["antimatterDimensionState"]);
-    this->_tickspeed = Tickspeed(j["tickspeedState"]);
-    this->_achievements = Achievements(j["achievementState"]);
-    this->_sacrificed = Decimal(j["sacrificed"]);
-    this->_dimensionBoosts = j["dimensionBoosts"];
-    this->_realTimePlayed = j["realTimePlayed"];
-    this->_canUseKonami = j["canUseKonami"];
+    if (j.contains("antimatter") && !j["antimatter"].is_null()) 
+        this->_antimatter = Decimal(j["antimatter"]);
+    if (j.contains("antimatterDimensionState") && !j["antimatterDimensionState"].is_null()) 
+        this->_AD = AntimatterDimensions(j["antimatterDimensionState"]);
+    if (j.contains("tickspeedState") && !j["tickspeedState"].is_null()) 
+        this->_tickspeed = Tickspeed(j["tickspeedState"]);
+    if (j.contains("achievementState") && !j["achievementState"].is_null()) 
+        this->_achievements = Achievements(j["achievementState"]);
+    if (j.contains("sacrificed") && !j["sacrificed"].is_null()) 
+        this->_sacrificed = Decimal(j["sacrificed"]);
+    if (j.contains("dimensionBoosts") && !j["dimensionBoosts"].is_null()) 
+        this->_dimensionBoosts = j["dimensionBoosts"];
+    if (j.contains("realTimePlayed") && !j["realTimePlayed"].is_null()) 
+        this->_realTimePlayed = j["realTimePlayed"];
+    if (j.contains("canUseKonami") && !j["canUseKonami"].is_null()) 
+        this->_canUseKonami = j["canUseKonami"];
     this->prepare();
 }
 
