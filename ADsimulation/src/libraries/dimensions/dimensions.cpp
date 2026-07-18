@@ -68,6 +68,10 @@ void Dimension::lock() {
     this->unlocked = false;
 }
 
+void Dimension::resetAmount() {
+    this->amount = DC::D0;
+}
+
 bool Dimension::canPurchase(Decimal resource) {
     return this->isUnlocked() && resource >= this->getCost();
 }
@@ -122,6 +126,9 @@ void AntimatterDimension::update(GameState& st) {
     mult *= st.getAchievementBonus();
     mult *= Decimal::pow(DC::D2, max(0, st.dimensionBoosts() - tier + 1));
     mult *= st.tickspeed().perSecond();
+    if (this->tier == 8) {
+        mult *= st.getSacrificeBonus();
+    }
     this->multiplier = mult;
 }
 

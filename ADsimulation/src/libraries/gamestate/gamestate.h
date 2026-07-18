@@ -26,10 +26,14 @@ class GameState : public ISerializable {
         Decimal nextPurchase;
         Decimal currPriceRange;
         Decimal achievementBonus;
+        Decimal sacrificeBonus;
 
         void prepare();
         void calcNextPurchase();
         void recalcAchievementBonus();
+        void recalcSacrificeBonus();
+        Decimal getSacrificeExponent();
+        Decimal nextSacrificeBoost();
 
     public:
         GameState();
@@ -60,11 +64,13 @@ class GameState : public ISerializable {
         // getting cached data
 
         Decimal getAchievementBonus();
+        Decimal getSacrificeBonus();
 
         // simulation methods
 
-        void addInstructions(vector<int> instructions);
-        bool runInstruction(int instruction);
+        bool isNextCmdSacrifice;
+        void addInstructions(vector<double> instructions);
+        bool runInstruction(double instruction);
         void runNextInstructions();
         bool hasNextInstruction();
         vector<double> getCompletedInstructions();

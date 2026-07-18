@@ -20,7 +20,9 @@ GameState::GameState() :
     _canUseKonami(true),
     nextPurchase(DC::D0),
     currPriceRange(DC::D0),
-    achievementBonus(DC::D1)
+    achievementBonus(DC::D1),
+    sacrificeBonus(DC::D1),
+    isNextCmdSacrifice(false)
 {
     this->prepare();
 };
@@ -84,6 +86,23 @@ void GameState::recalcAchievementBonus() {
     }
     this->achievementBonus = result;
     this->AD().update(*this);
+}
+
+void GameState::recalcSacrificeBonus() {
+    this->sacrificeBonus = Decimal::pow(Decimal(_sacrificed.log10()) / DC::D10, this->getSacrificeExponent());
+    this->_AD[8].update(*this);
+}
+
+Decimal GameState::getSacrificeExponent() {
+    return DC::D2;
+}
+
+Decimal GameState::nextSacrificeBoost() {
+    Decimal a = (_sacrificed + _AD[1].getAmount()).log10() / DC::D10;
+    Decimal b = Decimal::max(_sacrificed.log10() / DC::D10, DC::D1);
+    Decimal c = a / b;
+    Decimal e = getSacrificeExponent();
+    return Decimal::pow(c, e);
 }
 
 ostream& operator<<(ostream& os, GameState& st) {
@@ -201,11 +220,17 @@ Decimal GameState::getAchievementBonus() {
     return this->achievementBonus;
 }
 
-void GameState::addInstructions(vector<int> instructions) {
-    for (int instruction : instructions) {
-        if (10 <= instruction && instruction <= 99) {
+Decimal GameState::getSacrificeBonus() {
+    return this->sacrificeBonus;
+}
+
+void GameState::addInstructions(vector<double> instructions) {
+    for (double instruction : instructions) {
+        if (floor(instruction) != instruction) {
+            this->instructions.push_back(instruction);
+        } else if (10 <= instruction && instruction <= 99) {
             int type = instruction / 10;
-            int times = instruction % 10 + 10;
+            int times = (int) instruction % 10 + 10;
             if (times > 10) times -= 10;
             for (int i = 0; i < times; i++) {
                 this->instructions.push_back(type);
@@ -216,13 +241,20 @@ void GameState::addInstructions(vector<int> instructions) {
     }
 }
 
-bool GameState::runInstruction(int instruction) {
-    if (1 <= instruction && instruction <= 8) {
+bool GameState::runInstruction(double instruction) {
+    if (this->isNextCmdSacrifice) {
+        if (Decimal(instruction) < nextSacrificeBoost()) return false;
+        this->isNextCmdSacrifice = false;
+        return sacrificeReset();
+    } else if (1 <= instruction && instruction <= 8 && floor(instruction) == instruction) {
         return this->buyOneDimension(instruction);
     } else if (instruction == 9) {
         return this->buyTickspeed();
     } else if (instruction == 130) {
         return this->handleKonamiCode();
+    } else if (instruction == 108) {
+        this->isNextCmdSacrifice = true;
+        return true;
     } else {
         return false;
     }
@@ -262,6 +294,7 @@ bool GameState::requestDimboost() {
         _tickspeed = Tickspeed();
         _antimatter = DC::D10;
         _tickspeed.update(*this);
+        _sacrificed = DC::D1;
         _AD.update(*this);
         return true;
     }
@@ -275,6 +308,12 @@ bool GameState::canBuyNextDimboost() {
 bool GameState::sacrificeReset() {
     if (_dimensionBoosts < 5) return false;
     if (_AD[8].getAmount() == DC::D0) return false;
+    if (_AD[1].getAmount() <= _sacrificed) return false;
+    _sacrificed += _AD[1].getAmount();
+    this->recalcSacrificeBonus();
+    for (int i = 1; i <= 7; i++) {
+        _AD[i].resetAmount();
+    }
     return true;
 }
 

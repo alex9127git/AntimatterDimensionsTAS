@@ -95,12 +95,8 @@ ostream& operator<<(ostream& os, const Decimal& d) {
     return os;
 }
 
-double Decimal::mant() {
-    return this->mantissa;
-}
-
-long long Decimal::exp() {
-    return this->exponent;
+Decimal Decimal::log10() {
+    return Decimal(this->exponent + std::log10(this->mantissa));
 }
 
 double Decimal::toNumber(const Decimal& d) {
@@ -190,6 +186,9 @@ bool Decimal::eq(const Decimal& a, const Decimal& b) {
 }
 
 void Decimal::normalize() {
+    if (this->mantissa == INFINITY) {
+        throw runtime_error("Mantissa isn't supposed to be infinity, you absolute buffoon");
+    }
     bool isNegative = *this < DC::D0;
     if (isNegative) this->mantissa = -this->mantissa;
     while (this->mantissa >= 10) {

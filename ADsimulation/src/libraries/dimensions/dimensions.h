@@ -40,8 +40,10 @@ class Dimension : public ISerializable {
         Decimal getMult();
         int getPurchases();
         bool isUnlocked();
+
         void unlock();
         void lock();
+        void resetAmount();
         bool canPurchase(Decimal resource);
         virtual void onPurchase();
         

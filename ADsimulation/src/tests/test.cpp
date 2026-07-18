@@ -152,13 +152,111 @@ int main() {
     });
     gameState.runNextInstructions();
 
-    while (gameState.AD()[4].getPurchases() < 20) {
+    while (!gameState.canBuyNextDimboost()) {
         gameState.tick(0.033);
         gameState.runNextInstructions();
     }
     cout << endl << gameState << endl;
     assert(gameState.realTimePlayed() == 1080816);
     cout << "Fixed order check done; time taken is optimal" << endl << endl;
+
+    json save = {
+        {"achievementState", {
+            {"unlockedAchievements", {11,12,13,14,15,16,17,18,22,35,44,76}},
+        }},
+        {"antimatter", {{"exponent",1},{"mantissa",1.0}}},
+        {"antimatterDimensionState", {{
+            "dims", {
+                {
+                    {"amount",{{"exponent",0},{"mantissa",0.0}}},
+                    {"cost",{{"exponent",1},{"mantissa",1.0}}},
+                    {"purchases",0},
+                    {"scaling",{{"exponent",3},{"mantissa",1.0}}},
+                    {"tier",1},
+                    {"unlocked",true}
+                },
+                {
+                    {"amount",{{"exponent",0},{"mantissa",0.0}}},
+                    {"cost",{{"exponent",2},{"mantissa",1.0}}},
+                    {"purchases",0},
+                    {"scaling",{{"exponent",4},{"mantissa",1.0}}},
+                    {"tier",2},
+                    {"unlocked",false}
+                },
+                {
+                    {"amount",{{"exponent",0},{"mantissa",0.0}}},
+                    {"cost",{{"exponent",4},{"mantissa",1.0}}},
+                    {"purchases",0},
+                    {"scaling",{{"exponent",5},{"mantissa",1.0}}},
+                    {"tier",3},
+                    {"unlocked",false}
+                },
+                {
+                    {"amount",{{"exponent",0},{"mantissa",0.0}}},
+                    {"cost",{{"exponent",6},{"mantissa",1.0}}},
+                    {"purchases",0},{"scaling",{{"exponent",6},{"mantissa",1.0}}},
+                    {"tier",4},
+                    {"unlocked",false}
+                },
+                {
+                    {"amount",{{"exponent",0},{"mantissa",0.0}}},
+                    {"cost",{{"exponent",9},{"mantissa",1.0}}},
+                    {"purchases",0},
+                    {"scaling",{{"exponent",8},{"mantissa",1.0}}},
+                    {"tier",5},
+                    {"unlocked",false}
+                },
+                {
+                    {"amount",{{"exponent",0},{"mantissa",0.0}}},
+                    {"cost",{{"exponent",13},{"mantissa",1.0}}},
+                    {"purchases",0},
+                    {"scaling",{{"exponent",10},{"mantissa",1.0}}},
+                    {"tier",6},
+                    {"unlocked",false}
+                },
+                {
+                    {"amount",{{"exponent",0},{"mantissa",0.0}}},
+                    {"cost",{{"exponent",18},{"mantissa",1.0}}},
+                    {"purchases",0},
+                    {"scaling",{{"exponent",12},{"mantissa",1.0}}},
+                    {"tier",7},
+                    {"unlocked",false}
+                },
+                {
+                    {"amount",{{"exponent",0},{"mantissa",0.0}}},
+                    {"cost",{{"exponent",24},{"mantissa",1.0}}},
+                    {"purchases",0},
+                    {"scaling",{{"exponent",15},{"mantissa",1.0}}},
+                    {"tier",8},
+                    {"unlocked",false}
+                }
+            },
+        }}},
+        {"canUseKonami",false},
+        {"dimensionBoosts",5},
+        {"realTimePlayed",5307522},
+        {"sacrificed",{{"exponent",0},{"mantissa",1.0}}},
+        {"tickspeedState",{{"cost",{{"exponent",3},{"mantissa",1.0}}},{"purchases",0},{"scaling",{{"exponent",1},{"mantissa",1.0}}},{"unlocked",false}}}
+    };
+    gameState = GameState(save);
+    gameState.addInstructions({
+        10, 20, 91, 31, 91, 39, 10, 92, 40, 91, 20, 91, 10, 91, 50, 91, 30, 91, 20, 10, 92, 40,
+        60, 91, 10, 91, 30, 20, 92, 10, 91, 70, 50, 91, 40, 20, 91, 30, 10, 92, 20, 91, 10, 60,
+        80, 108, 3.588, 91, 40, 30, 91, 50, 10, 91, 20, 92, 10, 91, 30, 91, 70, 40, 20, 91, 10,
+        91, 60, 91, 50, 91, 30, 20, 10, 91, 40, 92, 10, 20, 92, 80, 108, 2.842, 30, 91, 10, 91,
+        50, 91, 70, 20, 40, 91, 60, 10, 91, 30, 92, 20, 10, 92, 40, 91, 50, 10, 30, 91, 20, 92,
+        10, 91, 60, 80, 91, 70, 40, 30, 20, 91, 10, 92, 50, 91, 20, 10, 91, 30, 91, 40, 91, 10,
+        91, 20, 91, 60, 91, 30, 10, 50, 91, 40, 91, 20, 70, 91, 10, 85
+    });
+    gameState.runNextInstructions();
+
+    while (!gameState.canBuyNextDimboost()) {
+        gameState.tick(0.033);
+        gameState.runNextInstructions();
+    }
+    cout << endl << gameState << endl;
+    assert(gameState.realTimePlayed() == 6585546);
+    cout << "Fixed order check 2 done; time taken is optimal" << endl << endl;
     
     cout << "Starting test simulation" << endl;
     gameState = GameState();

@@ -45,7 +45,7 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
         for (GameState& gst : gameStates) {
             while (gst.canBranch() && !gst.hasNextInstruction()) {
                 Decimal priceRange = gst.getPriceRange();
-                vector<int> variants;
+                vector<double> variants;
                 if (gst.tickspeed().canPurchase(priceRange)) {
                     variants.push_back(9);
                 }

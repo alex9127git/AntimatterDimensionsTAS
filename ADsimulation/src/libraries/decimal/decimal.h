@@ -31,8 +31,7 @@ class Decimal : public ISerializable {
         bool operator==(const Decimal& b) const;
         friend ostream& operator<<(ostream& os, const Decimal& d);
 
-        double mant();
-        long long exp();
+        Decimal log10();
 
         static double toNumber(const Decimal& d);
 
