@@ -10,7 +10,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
-include_directories(${nlohmann_json_SOURCE_DIR}/include)
 
 FetchContent_Declare(
     nlohmann_json
@@ -55,6 +54,23 @@ target_link_libraries(testing
         permutations
         simulation
 )
+
+add_library(interfaces)
+target_sources(interfaces
+    PRIVATE
+        libraries/interfaces/interfaces.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/interfaces
+        FILES
+            libraries/interfaces/interfaces.h
+)
+target_link_libraries(interfaces
+    PUBLIC
+        nlohmann_json::nlohmann_json
+)
+
 add_library(decimal)
 target_sources(decimal
     PRIVATE
@@ -67,7 +83,7 @@ target_sources(decimal
             libraries/decimal/decimal.h
 )
 target_link_libraries(decimal
-    PRIVATE
+    PUBLIC
         interfaces
         nlohmann_json::nlohmann_json
 )
@@ -84,7 +100,7 @@ target_sources(constants
             libraries/constants/constants.h
 )
 target_link_libraries(constants
-    PRIVATE
+    PUBLIC
         decimal
         interfaces
         nlohmann_json::nlohmann_json
@@ -102,7 +118,7 @@ target_sources(dimensions
             libraries/dimensions/dimensions.h
 )
 target_link_libraries(dimensions
-    PRIVATE
+    PUBLIC
         constants
         interfaces
         nlohmann_json::nlohmann_json
@@ -120,7 +136,7 @@ target_sources(tickspeed
             libraries/tickspeed/tickspeed.h
 )
 target_link_libraries(tickspeed
-    PRIVATE
+    PUBLIC
         constants
         interfaces
         nlohmann_json::nlohmann_json
@@ -138,7 +154,7 @@ target_sources(achievements
             libraries/achievements/achievements.h
 )
 target_link_libraries(achievements
-    PRIVATE
+    PUBLIC
         interfaces
         nlohmann_json::nlohmann_json
 )
@@ -155,7 +171,7 @@ target_sources(gamestate
             libraries/gamestate/gamestate.h
 )
 target_link_libraries(gamestate
-    PRIVATE
+    PUBLIC
         decimal
         dimensions
         tickspeed
@@ -190,19 +206,4 @@ target_link_libraries(simulation
     PRIVATE
         gamestate
         permutations
-)
-add_library(interfaces)
-target_sources(interfaces
-    PRIVATE
-        libraries/interfaces/interfaces.cpp
-    PUBLIC
-        FILE_SET HEADERS
-        BASE_DIRS
-            libraries/interfaces
-        FILES
-            libraries/interfaces/interfaces.h
-)
-target_link_libraries(interfaces
-    PUBLIC
-        nlohmann_json::nlohmann_json
 )

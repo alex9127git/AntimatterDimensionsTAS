@@ -164,7 +164,7 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
         if (canBeRemoved[i] == 1) continue;
         for (int j = i + 1; j < values.size(); j++) {
             if (i == j) continue;
-            if (canBeRemoved[i] == 1) continue;
+            if (canBeRemoved[j] == 1) continue;
             int cmp = compare(values[i], values[j]);
             if (cmp > 0) {
                 canBeRemoved[j] = 1;
