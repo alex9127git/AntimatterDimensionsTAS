@@ -21,8 +21,7 @@ GameState::GameState() :
     nextPurchase(DC::D0),
     currPriceRange(DC::D0),
     achievementBonus(DC::D1),
-    sacrificeBonus(DC::D1),
-    isNextCmdSacrifice(false)
+    sacrificeBonus(DC::D1)
 {
     this->prepare();
 };
@@ -36,7 +35,9 @@ void GameState::prepare() {
     for (Achievement& ach : this->achievements().achievements()) {
         this->unlockAchievement(ach.getId(), false);
     }
-    completedInstructions = {};
+    this->purchaseInstructions = {};
+    this->sacrificeInstructions = {};
+    this->completedInstructions = {};
     prices.push_back(_tickspeed.getCost());
     for (int i = 1; i <= 8; i++) {
         prices.push_back(_AD[i].getCost());
@@ -225,50 +226,61 @@ Decimal GameState::getSacrificeBonus() {
 }
 
 void GameState::addInstructions(vector<double> instructions) {
+    bool isSacrifice = false;
     for (double instruction : instructions) {
-        if (floor(instruction) != instruction) {
-            this->instructions.push_back(instruction);
+        if (isSacrifice) {
+            this->sacrificeInstructions.push_back(instruction);
+            isSacrifice = false;
         } else if (10 <= instruction && instruction <= 99) {
             int type = instruction / 10;
             int times = (int) instruction % 10 + 10;
             if (times > 10) times -= 10;
             for (int i = 0; i < times; i++) {
-                this->instructions.push_back(type);
+                this->purchaseInstructions.push_back(type);
             }
+        } else if (instruction == 108) {
+            isSacrifice = true;
         } else {
-            this->instructions.push_back(instruction);
+            this->purchaseInstructions.push_back(instruction);
         }
     }
 }
 
 bool GameState::runInstruction(double instruction) {
-    if (this->isNextCmdSacrifice) {
-        if (nextSacrificeBoost() < Decimal(instruction)) return false;
-        this->isNextCmdSacrifice = false;
-        return sacrificeReset();
-    } else if (1 <= instruction && instruction <= 8 && floor(instruction) == instruction) {
+    if (1 <= instruction && instruction <= 8 && floor(instruction) == instruction) {
         return this->buyOneDimension(instruction);
     } else if (instruction == 9) {
         return this->buyTickspeed();
     } else if (instruction == 130) {
         return this->handleKonamiCode();
-    } else if (instruction == 108) {
-        this->isNextCmdSacrifice = true;
-        return true;
     } else {
         return false;
     }
 }
 
+bool GameState::runSacInstruction(double instruction) {
+    if (nextSacrificeBoost() < Decimal(instruction)) return false;
+    return sacrificeReset();
+}
+
 void GameState::runNextInstructions() {
-    while (hasNextInstruction() && this->runInstruction((this->instructions.front()))) {
-        this->completedInstructions.push_back(this->instructions.front());
-        this->instructions.erase(this->instructions.begin());
+    while (hasNextPurchaseInstruction() && this->runInstruction((this->purchaseInstructions.front()))) {
+        this->completedInstructions.push_back(this->purchaseInstructions.front());
+        this->purchaseInstructions.erase(this->purchaseInstructions.begin());
+    }
+    while (hasNextSacrificeInstruction() && this->runSacInstruction((this->sacrificeInstructions.front()))) {
+        this->completedInstructions.push_back(108);
+        this->completedInstructions.push_back(this->sacrificeInstructions.front());
+        this->sacrificeInstructions.erase(this->sacrificeInstructions.begin());
     }
 }
 
-bool GameState::hasNextInstruction() {
-    return !this->instructions.empty();
+bool GameState::hasNextPurchaseInstruction() {
+    return !this->purchaseInstructions.empty();
+}
+
+bool GameState::hasNextSacrificeInstruction() {
+    return !this->sacrificeInstructions.empty();
 }
 
 vector<double> GameState::getCompletedInstructions() {

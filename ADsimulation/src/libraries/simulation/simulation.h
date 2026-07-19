@@ -26,8 +26,8 @@ class Timer {
 };
 
 
-GameState run(GameState st, function<bool(GameState&)> stopCondition);
-GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbose);
+GameState purchaseRun(GameState st, function<bool(GameState&)> stopCondition);
+GameState purchaseRun(GameState st, function<bool(GameState&)> stopCondition, bool verbose);
 
 int compare(GameState& st1, GameState& st2);
 void compareValues(Decimal v1, Decimal v2, int& score, int& totalFeatures);

@@ -20,7 +20,8 @@ class GameState : public ISerializable {
 
         // volatile, shouldn't be serialized
         
-        vector<double> instructions;
+        vector<double> purchaseInstructions;
+        vector<double> sacrificeInstructions;
         vector<double> completedInstructions;
         vector<Decimal> prices;
         Decimal nextPurchase;
@@ -68,11 +69,12 @@ class GameState : public ISerializable {
 
         // simulation methods
 
-        bool isNextCmdSacrifice;
         void addInstructions(vector<double> instructions);
         bool runInstruction(double instruction);
+        bool runSacInstruction(double instruction);
         void runNextInstructions();
-        bool hasNextInstruction();
+        bool hasNextPurchaseInstruction();
+        bool hasNextSacrificeInstruction();
         vector<double> getCompletedInstructions();
         int instructionsExecuted();
         bool canBranch();

@@ -202,7 +202,7 @@ int main() {
     
     cout << "Starting test simulation" << endl;
     gameState = GameState();
-    gameState = run(gameState, [](GameState& st) {return st.canBuyNextDimboost();}, true);
+    gameState = purchaseRun(gameState, [](GameState& st) {return st.canBuyNextDimboost();}, true);
     cout << endl << gameState << endl;
     vector<double> instructions = gameState.getCompletedInstructions();
     for (double instruction : instructions) {

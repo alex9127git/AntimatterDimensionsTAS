@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
 
     o = ofstream(outputFile);
     vector<double> instructions;
-    gameState = run(gameState, 
+    gameState = purchaseRun(gameState, 
         [](GameState& st) {return st.canBuyNextDimboost();});
     gameState.requestDimboost();
     cout << "Finished simulation; dumping result game state into " << outputFile << endl;

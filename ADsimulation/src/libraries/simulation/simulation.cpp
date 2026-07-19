@@ -14,11 +14,11 @@ void renderProgressBar(double percentage) {
     cout << "\r" << flush;
 }
 
-GameState run(GameState st, function<bool(GameState&)> stopCondition) {
-    return run(st, stopCondition, true);
+GameState purchaseRun(GameState st, function<bool(GameState&)> stopCondition) {
+    return purchaseRun(st, stopCondition, true);
 }
 
-GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbose) {
+GameState purchaseRun(GameState st, function<bool(GameState&)> stopCondition, bool verbose) {
     Decimal priceRange = DC::D10;
     // If Konami code exploit isn't used, assume this is the starting game state 
     // and add some default instructions.
@@ -55,7 +55,7 @@ GameState run(GameState st, function<bool(GameState&)> stopCondition, bool verbo
         branchTimer.silentReset();
         for (GameState& gst : gameStates) {
             // Savestate will branch if isn't currently busy with an instruction and can afford at least one purchase
-            while (gst.canBranch() && !gst.hasNextInstruction()) {
+            while (gst.canBranch() && !gst.hasNextPurchaseInstruction()) {
                 Decimal priceRange = gst.getPriceRange();
                 // Gets all possible purchases at current price range and populates the game states accordingly
                 vector<double> variants;
@@ -178,6 +178,7 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
         for (int i = 1; i <= 8; i++) {
             valueRow.push_back(gst.AD()[i].getAmount());
             valueRow.push_back(Decimal(gst.AD()[i].getPurchases()));
+            valueRow.push_back(Decimal(gst.AD()[i].productionPerSecond()));
         }
         valueRow.push_back(Decimal(gst.tickspeed().getPurchases()));
         valueRow.push_back(gst.tickspeed().perSecond());
