@@ -154,14 +154,12 @@ int main() {
         11, 130, 19, 20, 91, 32, 91, 38, 10, 91, 41, 91, 49, 91, 20, 91, 10, 91, 30, 91, 20, 10, 92, 40
     });
     gameState.runNextInstructions();
-
     while (!gameState.canBuyNextDimboost()) {
         gameState.tick(0.033);
         gameState.runNextInstructions();
     }
-    cout << endl << gameState << endl;
     assert(gameState.realTimePlayed() == 1080816);
-    cout << "Fixed order check done; time taken is optimal" << endl << endl;
+    cout << "Fixed order check done; time taken is optimal" << endl;
 
     json save = {
         {"achievementState", {
@@ -175,8 +173,8 @@ int main() {
     // gameState.addInstructions({
     //     10, 20, 91, 31, 91, 39, 91, 10, 91, 40, 91, 20, 91, 10, 91, 50, 91, 30, 91, 20, 10, 92, 40,
     //     60, 91, 10, 91, 30, 20, 92, 10, 91, 70, 50, 91, 40, 20, 91, 30, 10, 92, 20, 91, 10, 91, 60,
-    //     80, 108, 3.588, 91, 40, 30, 91, 50, 10, 91, 20, 92, 10, 91, 30, 91, 70, 40, 20, 91, 10,
-    //     92, 60, 50, 91, 30, 20, 10, 92, 40, 91, 10, 91, 20, 80, 91, 108, 2.845, 30, 91, 10, 91,
+    //     80, 108, log10(3.588), 91, 40, 30, 91, 50, 10, 91, 20, 92, 10, 91, 30, 91, 70, 40, 20, 91, 10,
+    //     92, 60, 50, 91, 30, 20, 10, 92, 40, 91, 10, 91, 20, 80, 91, 108, log10(2.845), 30, 91, 10, 91,
     //     50, 91, 70, 20, 40, 91, 60, 10, 91, 30, 92, 20, 10, 92, 40, 91, 50, 30, 10, 91, 20, 92,
     //     10, 91, 60, 80, 91, 70, 40, 30, 20, 91, 10, 92, 50, 91, 20, 10, 91, 30, 91, 40, 91, 10,
     //     91, 20, 91, 60, 10, 91, 30, 50, 91, 40, 91, 20, 70, 91, 10, 85
@@ -184,27 +182,37 @@ int main() {
     gameState.addInstructions({
         10, 20, 91, 31, 91, 39, 10, 92, 40, 91, 20, 91, 10, 91, 50, 91, 30, 91, 20, 10, 92, 40,
         60, 91, 10, 91, 30, 20, 92, 10, 91, 70, 50, 91, 40, 20, 91, 30, 10, 92, 20, 91, 10, 91, 60,
-        80, 108, 3.588, 91, 40, 30, 91, 50, 10, 91, 20, 92, 10, 91, 30, 91, 70, 40, 20, 91, 10,
-        91, 60, 91, 50, 91, 30, 20, 10, 91, 40, 92, 10, 20, 92, 80, 108, 2.842, 30, 91, 10, 91,
+        80, 108, log10(3.588), 91, 40, 30, 91, 50, 10, 91, 20, 92, 10, 91, 30, 91, 70, 40, 20, 91, 10,
+        91, 60, 91, 50, 91, 30, 20, 10, 91, 40, 92, 10, 20, 92, 80, 108, log10(2.842), 30, 91, 10, 91,
         50, 91, 70, 20, 40, 91, 60, 10, 91, 30, 92, 20, 10, 92, 40, 91, 50, 10, 30, 91, 20, 92,
         10, 91, 60, 80, 91, 70, 40, 30, 20, 91, 10, 92, 50, 91, 20, 10, 91, 30, 91, 40, 91, 10,
         91, 20, 91, 60, 91, 30, 10, 50, 91, 40, 91, 20, 70, 91, 10, 85
     });
     gameState.runNextInstructions();
-
     while (!gameState.canBuyNextDimboost()) {
         gameState.tick(0.033);
         gameState.runNextInstructions();
     }
-    cout << endl << gameState << endl;
+    vector<double> instructions;
+    instructions = gameState.getCompletedPurchases();
+    for (double instruction : instructions) {
+        cout << instruction << " ";
+    }
+    cout << endl;
+    instructions = gameState.getCompletedSacrifices();
+    for (double instruction : instructions) {
+        cout << instruction << " ";
+    }
+    cout << endl;
+    assert(gameState.getCompletedSacrifices().size() == 2);
     assert(gameState.realTimePlayed() == 6547035);
     cout << "Fixed order check 2 done; time taken is optimal" << endl << endl;
     
     cout << "Starting test simulation" << endl;
     gameState = GameState();
-    gameState = purchaseRun(gameState, [](GameState& st) {return st.canBuyNextDimboost();}, true);
+    gameState = runDimboost(gameState, false);
     cout << endl << gameState << endl;
-    vector<double> instructions = gameState.getCompletedInstructions();
+    instructions = gameState.getCompletedInstructions();
     for (double instruction : instructions) {
         cout << instruction << " ";
     }

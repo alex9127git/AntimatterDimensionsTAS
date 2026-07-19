@@ -98,14 +98,6 @@ Decimal GameState::getSacrificeExponent() {
     return DC::D2;
 }
 
-Decimal GameState::nextSacrificeBoost() {
-    Decimal a = (_sacrificed + _AD[1].getAmount()).log10() / DC::D10;
-    Decimal b = Decimal::max(_sacrificed.log10() / DC::D10, DC::D1);
-    Decimal c = a / b;
-    Decimal e = getSacrificeExponent();
-    return Decimal::pow(c, e);
-}
-
 ostream& operator<<(ostream& os, GameState& st) {
     os << "You have " << st.antimatter() << " antimatter." << endl;
     os << "You have been playing for " << st._realTimePlayed << " milliseconds." << endl;
@@ -259,18 +251,20 @@ bool GameState::runInstruction(double instruction) {
 }
 
 bool GameState::runSacInstruction(double instruction) {
-    if (nextSacrificeBoost() < Decimal(instruction)) return false;
+    if (nextSacrificeBoost() < Decimal(1, instruction)) return false;
     return sacrificeReset();
 }
 
 void GameState::runNextInstructions() {
     while (hasNextPurchaseInstruction() && this->runInstruction((this->purchaseInstructions.front()))) {
         this->completedInstructions.push_back(this->purchaseInstructions.front());
+        this->completedPurchases.push_back(this->purchaseInstructions.front());
         this->purchaseInstructions.erase(this->purchaseInstructions.begin());
     }
     while (hasNextSacrificeInstruction() && this->runSacInstruction((this->sacrificeInstructions.front()))) {
         this->completedInstructions.push_back(108);
         this->completedInstructions.push_back(this->sacrificeInstructions.front());
+        this->completedSacrifices.push_back(this->sacrificeInstructions.front());
         this->sacrificeInstructions.erase(this->sacrificeInstructions.begin());
     }
 }
@@ -285,6 +279,14 @@ bool GameState::hasNextSacrificeInstruction() {
 
 vector<double> GameState::getCompletedInstructions() {
     return this->completedInstructions;
+}
+
+vector<double> GameState::getCompletedPurchases() {
+    return this->completedPurchases;
+}
+
+vector<double> GameState::getCompletedSacrifices() {
+    return this->completedSacrifices;
 }
 
 int GameState::instructionsExecuted() {
@@ -305,6 +307,10 @@ Decimal GameState::getAntimatterGoalForDimboost() {
     return dimNeeded.getInitialCost() * Decimal::pow(dimNeeded.getScaling(), scalingNeeded);
 }
 
+bool GameState::canBuyNextDimboost() {
+    return this->AD()[min(8, 4 + _dimensionBoosts)].getPurchases() >= 20 + 15 * max(0, _dimensionBoosts - 4);
+}
+
 bool GameState::requestDimboost() {
     if (canBuyNextDimboost()) {
         _dimensionBoosts += 1;
@@ -319,21 +325,29 @@ bool GameState::requestDimboost() {
     return false;
 }
 
-bool GameState::canBuyNextDimboost() {
-    return this->AD()[min(8, 4 + _dimensionBoosts)].getPurchases() >= 20 + 15 * max(0, _dimensionBoosts - 4);
-}
-
-bool GameState::sacrificeReset() {
+bool GameState::canSacrifice() {
     if (_dimensionBoosts < 5) return false;
     if (_AD[8].getAmount() == DC::D0) return false;
     if (_AD[1].getAmount() <= _sacrificed) return false;
+    return true;
+}
+
+bool GameState::sacrificeReset() {
+    if (!canSacrifice()) return false;
     _sacrificed += _AD[1].getAmount();
-    cout << _realTimePlayed << endl;
     this->recalcSacrificeBonus();
     for (int i = 1; i <= 7; i++) {
         _AD[i].resetAmount();
     }
     return true;
+}
+
+Decimal GameState::nextSacrificeBoost() {
+    Decimal a = (_sacrificed + _AD[1].getAmount()).log10() / DC::D10;
+    Decimal b = Decimal::max(_sacrificed.log10() / DC::D10, DC::D1);
+    Decimal c = a / b;
+    Decimal e = getSacrificeExponent();
+    return Decimal::pow(c, e);
 }
 
 GameState GameState::copy() {

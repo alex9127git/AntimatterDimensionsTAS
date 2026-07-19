@@ -25,9 +25,10 @@ class Timer {
         }
 };
 
-
-GameState purchaseRun(GameState st, function<bool(GameState&)> stopCondition);
-GameState purchaseRun(GameState st, function<bool(GameState&)> stopCondition, bool verbose);
+GameState runDimboost(GameState st);
+GameState runDimboost(GameState st, bool verbose);
+vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondition, bool verbose);
+vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCondition, vector<vector<double>> purchaseStrategies, bool verbose);
 
 int compare(GameState& st1, GameState& st2);
 void compareValues(Decimal v1, Decimal v2, int& score, int& totalFeatures);

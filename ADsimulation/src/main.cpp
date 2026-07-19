@@ -42,9 +42,7 @@ int main(int argc, char* argv[]) {
 
     o = ofstream(outputFile);
     vector<double> instructions;
-    gameState = purchaseRun(gameState, 
-        [](GameState& st) {return st.canBuyNextDimboost();});
-    gameState.requestDimboost();
+    gameState = runDimboost(gameState);
     cout << "Finished simulation; dumping result game state into " << outputFile << endl;
     o << gameState.to_json();
     cout << "Dumping instruction sequence into " << outputFile.substr(0, outputFile.size() - 5) << "_cmd.json" << endl;

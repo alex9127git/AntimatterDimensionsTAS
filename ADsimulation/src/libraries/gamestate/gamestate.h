@@ -23,6 +23,8 @@ class GameState : public ISerializable {
         vector<double> purchaseInstructions;
         vector<double> sacrificeInstructions;
         vector<double> completedInstructions;
+        vector<double> completedPurchases;
+        vector<double> completedSacrifices;
         vector<Decimal> prices;
         Decimal nextPurchase;
         Decimal currPriceRange;
@@ -34,7 +36,6 @@ class GameState : public ISerializable {
         void recalcAchievementBonus();
         void recalcSacrificeBonus();
         Decimal getSacrificeExponent();
-        Decimal nextSacrificeBoost();
 
     public:
         GameState();
@@ -76,6 +77,8 @@ class GameState : public ISerializable {
         bool hasNextPurchaseInstruction();
         bool hasNextSacrificeInstruction();
         vector<double> getCompletedInstructions();
+        vector<double> getCompletedPurchases();
+        vector<double> getCompletedSacrifices();
         int instructionsExecuted();
         bool canBranch();
         Decimal getPriceRange();
@@ -83,8 +86,10 @@ class GameState : public ISerializable {
 
         // reset methods
 
-        bool requestDimboost();
         bool canBuyNextDimboost();
+        bool requestDimboost();
+        bool canSacrifice();
+        Decimal nextSacrificeBoost();
         bool sacrificeReset();
 
         // data & i/o manipulation
