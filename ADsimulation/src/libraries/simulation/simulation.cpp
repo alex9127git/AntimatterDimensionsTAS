@@ -20,10 +20,11 @@ GameState runDimboost(GameState st) {
 
 GameState runDimboost(GameState st, bool verbose) {
     vector<GameState> gameStates;
+    GameState bestState;
     long startTime = st.realTimePlayed();
     gameStates = purchaseRun(st, [](GameState& st) {return st.canBuyNextDimboost();}, verbose);
     if (st.dimensionBoosts() < 5) {
-        GameState bestState = gameStates[0].copy();
+        bestState = gameStates[0].copy();
         bestState.requestDimboost();
         return bestState;
     }
@@ -35,7 +36,9 @@ GameState runDimboost(GameState st, bool verbose) {
         winnerPurchaseStrategies.push_back(gst.getCompletedPurchases());
     }
     gameStates = sacrificeRun(st, [](GameState& st) {return st.canBuyNextDimboost();}, winnerPurchaseStrategies, verbose);
-    return gameStates[0];
+    bestState = gameStates[0].copy();
+    bestState.requestDimboost();
+    return bestState;
     // while (bestTime != currentIterationTime) {
     //     if (isSacrificeIteration) {
     //         vector<vector<double>> winnerPurchaseStrategies;
@@ -203,24 +206,32 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
     double purgeTime;
     bool isFinished = false;
     int ticks = 0;
+    int statesAfterPurge = 1;
+    int adds = 0;
     int maxStates = 0;
     for (int i = 0; i < purchaseStrategies.size(); i++) {
         gameStates.push_back(st.copy());
         gameStates[i].addInstructions(purchaseStrategies[i]);
     }
+    int states = gameStates.size();
     while (true) {
         ticks++;
         // Branching
         branchTimer.silentReset();
         for (GameState& gst : gameStates) {
-            if (gst.canSacrifice()) {
+            if (gst.canSacrifice() && gst.canSacBranch()) {
+                gst.incrementSacBranching();
                 GameState newGst = gst.copy();
                 newGst.addInstructions({108.0, Decimal::toNumber(newGst.nextSacrificeBoost().log10())});
                 newGameStates.push_back(newGst);
             }
         }
+        if (!newGameStates.empty()) {
+            adds += 1;
+        }
         for (GameState& gst : newGameStates) {
             gameStates.push_back(gst);
+            states++;
         }
         branchTime += branchTimer.silentReset();
         newGameStates.clear();
@@ -267,12 +278,14 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
             buyTime += buyTimer.silentReset();
         }
         // Purge and updating progress
-        if (ticks == 100) {
+        if (adds >= 300 || states >= statesAfterPurge * 1.5) {
             purgeTimer.silentReset();
-            ticks = 0;
+            adds = 0;
             int beforeSize = gameStates.size();
             maxStates = max(maxStates, beforeSize);
             gameStates = purge(gameStates, verbose);
+            statesAfterPurge = gameStates.size();
+            states = statesAfterPurge;
             purgeTime += purgeTimer.silentReset();
         }
     }

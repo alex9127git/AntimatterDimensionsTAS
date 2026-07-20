@@ -27,6 +27,7 @@ class GameState : public ISerializable {
         vector<double> completedSacrifices;
         vector<Decimal> prices;
         Decimal nextPurchase;
+        Decimal nextSacrifice;
         Decimal currPriceRange;
         Decimal achievementBonus;
         Decimal sacrificeBonus;
@@ -81,6 +82,9 @@ class GameState : public ISerializable {
         vector<double> getCompletedSacrifices();
         int instructionsExecuted();
         bool canBranch();
+        void initializeSacBranching();
+        void incrementSacBranching();
+        bool canSacBranch();
         Decimal getPriceRange();
         Decimal getAntimatterGoalForDimboost();
 

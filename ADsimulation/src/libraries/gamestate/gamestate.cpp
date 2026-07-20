@@ -19,6 +19,7 @@ GameState::GameState() :
     _realTimePlayed(0),
     _canUseKonami(true),
     nextPurchase(DC::D0),
+    nextSacrifice(DC::D1),
     currPriceRange(DC::D0),
     achievementBonus(DC::D1),
     sacrificeBonus(DC::D1)
@@ -166,6 +167,9 @@ bool GameState::buyOneDimension(int tier) {
         if (tier < 8 && _dimensionBoosts >= tier - 3) {
             _AD[tier + 1].unlock();
         }
+        if (tier == 8 && _AD[8].getPurchases() == 1) {
+            initializeSacBranching();
+        }
         return true;
     }
     return false;
@@ -297,6 +301,24 @@ bool GameState::canBranch() {
     return this->_antimatter > this->nextPurchase;
 }
 
+void GameState::initializeSacBranching() {
+    this->nextSacrifice = this->_AD[1].getAmount();
+}
+
+void GameState::incrementSacBranching() {
+    this->nextSacrifice = Decimal(
+        1, 
+        Decimal::toNumber(Decimal::pow(
+            Decimal::pow(this->nextSacrifice.log10(), 2) + Decimal(1, -1LL), 
+            0.5
+        ))
+    );
+}
+
+bool GameState::canSacBranch() {
+    return this->_AD[1].getAmount() >= this->nextSacrifice;
+}
+
 Decimal GameState::getPriceRange() {
     return this->currPriceRange;
 }
@@ -335,6 +357,7 @@ bool GameState::canSacrifice() {
 bool GameState::sacrificeReset() {
     if (!canSacrifice()) return false;
     _sacrificed += _AD[1].getAmount();
+    this->nextSacrifice = _sacrificed * DC::D2;
     this->recalcSacrificeBonus();
     for (int i = 1; i <= 7; i++) {
         _AD[i].resetAmount();
