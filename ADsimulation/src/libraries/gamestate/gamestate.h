@@ -83,7 +83,7 @@ class GameState : public ISerializable {
         int instructionsExecuted();
         bool canBranch();
         void initializeSacBranching();
-        void setNextSacBranching(double value);
+        void setNextSacBranching(double sacValue);
         bool canSacBranch();
         Decimal getPriceRange();
         Decimal getAntimatterGoalForDimboost();
