@@ -220,9 +220,11 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
         branchTimer.silentReset();
         for (GameState& gst : gameStates) {
             if (gst.canSacrifice() && gst.canSacBranch()) {
-                gst.incrementSacBranching();
                 GameState newGst = gst.copy();
-                newGst.addInstructions({108.0, Decimal::toNumber(newGst.nextSacrificeBoost().log10())});
+                double sacValue = Decimal::toNumber(newGst.nextSacrificeBoost());
+                newGst.addInstructions({108.0, log10(sacValue)});
+                double nextSacValue = (floor(sacValue * 1000) + 1) / 1000;
+                gst.setNextSacBranching(nextSacValue);
                 newGameStates.push_back(newGst);
             }
         }

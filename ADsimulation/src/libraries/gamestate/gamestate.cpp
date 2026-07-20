@@ -305,14 +305,12 @@ void GameState::initializeSacBranching() {
     this->nextSacrifice = this->_AD[1].getAmount();
 }
 
-void GameState::incrementSacBranching() {
-    this->nextSacrifice = Decimal(
-        1, 
-        Decimal::toNumber(Decimal::pow(
-            Decimal::pow(this->nextSacrifice.log10(), 2) + Decimal(1, -1LL), 
-            0.5
-        ))
+void GameState::setNextSacBranching(double value) {
+    this->nextSacrifice = Decimal::pow(
+        10, 
+        pow(value, 0.5) * 10
     );
+
 }
 
 bool GameState::canSacBranch() {
@@ -357,7 +355,7 @@ bool GameState::canSacrifice() {
 bool GameState::sacrificeReset() {
     if (!canSacrifice()) return false;
     _sacrificed += _AD[1].getAmount();
-    this->nextSacrifice = _sacrificed * DC::D2;
+    this->nextSacrifice = _sacrificed;
     this->recalcSacrificeBonus();
     for (int i = 1; i <= 7; i++) {
         _AD[i].resetAmount();
