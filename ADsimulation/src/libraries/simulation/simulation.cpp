@@ -15,10 +15,14 @@ void renderProgressBar(double percentage) {
 }
 
 GameState runDimboost(GameState st) {
-    return runDimboost(st, true);
+    return runDimboost(st, 1000, true);
 }
 
-GameState runDimboost(GameState st, bool verbose) {
+GameState runDimboost(GameState st, int precision) {
+    return runDimboost(st, precision, true);
+}
+
+GameState runDimboost(GameState st, int precision, bool verbose) {
     vector<GameState> gameStates;
     GameState bestState;
     long startTime = st.realTimePlayed();
@@ -35,7 +39,7 @@ GameState runDimboost(GameState st, bool verbose) {
     for (GameState& gst : gameStates) {
         winnerPurchaseStrategies.push_back(gst.getCompletedPurchases());
     }
-    gameStates = sacrificeRun(st, [](GameState& st) {return st.canBuyNextDimboost();}, winnerPurchaseStrategies, verbose);
+    gameStates = sacrificeRun(st, [](GameState& st) {return st.canBuyNextDimboost();}, precision, winnerPurchaseStrategies, verbose);
     bestState = gameStates[0].copy();
     bestState.requestDimboost();
     return bestState;
@@ -188,7 +192,7 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
     return finishedStates;
 }
 
-vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCondition, vector<vector<double>> purchaseStrategies, bool verbose) {
+vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCondition, int precision, vector<vector<double>> purchaseStrategies, bool verbose) {
     vector<GameState> gameStates;
     vector<GameState> newGameStates;
     GameState bestState;
@@ -223,7 +227,7 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
                 GameState newGst = gst.copy();
                 double sacValue = Decimal::toNumber(newGst.nextSacrificeBoost());
                 newGst.addInstructions({108.0, log10(sacValue)});
-                double nextSacValue = (floor(sacValue * 1000) + 1) / 1000;
+                double nextSacValue = (floor(sacValue * precision) + 1) / precision;
                 gst.setNextSacBranching(nextSacValue);
                 newGameStates.push_back(newGst);
             }
