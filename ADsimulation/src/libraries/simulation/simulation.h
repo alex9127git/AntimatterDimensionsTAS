@@ -1,7 +1,6 @@
 #include "../gamestate/gamestate.h"
-#include <chrono>
-#include <vector>
-#include <array>
+#include "chrono"
+#include "vector"
 
 
 class Timer {
@@ -32,8 +31,7 @@ GameState runDimboost(GameState st, int precision, bool verbose);
 vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondition, bool verbose);
 vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCondition, int precision, vector<vector<double>> purchaseStrategies, bool verbose);
 
-template <std::size_t N>
-int compare(array<Decimal, N>& st1, array<Decimal, N>& st2);
+int compare(GameState& st1, GameState& st2);
 void compareValues(Decimal v1, Decimal v2, int& score, int& totalFeatures);
 void compareValues(int v1, int v2, int& score, int& totalFeatures);
 

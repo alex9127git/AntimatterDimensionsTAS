@@ -2,7 +2,6 @@
 #include "../constants/constants.h"
 #include "../permutations/permutations.h"
 #include <vector>
-#include <array>
 #include <list>
 #include <set>
 using namespace std;
@@ -305,8 +304,7 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
     return finishedStates;
 }
 
-template <std::size_t N>
-int compare(array<Decimal, N>& st1, array<Decimal, N>& st2) {
+int compare(vector<Decimal>& st1, vector<Decimal>& st2) {
     // Compare the two game states together.
     // If a first game state has a property bigger, score variable shifts positive.
     // Otherwise it shifts negative. This value is then used to determine the return value.
@@ -332,22 +330,19 @@ int compare(array<Decimal, N>& st1, array<Decimal, N>& st2) {
 }
 
 vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
-    vector<array<Decimal, 21>> values;
-    values.reserve(gamestates.size());
-    int stN = 0;
+    vector<vector<Decimal>> values;
     for (GameState& gst : gamestates) {
-        array<Decimal, 21> valueRow;
-        valueRow[0] = gst.antimatter();
+        vector<Decimal> valueRow;
+        valueRow.push_back(gst.antimatter());
         for (int i = 1; i <= 8; i++) {
-            valueRow[i*2-1] = gst.AD()[i].getAmount();
-            valueRow[i*2] = Decimal(gst.AD()[i].getPurchases());
+            valueRow.push_back(gst.AD()[i].getAmount());
+            valueRow.push_back(Decimal(gst.AD()[i].getPurchases()));
         }
-        valueRow[17] = gst.getSacrificeBonus();
-        valueRow[18] = gst.tickspeed().getPurchases();
-        valueRow[19] = gst.tickspeed().perSecond();
-        valueRow[20] = gst.getAchievementBonus();
+        valueRow.push_back(gst.getSacrificeBonus());
+        valueRow.push_back(Decimal(gst.tickspeed().getPurchases()));
+        valueRow.push_back(gst.tickspeed().perSecond());
+        valueRow.push_back(gst.getAchievementBonus());
         values.push_back(valueRow);
-        stN++;
     }
     int canBeRemoved[values.size()];
     for (int i = 0; i < values.size(); i++) {
