@@ -10,6 +10,7 @@ class Decimal : public ISerializable {
         long long exponent;
 
     public:
+        Decimal();
         Decimal(double _mant, long long _exp);
         Decimal(double _mant, double _exp);
         Decimal(double _val);

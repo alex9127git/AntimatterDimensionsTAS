@@ -7,6 +7,11 @@
 using namespace std;
 
 
+Decimal::Decimal() {
+    this->mantissa = 0;
+    this->exponent = 0;
+}
+
 Decimal::Decimal(double _mant, long long _exp) {
     this->mantissa = _mant;
     this->exponent = _exp;
