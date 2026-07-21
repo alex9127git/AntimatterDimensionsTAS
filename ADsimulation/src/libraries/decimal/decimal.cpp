@@ -173,16 +173,15 @@ bool Decimal::gte(const Decimal& a, const Decimal& b) {
 }
 
 bool Decimal::gt(const Decimal& a, const Decimal& b) {
-    if (Decimal::eq(a, DC::D0)) return b.mantissa < 0;
-    if (Decimal::eq(b, DC::D0)) return a.mantissa > 0;
-    if (a.mantissa > 0 && b.mantissa < 0) return true;
-    if (b.mantissa > 0 && a.mantissa < 0) return false;
-    if (a.exponent != b.exponent) return a.exponent > b.exponent; 
-    return a.mantissa > b.mantissa; 
+    if (a.mantissa == 0) return b.mantissa < 0;
+    if (b.mantissa == 0) return a.mantissa > 0;
+    if (a.exponent == b.exponent) return a.mantissa > b.mantissa;
+    if (a.mantissa > 0) return b.mantissa < 0 || a.exponent > b.exponent;
+    return b.mantissa < 0 && a.exponent < b.exponent;
 }
 
 bool Decimal::eq(const Decimal& a, const Decimal& b) {
-    if (abs(a.mantissa) < 1e-12 && abs(b.mantissa) < 1e-12) return true;
+    if (a.mantissa == 0 && b.mantissa == 0) return true;
     return abs(a.mantissa - b.mantissa) < 1e-12 && a.exponent == b.exponent;
 }
 

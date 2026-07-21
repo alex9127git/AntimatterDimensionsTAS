@@ -31,7 +31,7 @@ GameState runDimboost(GameState st, int precision, bool verbose);
 vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondition, bool verbose);
 vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCondition, int precision, vector<vector<double>> purchaseStrategies, bool verbose);
 
-int compare(GameState& st1, GameState& st2);
+int compare(vector<Decimal>& st1, vector<Decimal>& st2);
 void compareValues(Decimal v1, Decimal v2, int& score, int& totalFeatures);
 void compareValues(int v1, int v2, int& score, int& totalFeatures);
 

@@ -293,6 +293,7 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
             statesAfterPurge = gameStates.size();
             states = statesAfterPurge;
             purgeTime += purgeTimer.silentReset();
+            //cout << "tick: " << ticks << "; before: " << beforeSize << "; after: " << statesAfterPurge << string(100, ' ') << endl;
         }
     }
     vector<GameState> finishedStates;
@@ -314,8 +315,8 @@ int compare(vector<Decimal>& st1, vector<Decimal>& st2) {
     int score1 = 0;
     int score2 = 0;
     for (int i = 0; i < st1.size(); i++) {
-        Decimal v1 = st1[i];
-        Decimal v2 = st2[i];
+        Decimal& v1 = st1[i];
+        Decimal& v2 = st2[i];
         if (v1 > v2) score1++;
         if (v1 < v2) score2++;
         if (score1 > 0 && score2 > 0) return 0;
@@ -331,6 +332,7 @@ int compare(vector<Decimal>& st1, vector<Decimal>& st2) {
 
 vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
     vector<vector<Decimal>> values;
+    Timer timer;
     for (GameState& gst : gamestates) {
         vector<Decimal> valueRow;
         valueRow.push_back(gst.antimatter());
@@ -348,10 +350,10 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
     for (int i = 0; i < values.size(); i++) {
         canBeRemoved[i] = 0;
     }
+    double createArrayTimer = timer.silentReset();
     for (int i = 0; i < values.size(); i++) {
         if (canBeRemoved[i] == 1) continue;
         for (int j = i + 1; j < values.size(); j++) {
-            if (i == j) continue;
             if (canBeRemoved[j] == 1) continue;
             int cmp = compare(values[i], values[j]);
             if (cmp > 0) {
@@ -361,6 +363,7 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
             }
         }
     }
+    double compareTimer = timer.silentReset();
     vector<GameState> result;
     int i = 0;
     for (auto stIter = gamestates.begin(); stIter != gamestates.end(); stIter++) {
@@ -369,5 +372,7 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
         }
         i++;
     }
+    double recreateTimer = timer.silentReset();
+    //cout << createArrayTimer << " " << compareTimer << " " << recreateTimer << endl;
     return result;
 }

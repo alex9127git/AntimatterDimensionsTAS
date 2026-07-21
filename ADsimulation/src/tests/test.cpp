@@ -37,6 +37,9 @@ int main() {
     a = Decimal(5);
     b = Decimal(4);
     assert(a > b);
+    a = Decimal(500);
+    b = Decimal(4);
+    assert(a > b);
     a = Decimal(10);
     b = DC::D10;
     assert(a >= b);
@@ -63,6 +66,12 @@ int main() {
     c = Decimal(0);
     assert(a > c);
     assert(b < c);
+    a = Decimal(-5);
+    b = Decimal(-4);
+    assert(a < b);
+    a = Decimal(-500);
+    b = Decimal(-4);
+    assert(a < b);
     cout << "All comparison tests passed" << endl << endl;
 
     cout << "Started math tests" << endl;
@@ -211,7 +220,6 @@ int main() {
     cout << "Starting test simulation" << endl;
     gameState = GameState();
     gameState = runDimboost(gameState, false);
-    cout << endl << gameState << endl;
     instructions = gameState.getCompletedInstructions();
     for (double instruction : instructions) {
         cout << instruction << " ";
