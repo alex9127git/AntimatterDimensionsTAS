@@ -9,10 +9,10 @@ class Decimal : public ISerializable {
         double mantissa;
         long long exponent;
         
-        // volatile, shouldn't be serialized;
+        // volatile, shouldn't be serialized
         
-        double value;
-        bool isDouble;
+        double cachedValue = 0;
+        bool isCached = false;
 
     public:
         Decimal(double _mant, long long _exp);
@@ -57,6 +57,7 @@ class Decimal : public ISerializable {
         void normalize();
 
         void repr();
+        void cache();
 
         static string toString(const Decimal& d, int precision);
         string toString(int precision);

@@ -36,7 +36,25 @@ Decimal Decimal::operator+(const Decimal& b) {
 }
 
 Decimal& Decimal::operator+=(const Decimal& b) {
-    *this = *this + b;
+    if (b.mantissa == 0) {
+        return *this;
+    }
+    if (this->mantissa == 0) {
+        this->mantissa = b.mantissa;
+        this->exponent = b.exponent;
+    } else if (abs(this->exponent - b.exponent) > 30) {
+        const Decimal& bigger = Decimal::max(*this, b);
+        this->mantissa = bigger.mantissa;
+        this->exponent = bigger.exponent;
+    } else if (this->exponent >= b.exponent) {
+        double scaled = b.mantissa * std::pow(10, b.exponent - this->exponent);
+        this->mantissa = this->mantissa + scaled;
+    } else {
+        double scaled = this->mantissa * std::pow(10, this->exponent - b.exponent);
+        this->mantissa = b.mantissa + scaled;
+        this->exponent = b.exponent;
+    }
+    this->normalize();
     return *this;
 }
 
@@ -45,8 +63,7 @@ Decimal Decimal::operator-(const Decimal& b) {
 }
 
 Decimal& Decimal::operator-=(const Decimal& b) {
-    *this = *this - b;
-    return *this;
+    return *this += Decimal::unary_negate(b);
 }
 
 Decimal Decimal::operator*(const Decimal& b) {
@@ -54,7 +71,9 @@ Decimal Decimal::operator*(const Decimal& b) {
 }
 
 Decimal& Decimal::operator*=(const Decimal& b) {
-    *this = *this * b;
+    this->mantissa *= b.mantissa;
+    this->exponent += b.exponent;
+    this->normalize();
     return *this;
 }
 
@@ -63,8 +82,7 @@ Decimal Decimal::operator/(const Decimal& b) {
 }
 
 Decimal& Decimal::operator/=(const Decimal& b) {
-    *this = *this / b;
-    return *this;
+    return *this *= Decimal::invert(b);
 }
 
 Decimal Decimal::operator-() {
@@ -107,6 +125,7 @@ double Decimal::toNumber(const Decimal& d) {
 Decimal Decimal::add(const Decimal& a, const Decimal& b) {
     if (a.mantissa == 0) return b;
     if (b.mantissa == 0) return a;
+    if (abs(a.exponent - b.exponent) > 30) return Decimal::max(a, b);
     if (a.exponent >= b.exponent) {
         double scaled = b.mantissa * std::pow(10, b.exponent - a.exponent);
         return Decimal(a.mantissa + scaled, a.exponent);
@@ -120,8 +139,6 @@ Decimal Decimal::add(const Decimal& a, const Decimal& b) {
 // do not use recursive behavior in C++... dummy
 // while loops are better.
 Decimal Decimal::multiply(const Decimal& a, const Decimal& b) {
-    if (a.mantissa == 0 || b.mantissa == 0) 
-        return DC::D0;
     Decimal result(
         a.mantissa * b.mantissa,
         a.exponent + b.exponent
@@ -168,7 +185,7 @@ bool Decimal::gte(const Decimal& a, const Decimal& b) {
 }
 
 bool Decimal::gt(const Decimal& a, const Decimal& b) {
-    //if (a.isDouble && b.isDouble) return a.value > b.value;
+    if (a.isCached && b.isCached) return a.cachedValue > b.cachedValue;
     if (a.mantissa == 0) return b.mantissa < 0;
     if (b.mantissa == 0) return a.mantissa > 0;
     if (a.exponent == b.exponent) return a.mantissa > b.mantissa;
@@ -196,12 +213,15 @@ void Decimal::normalize() {
         this->exponent--; 
     }
     if (isNegative) this->mantissa = -this->mantissa;
-    //this->value = this->mantissa * std::pow(10, this->exponent);
-    //this->isDouble = !isinf(this->value);
 }
 
 void Decimal::repr() {
     cout << "Decimal(" << this->mantissa << ", " << this->exponent << ")" << endl;
+}
+
+void Decimal::cache() {
+    this->cachedValue = this->mantissa * std::pow(10, this->exponent);
+    this->isCached = !isinf(this->cachedValue);
 }
 
 string Decimal::toString(const Decimal& d, int precision) {

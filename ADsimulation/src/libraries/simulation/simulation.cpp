@@ -339,6 +339,7 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
         valueRow.push_back(Decimal(gst.tickspeed().getPurchases()));
         valueRow.push_back(gst.tickspeed().perSecond());
         valueRow.push_back(gst.getAchievementBonus());
+        for (Decimal& d : valueRow) d.cache();
         values.push_back(valueRow);
     }
     int removedCopy[size];

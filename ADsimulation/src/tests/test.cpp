@@ -104,6 +104,9 @@ int main() {
     assert(Decimal::pow(a, b) < Decimal(3.1622777));
     a = Decimal(2);
     assert(Decimal::pow(a, 1024) > Decimal(1, 308LL));
+    a = Decimal(1, 200LL);
+    b = Decimal(1, 1000LL);
+    assert(a + b == Decimal(1, 1000LL));
     cout << "All math tests passed" << endl << endl;
 
     cout << "Started permutation tests" << endl;
