@@ -309,12 +309,13 @@ bool compare(vector<Decimal>& st1, vector<Decimal>& st2) {
     // Compare the two game states together.
     // Returns true if all st1's values are bigger or equal than that of st2.
     // Otherwise, return false.
-    bool allEqual = false;
     for (int i = 0; i < st1.size(); i++) {
         if (st1[i] < st2[i]) return false;
-        //if (st1[i] != st2[i]) allEqual = false;
     }
-    return !allEqual;
+    for (int i = 0; i < st1.size(); i++) {
+        if (st1[i] > st2[i]) return true;
+    }
+    return false;
 }
 
 vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
