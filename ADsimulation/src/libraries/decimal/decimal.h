@@ -8,6 +8,11 @@ class Decimal : public ISerializable {
     private:
         double mantissa;
         long long exponent;
+        
+        // volatile, shouldn't be serialized;
+        
+        double value;
+        bool isDouble;
 
     public:
         Decimal(double _mant, long long _exp);

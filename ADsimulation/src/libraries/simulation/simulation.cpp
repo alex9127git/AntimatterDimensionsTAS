@@ -77,11 +77,11 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
     Timer tickTimer;
     Timer buyTimer;
     Timer purgeTimer;
-    double branchTime;
-    double checkTime;
-    double tickTime;
-    double buyTime;
-    double purgeTime;
+    double branchTime = 0;
+    double checkTime = 0;
+    double tickTime = 0;
+    double buyTime = 0;
+    double purgeTime = 0;
     bool isFinished = false;
     int ticks = 0;
     int maxStates = 0;
@@ -203,11 +203,11 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
     Timer tickTimer;
     Timer buyTimer;
     Timer purgeTimer;
-    double branchTime;
-    double checkTime;
-    double tickTime;
-    double buyTime;
-    double purgeTime;
+    double branchTime = 0;
+    double checkTime = 0;
+    double tickTime = 0;
+    double buyTime = 0;
+    double purgeTime = 0;
     bool isFinished = false;
     int ticks = 0;
     int statesAfterPurge = 1;
@@ -331,6 +331,7 @@ int compare(vector<Decimal>& st1, vector<Decimal>& st2) {
 }
 
 vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
+    int size = gamestates.size();
     vector<vector<Decimal>> values;
     Timer timer;
     for (GameState& gst : gamestates) {
@@ -346,14 +347,19 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
         valueRow.push_back(gst.getAchievementBonus());
         values.push_back(valueRow);
     }
-    int canBeRemoved[values.size()];
-    for (int i = 0; i < values.size(); i++) {
+    vector<int> indices(size);
+    iota(indices.begin(), indices.end(), 0);
+    sort(indices.begin(), indices.end(), [&gamestates](int i, int j) {
+        return gamestates[i].AD()[1].getAmount() > gamestates[j].AD()[1].getAmount();
+    });
+    int canBeRemoved[size];
+    for (int i = 0; i < size; i++) {
         canBeRemoved[i] = 0;
     }
     double createArrayTimer = timer.silentReset();
-    for (int i = 0; i < values.size(); i++) {
+    for (int i = 0; i < size; i++) {
         if (canBeRemoved[i] == 1) continue;
-        for (int j = i + 1; j < values.size(); j++) {
+        for (int j = i + 1; j < size; j++) {
             if (canBeRemoved[j] == 1) continue;
             int cmp = compare(values[i], values[j]);
             if (cmp > 0) {

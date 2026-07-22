@@ -28,6 +28,7 @@ Decimal::Decimal(double _val) {
 
 Decimal::Decimal(json& j) {
     this->from_json(j);
+    this->normalize();
 }
 
 Decimal Decimal::operator+(const Decimal& b) {
@@ -106,18 +107,13 @@ double Decimal::toNumber(const Decimal& d) {
 Decimal Decimal::add(const Decimal& a, const Decimal& b) {
     if (a.mantissa == 0) return b;
     if (b.mantissa == 0) return a;
-    Decimal result = DC::D0;
     if (a.exponent >= b.exponent) {
         double scaled = b.mantissa * std::pow(10, b.exponent - a.exponent);
-        result.mantissa = a.mantissa + scaled;
-        result.exponent = a.exponent;
+        return Decimal(a.mantissa + scaled, a.exponent);
     } else {
         double scaled = a.mantissa * std::pow(10, a.exponent - b.exponent);
-        result.mantissa = b.mantissa + scaled;
-        result.exponent = b.exponent;
-    };
-    result.normalize();
-    return result;
+        return Decimal(b.mantissa + scaled, b.exponent);
+    }
 }
 
 // note to Jade: 
@@ -130,7 +126,6 @@ Decimal Decimal::multiply(const Decimal& a, const Decimal& b) {
         a.mantissa * b.mantissa,
         a.exponent + b.exponent
     );
-    result.normalize();
     return result;
 }
 
@@ -173,6 +168,7 @@ bool Decimal::gte(const Decimal& a, const Decimal& b) {
 }
 
 bool Decimal::gt(const Decimal& a, const Decimal& b) {
+    if (a.isDouble && b.isDouble) return a.value > b.value;
     if (a.mantissa == 0) return b.mantissa < 0;
     if (b.mantissa == 0) return a.mantissa > 0;
     if (a.exponent == b.exponent) return a.mantissa > b.mantissa;
@@ -186,10 +182,10 @@ bool Decimal::eq(const Decimal& a, const Decimal& b) {
 }
 
 void Decimal::normalize() {
-    if (this->mantissa == INFINITY) {
+    if (isinf(this->mantissa)) {
         throw runtime_error("Mantissa isn't supposed to be infinity, you absolute buffoon");
     }
-    bool isNegative = *this < DC::D0;
+    bool isNegative = this->mantissa < 0;
     if (isNegative) this->mantissa = -this->mantissa;
     while (this->mantissa >= 10) {
         this->mantissa /= 10.0;
@@ -200,6 +196,8 @@ void Decimal::normalize() {
         this->exponent--; 
     }
     if (isNegative) this->mantissa = -this->mantissa;
+    this->value = this->mantissa * std::pow(10, this->exponent);
+    this->isDouble = !isinf(this->value);
 }
 
 void Decimal::repr() {
