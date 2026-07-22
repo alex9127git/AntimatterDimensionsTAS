@@ -305,36 +305,29 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
     return finishedStates;
 }
 
-int compare(vector<Decimal>& st1, vector<Decimal>& st2) {
+bool compare(vector<Decimal>& st1, vector<Decimal>& st2) {
     // Compare the two game states together.
-    // If a first game state has a property bigger, score variable shifts positive.
-    // Otherwise it shifts negative. This value is then used to determine the return value.
-    // If st1 is strictly better than st2, this function should return 1.
-    // If st2 is strictly better than st2, this function should return -1.
-    // Otherwise, return 0.
-    int score1 = 0;
-    int score2 = 0;
+    // Returns true if all st1's values are bigger or equal than that of st2.
+    // Otherwise, return false.
+    bool allEqual = false;
     for (int i = 0; i < st1.size(); i++) {
-        Decimal& v1 = st1[i];
-        Decimal& v2 = st2[i];
-        if (v1 > v2) score1++;
-        if (v1 < v2) score2++;
-        if (score1 > 0 && score2 > 0) return 0;
+        if (st1[i] < st2[i]) return false;
+        //if (st1[i] != st2[i]) allEqual = false;
     }
-    if (score1 > 0 && score2 == 0) {
-        return 1;
-    } else if (score2 > 0 && score1 == 0) {
-        return -1;
-    } else {
-        return 0;
-    }
+    return !allEqual;
 }
 
 vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
     int size = gamestates.size();
     vector<vector<Decimal>> values;
     Timer timer;
-    for (GameState& gst : gamestates) {
+    vector<int> indices(size);
+    iota(indices.begin(), indices.end(), 0);
+    sort(indices.begin(), indices.end(), [&gamestates](int i, int j) {
+        return gamestates[i].AD()[1].getAmount() > gamestates[j].AD()[1].getAmount();
+    });
+    for (int i = 0; i < size; i++) {
+        GameState& gst = gamestates[indices[i]];
         vector<Decimal> valueRow;
         valueRow.push_back(gst.antimatter());
         for (int i = 1; i <= 8; i++) {
@@ -347,33 +340,29 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
         valueRow.push_back(gst.getAchievementBonus());
         values.push_back(valueRow);
     }
-    vector<int> indices(size);
-    iota(indices.begin(), indices.end(), 0);
-    sort(indices.begin(), indices.end(), [&gamestates](int i, int j) {
-        return gamestates[i].AD()[1].getAmount() > gamestates[j].AD()[1].getAmount();
-    });
-    int canBeRemoved[size];
+    int removedCopy[size];
     for (int i = 0; i < size; i++) {
-        canBeRemoved[i] = 0;
+        removedCopy[i] = 0;
     }
     double createArrayTimer = timer.silentReset();
     for (int i = 0; i < size; i++) {
-        if (canBeRemoved[i] == 1) continue;
+        if (removedCopy[i] == 1) continue;
         for (int j = i + 1; j < size; j++) {
-            if (canBeRemoved[j] == 1) continue;
-            int cmp = compare(values[i], values[j]);
-            if (cmp > 0) {
-                canBeRemoved[j] = 1;
-            } else if (cmp < 0) {
-                canBeRemoved[i] = 1;
+            if (removedCopy[j] == 1) continue;
+            if (compare(values[i], values[j])) {
+                removedCopy[j] = 1;
             }
         }
+    }
+    int removedOrig[size];
+    for (int i = 0; i < size; i++) {
+        removedOrig[indices[i]] = removedCopy[i];
     }
     double compareTimer = timer.silentReset();
     vector<GameState> result;
     int i = 0;
     for (auto stIter = gamestates.begin(); stIter != gamestates.end(); stIter++) {
-        if (canBeRemoved[i] == 0) {
+        if (removedOrig[i] == 0) {
             result.push_back(*stIter);
         }
         i++;

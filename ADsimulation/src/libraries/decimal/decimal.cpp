@@ -168,7 +168,7 @@ bool Decimal::gte(const Decimal& a, const Decimal& b) {
 }
 
 bool Decimal::gt(const Decimal& a, const Decimal& b) {
-    if (a.isDouble && b.isDouble) return a.value > b.value;
+    //if (a.isDouble && b.isDouble) return a.value > b.value;
     if (a.mantissa == 0) return b.mantissa < 0;
     if (b.mantissa == 0) return a.mantissa > 0;
     if (a.exponent == b.exponent) return a.mantissa > b.mantissa;
@@ -196,8 +196,8 @@ void Decimal::normalize() {
         this->exponent--; 
     }
     if (isNegative) this->mantissa = -this->mantissa;
-    this->value = this->mantissa * std::pow(10, this->exponent);
-    this->isDouble = !isinf(this->value);
+    //this->value = this->mantissa * std::pow(10, this->exponent);
+    //this->isDouble = !isinf(this->value);
 }
 
 void Decimal::repr() {
