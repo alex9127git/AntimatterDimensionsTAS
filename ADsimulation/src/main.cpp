@@ -39,10 +39,29 @@ int main(int argc, char* argv[]) {
         cout << "Run with an input and output filename (like main in.json out.json) to use those instead." << endl;
         return 0;
     }
-
+    bool useSacrifice = false;
+    if (gameState.dimensionBoosts() >= 5) {
+        cout << "Input game state has 5 dimension boosts or more. Do you want to use sacrifice? [Y/n] ";
+        char confirmation = getchar();
+        switch (confirmation) {
+            case 'Y':
+            case 'y':
+            case '\r':
+            case '\n':
+                useSacrifice = true;
+                break;
+            case 'N':
+            case 'n':
+                useSacrifice = false;
+                break;
+            default:
+                cout << "Unrecognized input. Aborting the execution." << endl;
+                return 0;
+        }
+    }
     o = ofstream(outputFile);
     vector<double> instructions;
-    gameState = runDimboost(gameState, 400);
+    gameState = runDimboost(gameState, useSacrifice);
     cout << "Finished simulation; dumping result game state into " << outputFile << endl;
     o << gameState.to_json();
     cout << "Dumping instruction sequence into " << outputFile.substr(0, outputFile.size() - 5) << "_cmd.json" << endl;

@@ -14,21 +14,35 @@ void renderProgressBar(double percentage) {
     cout << "\r" << flush;
 }
 
-GameState runDimboost(GameState st) {
-    return runDimboost(st, 1000, true);
+string renderTime(long ms) {
+    int hours = ms / 3600000;
+    int minutes = (ms % 3600000) / 60000;
+    int seconds = (ms % 60000) / 1000;
+    int milliseconds = ms % 1000;
+    return format("{:02d}:{:02d}:{:02d}.{:03d}", hours, minutes, seconds, milliseconds);
 }
 
-GameState runDimboost(GameState st, int precision) {
-    return runDimboost(st, precision, true);
+GameState runDimboost(GameState st, bool useSacrifice) {
+    return runDimboost(st, 1000, useSacrifice, true);
 }
 
-GameState runDimboost(GameState st, int precision, bool verbose) {
+GameState runDimboost(GameState st, int precision, bool useSacrifice) {
+    return runDimboost(st, precision, useSacrifice, true);
+}
+
+GameState runDimboost(GameState st, int precision, bool useSacrifice, bool verbose) {
     vector<GameState> gameStates;
     GameState bestState;
     long startTime = st.realTimePlayed();
     gameStates = purchaseRun(st, [](GameState& st) {return st.canBuyNextDimboost();}, verbose);
-    if (st.dimensionBoosts() < 5) {
-        bestState = gameStates[0].copy();
+    bestState = gameStates[0].copy();
+    long iterationTime = bestState.realTimePlayed();
+    if (verbose) {
+        cout << "Iteration 1" << endl;
+        cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
+        cout << "Cumulative time: " << renderTime(iterationTime) << endl;
+    }
+    if (st.dimensionBoosts() < 5 || !useSacrifice) {
         bestState.requestDimboost();
         return bestState;
     }
@@ -41,6 +55,12 @@ GameState runDimboost(GameState st, int precision, bool verbose) {
     }
     gameStates = sacrificeRun(st, [](GameState& st) {return st.canBuyNextDimboost();}, precision, winnerPurchaseStrategies, verbose);
     bestState = gameStates[0].copy();
+    iterationTime = bestState.realTimePlayed();
+    if (verbose) {
+        cout << "Iteration 2" << endl;
+        cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
+        cout << "Cumulative time: " << renderTime(iterationTime) << endl;
+    }
     bestState.requestDimboost();
     return bestState;
     // while (bestTime != currentIterationTime) {
@@ -149,6 +169,7 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
                     cout << "purge: " << purgeTime << " ms" << endl;
                 }
                 isFinished = true;
+                break;
             }
             if (ticks == 100 && verbose) {
                 if (gst.antimatter() > bestAntimatter) {

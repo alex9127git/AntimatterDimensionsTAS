@@ -222,7 +222,7 @@ int main() {
     
     cout << "Starting test simulation" << endl;
     gameState = GameState();
-    gameState = runDimboost(gameState, false);
+    gameState = runDimboost(gameState, 1000, true, false);
     instructions = gameState.getCompletedInstructions();
     for (double instruction : instructions) {
         cout << instruction << " ";
