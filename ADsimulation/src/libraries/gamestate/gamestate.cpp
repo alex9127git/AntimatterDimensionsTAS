@@ -208,6 +208,7 @@ void GameState::unlockAchievement(int ach, bool force) {
     if (force || this->achievements()[ach].checkUnlockCondition(*this)) {
         if (!this->achievements()[ach].isUnlocked()) {
             this->achievements()[ach].unlock();
+            this->achievements()[ach].setUnlockTime(this->realTimePlayed());
             this->recalcAchievementBonus();
         }
     }

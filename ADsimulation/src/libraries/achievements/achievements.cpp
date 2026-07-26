@@ -13,7 +13,8 @@ Achievement::Achievement(
         effect([_effect](Decimal _) {return _effect;}),
         defaultEffect(_defaultEffect),
         unlockCondition(_unlockCondition),
-        unlocked(false)
+        unlocked(false),
+        unlockTime(0)
     {};
 
 Achievement::Achievement(
@@ -25,11 +26,16 @@ Achievement::Achievement(
         effect(_effect),
         defaultEffect(_defaultEffect),
         unlockCondition(_unlockCondition),
-        unlocked(false)
+        unlocked(false),
+        unlockTime(0)
     {}
 
 void Achievement::unlock() {
     this->unlocked = true;
+}
+
+void Achievement::setUnlockTime(long t) {
+    this->unlockTime = t;
 }
 
 void Achievement::lock() {

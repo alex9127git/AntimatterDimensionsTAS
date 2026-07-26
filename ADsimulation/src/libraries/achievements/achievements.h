@@ -16,6 +16,7 @@ class Achievement {
         Decimal defaultEffect;
         function<bool(GameState&)> unlockCondition;
         bool unlocked;
+        long unlockTime;
 
     public:
         Achievement(
@@ -32,6 +33,7 @@ class Achievement {
         );
 
         void unlock();
+        void setUnlockTime(long t);
         void lock();
 
         int getId();

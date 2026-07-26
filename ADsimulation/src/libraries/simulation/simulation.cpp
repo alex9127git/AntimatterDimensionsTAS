@@ -109,48 +109,53 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
     while (true) {
         ticks++;
         // Branching
+        bool isBranching = true;
         branchTimer.silentReset();
-        for (GameState& gst : gameStates) {
-            // Savestate will branch if isn't currently busy with an instruction and can afford at least one purchase
-            while (gst.canBranch() && !gst.hasNextPurchaseInstruction()) {
-                Decimal priceRange = gst.getPriceRange();
-                // Gets all possible purchases at current price range and populates the game states accordingly
-                vector<double> variants;
-                if (gst.tickspeed().canPurchase(priceRange)) {
-                    variants.push_back(9);
-                }
-                for (int i = 1; i <= 8; i++) {
-                    int purchases = gst.AD()[i].getPurchases();
-                    if (purchases < 10 || i == min(gst.dimensionBoosts() + 4, 8)) {
-                        if (gst.AD()[i].canPurchase(priceRange)) {
-                            variants.push_back(i);
+        while (isBranching) {
+            isBranching = false;
+            for (GameState& gst : gameStates) {
+                // Savestate will branch if isn't currently busy with an instruction and can afford at least one purchase
+                while (gst.canBranch() && !gst.hasNextPurchaseInstruction()) {
+                    isBranching = true;
+                    Decimal priceRange = gst.getPriceRange();
+                    // Gets all possible purchases at current price range and populates the game states accordingly
+                    vector<double> variants;
+                    if (gst.tickspeed().canPurchase(priceRange)) {
+                        variants.push_back(9);
+                    }
+                    for (int i = 1; i <= 8; i++) {
+                        int purchases = gst.AD()[i].getPurchases();
+                        if (purchases < 10 || i == min(gst.dimensionBoosts() + 4, 8)) {
+                            if (gst.AD()[i].canPurchase(priceRange)) {
+                                variants.push_back(i);
+                            }
+                        } else {
+                            if (gst.AD()[i].canPurchase(priceRange / DC::D10)) {
+                                variants.push_back(i * 10);
+                            }
                         }
+                    }
+                    if (variants.empty()) {
+                        continue;
+                    } else if (variants.size() == 1) {
+                        gst.addInstructions(variants);
                     } else {
-                        if (gst.AD()[i].canPurchase(priceRange / DC::D10)) {
-                            variants.push_back(i * 10);
+                        for (int i = 1; i < variants.size(); i++) {
+                            GameState newGst = gst.copy();
+                            newGst.addInstructions({variants[i]});
+                            newGameStates.push_back(newGst);
                         }
+                        gst.addInstructions({variants[0]});
                     }
+                    gst.runNextInstructions();
                 }
-                if (variants.empty()) {
-                    continue;
-                } else if (variants.size() == 1) {
-                    gst.addInstructions(variants);
-                } else {
-                    for (int i = 1; i < variants.size(); i++) {
-                        GameState newGst = gst.copy();
-                        newGst.addInstructions({variants[i]});
-                        newGameStates.push_back(newGst);
-                    }
-                    gst.addInstructions({variants[0]});
-                }
-                gst.runNextInstructions();
             }
-        }
-        for (GameState& gst : newGameStates) {
-            gameStates.push_back(gst);
+            for (GameState& gst : newGameStates) {
+                gameStates.push_back(gst);
+            }
+            newGameStates.clear();
         }
         branchTime += branchTimer.silentReset();
-        newGameStates.clear();
         // Checking for condition
         checkTimer.silentReset();
         for (GameState& gst : gameStates) {
