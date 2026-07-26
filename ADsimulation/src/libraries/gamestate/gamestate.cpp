@@ -412,6 +412,7 @@ void GameState::writeInstructions(ofstream& f) {
     f << "[\n";
     int dim_tier = 0;
     int dim_bulk = 0;
+    bool isNextSacrifice = 0;
     this->completedInstructions.push_back(0);
     vector<string> lines;
     for (double instruction : completedInstructions) {
@@ -428,13 +429,9 @@ void GameState::writeInstructions(ofstream& f) {
                 dim_bulk = 0;
             }
             if (instruction == 9) {
-                lines.push_back("[\"buyTickspeed\",[0]]");
+                lines.push_back("[\"buyTickSpeed\",[0]]");
             }
         }
-    }
-    if (dim_bulk > 0) {
-        lines.push_back("[\"buyDimension\",[" + to_string(dim_tier) + "," + to_string(dim_bulk) + "]]");
-        dim_bulk = 0;
     }
     for (int i = 0; i < lines.size(); i++) {
         f << lines[i];
