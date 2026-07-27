@@ -143,7 +143,7 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
                         for (int i = 1; i < variants.size(); i++) {
                             GameState newGst = gst.copy();
                             newGst.addInstructions({variants[i]});
-                            newGameStates.push_back(newGst);
+                            newGameStates.push_back(move(newGst));
                         }
                         gst.addInstructions({variants[0]});
                     }
@@ -154,7 +154,7 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
                 adds += 1;
             }
             for (GameState& gst : newGameStates) {
-                gameStates.push_back(gst);
+                gameStates.push_back(move(gst));
                 states++;
             }
             newGameStates.clear();
@@ -180,7 +180,7 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
                 isFinished = true;
                 break;
             }
-            if (ticks % 50 == 0 && verbose) {
+            if (ticks % 25 == 0 && verbose) {
                 if (gst.antimatter() > bestAntimatter) {
                     bestAntimatter = Decimal::max(bestAntimatter, gst.antimatter());
                     bestState = gst;
@@ -188,7 +188,7 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
             }
         }
         if (isFinished) break;
-        if (ticks % 50 == 0 && verbose) {
+        if (ticks % 25 == 0 && verbose) {
             Decimal currLog = Decimal::max(bestAntimatter, DC::D1).log10();
             Decimal goalLog = bestState.getAntimatterGoalForDimboost().log10();
             renderProgressBar(Decimal::toNumber(currLog / goalLog));
@@ -261,14 +261,14 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
                 newGst.addInstructions({108.0, log10(sacValue)});
                 double nextSacValue = (floor(sacValue * precision) + 1) / precision;
                 gst.setNextSacBranching(nextSacValue);
-                newGameStates.push_back(newGst);
+                newGameStates.push_back(move(newGst));
             }
         }
         if (!newGameStates.empty()) {
             adds += 1;
         }
         for (GameState& gst : newGameStates) {
-            gameStates.push_back(gst);
+            gameStates.push_back(move(gst));
             states++;
         }
         branchTime += branchTimer.silentReset();
@@ -292,7 +292,7 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
                 }
                 isFinished = true;
             }
-            if (ticks % 10 == 0 && verbose) {
+            if (ticks % 25 == 0 && verbose) {
                 if (gst.antimatter() > bestAntimatter) {
                     bestAntimatter = Decimal::max(bestAntimatter, gst.antimatter());
                     bestState = gst;
@@ -300,7 +300,7 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
             }
         }
         if (isFinished) break;
-        if (ticks % 10 == 0 && verbose) {
+        if (ticks % 25 == 0 && verbose) {
             Decimal currLog = Decimal::max(bestAntimatter, DC::D1).log10();
             Decimal goalLog = bestState.getAntimatterGoalForDimboost().log10();
             renderProgressBar(Decimal::toNumber(currLog / goalLog));

@@ -44,15 +44,15 @@ Decimal& Decimal::operator+=(const Decimal& b) {
     if (this->mantissa == 0) {
         this->mantissa = b.mantissa;
         this->exponent = b.exponent;
-    } else if (abs(this->exponent - b.exponent) > 30) {
+    } else if (abs(this->exponent - b.exponent) > 20) {
         const Decimal& bigger = Decimal::max(*this, b);
         this->mantissa = bigger.mantissa;
         this->exponent = bigger.exponent;
     } else if (this->exponent >= b.exponent) {
-        double scaled = b.mantissa * std::pow(10, b.exponent - this->exponent);
+        double scaled = b.mantissa * pow10_table[b.exponent - this->exponent + 20];
         this->mantissa = this->mantissa + scaled;
     } else {
-        double scaled = this->mantissa * std::pow(10, this->exponent - b.exponent);
+        double scaled = this->mantissa * pow10_table[this->exponent - b.exponent + 20];
         this->mantissa = b.mantissa + scaled;
         this->exponent = b.exponent;
     }
@@ -127,12 +127,12 @@ double Decimal::toNumber(const Decimal& d) {
 Decimal Decimal::add(const Decimal& a, const Decimal& b) {
     if (a.mantissa == 0) return b;
     if (b.mantissa == 0) return a;
-    if (abs(a.exponent - b.exponent) > 30) return Decimal::max(a, b);
+    if (abs(a.exponent - b.exponent) > 20) return Decimal::max(a, b);
     if (a.exponent >= b.exponent) {
-        double scaled = b.mantissa * std::pow(10, b.exponent - a.exponent);
+        double scaled = b.mantissa * pow10_table[b.exponent - a.exponent + 20];
         return Decimal(a.mantissa + scaled, a.exponent);
     } else {
-        double scaled = a.mantissa * std::pow(10, a.exponent - b.exponent);
+        double scaled = a.mantissa * pow10_table[a.exponent - b.exponent + 20];
         return Decimal(b.mantissa + scaled, b.exponent);
     }
 }
