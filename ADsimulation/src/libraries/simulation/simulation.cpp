@@ -2,6 +2,7 @@
 #include "../ioutils/ioutils.h"
 #include "../constants/constants.h"
 #include "../permutations/permutations.h"
+#include <cstdint>
 #include <vector>
 #include <list>
 #include <set>
@@ -30,52 +31,42 @@ GameState runDimboost(GameState st, bool useSacrifice, int precision, bool verbo
 GameState runUntil(GameState st, function<bool(GameState&)> stopCondition, bool useSacrifice, int precision, bool verbose) {
     vector<GameState> gameStates;
     GameState bestState;
-    long startTime = st.realTimePlayed();
-    cout << "Running iteration 1" << endl;
-    gameStates = purchaseRun(st, stopCondition, verbose);
-    bestState = gameStates[0].copy();
-    long iterationTime = bestState.realTimePlayed();
-    if (verbose) {
-        cout << "Iteration 1" << endl;
-        cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
-        cout << "Cumulative time: " << renderTime(iterationTime) << endl;
-    }
-    if (st.dimensionBoosts() < 5 || !useSacrifice) {
-        bestState.addInstructions({100});
-        bestState.runNextInstructions();
-        return bestState;
-    }
-    bool isSacrificeIteration = true;
-    long bestTime = gameStates[0].realTimePlayed();
-    long currentIterationTime = bestTime;
-    vector<vector<double>> winnerPurchaseStrategies;
-    for (GameState& gst : gameStates) {
-        winnerPurchaseStrategies.push_back(gst.getCompletedPurchases());
-    }
-    cout << "Running iteration 2" << endl;
-    gameStates = sacrificeRun(st, stopCondition, precision, winnerPurchaseStrategies, verbose);
-    bestState = gameStates[0].copy();
-    iterationTime = bestState.realTimePlayed();
-    if (verbose) {
-        cout << "Iteration 2" << endl;
-        cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
-        cout << "Cumulative time: " << renderTime(iterationTime) << endl;
-    }
+    int64_t currentIterationTime = INT64_MAX;
+    int64_t iterationTime = INT64_MAX;
+    int64_t startTime = st.realTimePlayed();
+    vector<vector<double>> winnerStrategies = {{}};
+    int iterationCounter = 0;
+    do {
+        iterationCounter++;
+        currentIterationTime = iterationTime;
+        cout << "Running iteration " << iterationCounter << endl;
+        if (iterationCounter % 2 == 1) {
+            gameStates = purchaseRun(st, stopCondition, winnerStrategies, verbose);
+            winnerStrategies.clear();
+            for (GameState& gst : gameStates) {
+                winnerStrategies.push_back(gst.getCompletedPurchases());
+            }
+        } else {
+            gameStates = sacrificeRun(st, stopCondition, precision, winnerStrategies, verbose);
+            winnerStrategies.clear();
+            for (GameState& gst : gameStates) {
+                winnerStrategies.push_back(gst.getCompletedSacrifices());
+            }
+        }
+        bestState = gameStates[0].copy();
+        iterationTime = bestState.realTimePlayed();
+        if (verbose) {
+            cout << "Iteration " << iterationCounter << endl;
+            cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
+            cout << "Cumulative time: " << renderTime(iterationTime) << endl;
+        }
+    } while (st.dimensionBoosts() >= 5 && useSacrifice && iterationTime < currentIterationTime);
     bestState.addInstructions({100});
     bestState.runNextInstructions();
     return bestState;
-    // while (bestTime != currentIterationTime) {
-    //     if (isSacrificeIteration) {
-    //         vector<vector<double>> winnerPurchaseStrategies;
-    //         for (GameState& gst : gameStates) {
-    //             winnerPurchaseStrategies.push_back(gst.getCompletedPurchases());
-    //         }
-    //         gameStates = sacrificeRun(st, [](GameState& st) {return st.canBuyNextDimboost();}, winnerPurchaseStrategies, verbose);
-    //     }
-    // }
 }
 
-vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondition, bool verbose) {
+vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondition, vector<vector<double>> sacrificeStrategies, bool verbose) {
     Decimal priceRange = DC::D10;
     // If Konami code exploit isn't used, assume this is the starting game state 
     // and add some default instructions.
@@ -105,8 +96,16 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
     double purgeTime = 0;
     bool isFinished = false;
     int ticks = 0;
+    int statesAfterPurge = 1;
+    int adds = 0;
     int maxStates = 0;
-    gameStates.push_back(st.copy());
+    for (int i = 0; i < sacrificeStrategies.size(); i++) {
+        gameStates.push_back(st.copy());
+        for (double instruction : sacrificeStrategies[i]) {
+            gameStates[i].addInstructions({108, instruction});
+        }
+    }
+    int states = gameStates.size();
     while (true) {
         ticks++;
         // Branching
@@ -151,8 +150,12 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
                     gst.runNextInstructions();
                 }
             }
+            if (!newGameStates.empty()) {
+                adds += 1;
+            }
             for (GameState& gst : newGameStates) {
                 gameStates.push_back(gst);
+                states++;
             }
             newGameStates.clear();
         }
@@ -177,7 +180,7 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
                 isFinished = true;
                 break;
             }
-            if (ticks == 100 && verbose) {
+            if (ticks % 50 == 0 && verbose) {
                 if (gst.antimatter() > bestAntimatter) {
                     bestAntimatter = Decimal::max(bestAntimatter, gst.antimatter());
                     bestState = gst;
@@ -185,7 +188,7 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
             }
         }
         if (isFinished) break;
-        if (ticks == 100 && verbose) {
+        if (ticks % 50 == 0 && verbose) {
             Decimal currLog = Decimal::max(bestAntimatter, DC::D1).log10();
             Decimal goalLog = bestState.getAntimatterGoalForDimboost().log10();
             renderProgressBar(Decimal::toNumber(currLog / goalLog));
@@ -201,12 +204,14 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
             buyTime += buyTimer.silentReset();
         }
         // Purge and updating progress
-        if (ticks == 100) {
+        if (adds >= 300 || states >= statesAfterPurge * 1.5) {
             purgeTimer.silentReset();
-            ticks = 0;
+            adds = 0;
             int beforeSize = gameStates.size();
             maxStates = max(maxStates, beforeSize);
             gameStates = purge(gameStates, verbose);
+            statesAfterPurge = gameStates.size();
+            states = statesAfterPurge;
             purgeTime += purgeTimer.silentReset();
         }
     }

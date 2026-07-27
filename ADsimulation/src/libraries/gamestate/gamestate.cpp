@@ -19,8 +19,9 @@ GameState::GameState() :
     _dimensionBoosts(0),
     _realTimePlayed(0),
     _canUseKonami(true),
-    nextPurchase(DC::D0),
-    nextSacrifice(DC::D1),
+    nextPurchaseBranch(DC::D0),
+    nextSacrificeBranch(DC::D1),
+    nextSacrificeInstruction(DC::D1),
     currPriceRange(DC::D0),
     achievementBonus(DC::D1),
     sacrificeBonus(DC::D1)
@@ -53,17 +54,17 @@ void GameState::prepare() {
 void GameState::calcNextPurchase() {
     Decimal minStackPrice = prices[0];
     this->currPriceRange = prices[0];
-    this->nextPurchase = prices[0];
+    this->nextPurchaseBranch = prices[0];
     for (int i = 1; i <= min(_dimensionBoosts + 4, 8); i++) {
         Decimal price = _AD[i].getPurchases() < 10 || i == min(_dimensionBoosts + 4, 8) 
                 ? prices[i] : prices[i] * DC::D10;
         if (price < minStackPrice) {
             minStackPrice = price;
             currPriceRange = price;
-            this->nextPurchase = prices[i];
+            this->nextPurchaseBranch = prices[i];
         } else if (price == minStackPrice) {
-            if (prices[i] < this->nextPurchase) {
-                this->nextPurchase = prices[i];
+            if (prices[i] < this->nextPurchaseBranch) {
+                this->nextPurchaseBranch = prices[i];
             }
         }
     }
@@ -227,6 +228,9 @@ void GameState::addInstructions(vector<double> instructions) {
     bool isSacrifice = false;
     for (double instruction : instructions) {
         if (isSacrifice) {
+            if (this->sacrificeInstructions.empty()) {
+                this->nextSacrificeInstruction = getReqForSac(Decimal(1, instruction));
+            }
             this->sacrificeInstructions.push_back(instruction);
             isSacrifice = false;
         } else if (10 <= instruction && instruction <= 99) {
@@ -259,7 +263,8 @@ bool GameState::runInstruction(double instruction) {
 }
 
 bool GameState::runSacInstruction(double instruction) {
-    if (nextSacrificeBoost() < Decimal(1, instruction)) return false;
+    if (this->AD()[1].getAmount() < this->nextSacrificeInstruction) return false;
+    //if (nextSacrificeBoost() < Decimal(1, instruction)) return false;
     return sacrificeReset();
 }
 
@@ -274,6 +279,7 @@ void GameState::runNextInstructions() {
         this->completedInstructions.push_back(this->sacrificeInstructions.front());
         this->completedSacrifices.push_back(this->sacrificeInstructions.front());
         this->sacrificeInstructions.erase(this->sacrificeInstructions.begin());
+        this->nextSacrificeInstruction = getReqForSac(Decimal(1, this->sacrificeInstructions.front()));
     }
 }
 
@@ -302,22 +308,26 @@ int GameState::instructionsExecuted() {
 }
 
 bool GameState::canBranch() {
-    return this->_antimatter > this->nextPurchase;
+    return this->_antimatter > this->nextPurchaseBranch;
 }
 
 void GameState::initializeSacBranching() {
-    this->nextSacrifice = this->_AD[1].getAmount();
+    this->nextSacrificeBranch = this->_AD[1].getAmount();
 }
 
 void GameState::setNextSacBranching(double sacValue) {
-    this->nextSacrifice = Decimal::pow(
+    this->nextSacrificeBranch = getReqForSac(Decimal(sacValue));
+}
+
+Decimal GameState::getReqForSac(Decimal sacValue) {
+    return Decimal::pow(
         10, 
-        pow(sacValue * Decimal::toNumber(sacrificeBonus), 0.5) * 10
+        Decimal::pow(sacValue * this->sacrificeBonus, 0.5) * 10
     ) - _sacrificed;
 }
 
 bool GameState::canSacBranch() {
-    return this->_AD[1].getAmount() >= this->nextSacrifice;
+    return this->_AD[1].getAmount() >= this->nextSacrificeBranch;
 }
 
 Decimal GameState::getPriceRange() {
@@ -358,7 +368,7 @@ bool GameState::canSacrifice() {
 bool GameState::sacrificeReset() {
     if (!canSacrifice()) return false;
     _sacrificed += _AD[1].getAmount();
-    this->nextSacrifice = _sacrificed;
+    this->nextSacrificeBranch = _sacrificed;
     this->recalcSacrificeBonus();
     for (int i = 1; i <= 7; i++) {
         _AD[i].resetAmount();

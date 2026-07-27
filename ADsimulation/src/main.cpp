@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
     
     save_out = ofstream(outputFile);
     vector<double> instructions;
-    gameState = runDimboost(gameState, useSacrifice);
+    gameState = runDimboost(gameState, useSacrifice, 400);
     cout << "Finished simulation; dumping result game state into " << outputFile << endl;
     save_out << gameState.to_json();
     if (saveCommands) {

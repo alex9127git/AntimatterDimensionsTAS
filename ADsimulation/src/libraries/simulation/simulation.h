@@ -29,7 +29,7 @@ GameState runDimboost(GameState st, bool useSacrifice);
 GameState runDimboost(GameState st, bool useSacrifice, int precision);
 GameState runDimboost(GameState st, bool useSacrifice, int precision, bool verbose);
 GameState runUntil(GameState st, function<bool(GameState&)> stopCondition, bool useSacrifice, int precision, bool verbose);
-vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondition, bool verbose);
+vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondition, vector<vector<double>> sacrificeStrategies, bool verbose);
 vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCondition, int precision, vector<vector<double>> purchaseStrategies, bool verbose);
 
 bool compare(vector<Decimal>& st1, vector<Decimal>& st2);
