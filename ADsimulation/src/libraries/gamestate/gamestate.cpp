@@ -130,11 +130,11 @@ bool GameState::canUseKonami() {
     return this->_canUseKonami;
 }
 
-long GameState::realTimePlayed() {
+int64_t GameState::realTimePlayed() {
     return this->_realTimePlayed;
 }
 
-int GameState::dimensionBoosts() {
+int32_t GameState::dimensionBoosts() {
     return this->_dimensionBoosts;
 }
 

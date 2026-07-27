@@ -1,4 +1,5 @@
 #include "constants.h"
+#include <cstdint>
 
 
 Decimal DC::D0 = Decimal(0);

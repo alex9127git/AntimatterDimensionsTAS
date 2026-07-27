@@ -37,7 +37,7 @@ Decimal Tickspeed::getCost() {
     return this->cost;
 }
 
-int Tickspeed::getPurchases() {
+int32_t Tickspeed::getPurchases() {
     return this->purchases;
 }
 

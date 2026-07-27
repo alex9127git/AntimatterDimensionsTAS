@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <vector>
 #include <functional>
 #include "../decimal/decimal.h"
@@ -11,12 +12,12 @@ class GameState;
 
 class Achievement {
     private:
-        int id;
+        int16_t id;
         function<Decimal(Decimal)> effect;
         Decimal defaultEffect;
         function<bool(GameState&)> unlockCondition;
         bool unlocked;
-        long unlockTime;
+        int64_t unlockTime;
 
     public:
         Achievement(

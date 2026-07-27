@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <vector>
 #include <fstream>
 #include "../dimensions/dimensions.h"
@@ -13,8 +14,8 @@ class GameState : public ISerializable {
         AntimatterDimensions _AD;
         Tickspeed _tickspeed;
         Achievements _achievements;
-        int _dimensionBoosts;
-        long _realTimePlayed;
+        int32_t _dimensionBoosts;
+        int64_t _realTimePlayed;
         bool _canUseKonami;
         Decimal _sacrificed;
 
@@ -51,8 +52,8 @@ class GameState : public ISerializable {
         Tickspeed& tickspeed();
         Achievements& achievements();
         bool canUseKonami();
-        long realTimePlayed();
-        int dimensionBoosts();
+        int64_t realTimePlayed();
+        int32_t dimensionBoosts();
 
         void tick(double diff);
 

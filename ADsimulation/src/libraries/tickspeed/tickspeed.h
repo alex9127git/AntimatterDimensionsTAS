@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include "../interfaces/interfaces.h"
 #include "../decimal/decimal.h"
 
@@ -10,7 +11,7 @@ class Tickspeed : public ISerializable {
     private:
         Decimal cost;
         Decimal scaling;
-        int purchases;
+        int32_t purchases;
         bool unlocked;
 
         // volatile, shouldn't be serialized
@@ -26,7 +27,7 @@ class Tickspeed : public ISerializable {
         void update(GameState& st);
         Decimal perSecond();
         Decimal getCost();
-        int getPurchases();
+        int32_t getPurchases();
         bool isUnlocked();
         void unlock();
         void lock();

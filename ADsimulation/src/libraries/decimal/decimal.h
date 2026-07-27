@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include "../interfaces/interfaces.h"
 #include <iostream>
 using namespace std;
@@ -7,7 +8,7 @@ using namespace std;
 class Decimal : public ISerializable {
     private:
         double mantissa;
-        long long exponent;
+        int64_t exponent;
         
         // volatile, shouldn't be serialized
         
@@ -16,6 +17,7 @@ class Decimal : public ISerializable {
 
     public:
         Decimal(double _mant, long long _exp);
+        Decimal(double _mant, int64_t _exp);
         Decimal(double _mant, double _exp);
         Decimal(double _val);
         Decimal(json& j);

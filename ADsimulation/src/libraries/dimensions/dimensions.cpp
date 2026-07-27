@@ -62,7 +62,7 @@ Decimal Dimension::getMult() {
     return this->multiplier;
 }
 
-int Dimension::getPurchases() {
+int32_t Dimension::getPurchases() {
     return this->purchases;
 }
 

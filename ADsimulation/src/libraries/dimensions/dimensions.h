@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <vector>
 #include "../decimal/decimal.h"
 #include "../interfaces/interfaces.h"
@@ -17,7 +18,7 @@ class Dimension : public ISerializable {
         Decimal initialCost;
         Decimal scaling;
         Decimal amount;
-        int purchases;
+        int32_t purchases;
         bool unlocked;
 
         // volatile, shouldn't be serialized
@@ -41,7 +42,7 @@ class Dimension : public ISerializable {
         Decimal getScaling();
         Decimal getAmount();
         Decimal getMult();
-        int getPurchases();
+        int32_t getPurchases();
         bool isUnlocked();
 
         void unlock();
