@@ -26,8 +26,9 @@ class Timer {
 };
 
 GameState runDimboost(GameState st, bool useSacrifice);
-GameState runDimboost(GameState st, int precision, bool useSacrifice);
-GameState runDimboost(GameState st, int precision, bool useSacrifice, bool verbose);
+GameState runDimboost(GameState st, bool useSacrifice, int precision);
+GameState runDimboost(GameState st, bool useSacrifice, int precision, bool verbose);
+GameState runUntil(GameState st, function<bool(GameState&)> stopCondition, bool useSacrifice, int precision, bool verbose);
 vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondition, bool verbose);
 vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCondition, int precision, vector<vector<double>> purchaseStrategies, bool verbose);
 

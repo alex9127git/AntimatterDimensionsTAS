@@ -1,4 +1,5 @@
 #include "simulation.h"
+#include "../ioutils/ioutils.h"
 #include "../constants/constants.h"
 #include "../permutations/permutations.h"
 #include <vector>
@@ -14,27 +15,24 @@ void renderProgressBar(double percentage) {
     cout << "\r" << flush;
 }
 
-string renderTime(long ms) {
-    int hours = ms / 3600000;
-    int minutes = (ms % 3600000) / 60000;
-    int seconds = (ms % 60000) / 1000;
-    int milliseconds = ms % 1000;
-    return format("{:02d}:{:02d}:{:02d}.{:03d}", hours, minutes, seconds, milliseconds);
-}
-
 GameState runDimboost(GameState st, bool useSacrifice) {
-    return runDimboost(st, 1000, useSacrifice, true);
+    return runUntil(st, [](GameState& st) {return st.canBuyNextDimboost();}, useSacrifice, 1000, true);
 }
 
-GameState runDimboost(GameState st, int precision, bool useSacrifice) {
-    return runDimboost(st, precision, useSacrifice, true);
+GameState runDimboost(GameState st, bool useSacrifice, int precision) {
+    return runUntil(st, [](GameState& st) {return st.canBuyNextDimboost();}, useSacrifice, precision, true);
 }
 
-GameState runDimboost(GameState st, int precision, bool useSacrifice, bool verbose) {
+GameState runDimboost(GameState st, bool useSacrifice, int precision, bool verbose) {
+    return runUntil(st, [](GameState& st) {return st.canBuyNextDimboost();}, useSacrifice, precision, verbose);
+}
+
+GameState runUntil(GameState st, function<bool(GameState&)> stopCondition, bool useSacrifice, int precision, bool verbose) {
     vector<GameState> gameStates;
     GameState bestState;
     long startTime = st.realTimePlayed();
-    gameStates = purchaseRun(st, [](GameState& st) {return st.canBuyNextDimboost();}, verbose);
+    cout << "Running iteration 1" << endl;
+    gameStates = purchaseRun(st, stopCondition, verbose);
     bestState = gameStates[0].copy();
     long iterationTime = bestState.realTimePlayed();
     if (verbose) {
@@ -43,7 +41,8 @@ GameState runDimboost(GameState st, int precision, bool useSacrifice, bool verbo
         cout << "Cumulative time: " << renderTime(iterationTime) << endl;
     }
     if (st.dimensionBoosts() < 5 || !useSacrifice) {
-        bestState.requestDimboost();
+        bestState.addInstructions({100});
+        bestState.runNextInstructions();
         return bestState;
     }
     bool isSacrificeIteration = true;
@@ -53,7 +52,8 @@ GameState runDimboost(GameState st, int precision, bool useSacrifice, bool verbo
     for (GameState& gst : gameStates) {
         winnerPurchaseStrategies.push_back(gst.getCompletedPurchases());
     }
-    gameStates = sacrificeRun(st, [](GameState& st) {return st.canBuyNextDimboost();}, precision, winnerPurchaseStrategies, verbose);
+    cout << "Running iteration 2" << endl;
+    gameStates = sacrificeRun(st, stopCondition, precision, winnerPurchaseStrategies, verbose);
     bestState = gameStates[0].copy();
     iterationTime = bestState.realTimePlayed();
     if (verbose) {
@@ -61,7 +61,8 @@ GameState runDimboost(GameState st, int precision, bool useSacrifice, bool verbo
         cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
         cout << "Cumulative time: " << renderTime(iterationTime) << endl;
     }
-    bestState.requestDimboost();
+    bestState.addInstructions({100});
+    bestState.runNextInstructions();
     return bestState;
     // while (bestTime != currentIterationTime) {
     //     if (isSacrificeIteration) {

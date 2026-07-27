@@ -1,4 +1,5 @@
 #include "gamestate.h"
+#include "../ioutils/ioutils.h"
 #include "../constants/constants.h"
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
@@ -101,7 +102,7 @@ Decimal GameState::getSacrificeExponent() {
 
 ostream& operator<<(ostream& os, GameState& st) {
     os << "You have " << st.antimatter() << " antimatter." << endl;
-    os << "You have been playing for " << st._realTimePlayed << " milliseconds." << endl;
+    os << "You have been playing for " << renderTime(st._realTimePlayed) << endl;
     os << "Tickspeed bonus: x" << st.tickspeed().perSecond() << " (x" << st.tickspeed().getDisplayMult(st).toString(3) << " per upgrade)" << endl;
     for (const AntimatterDimension& d : st.AD().getDims()) {
         os << d << endl;
@@ -248,6 +249,8 @@ bool GameState::runInstruction(double instruction) {
         return this->buyOneDimension(instruction);
     } else if (instruction == 9) {
         return this->buyTickspeed();
+    } else if (instruction == 100) {
+        return this->requestDimboost();
     } else if (instruction == 130) {
         return this->handleKonamiCode();
     } else {
@@ -430,6 +433,9 @@ void GameState::writeInstructions(ofstream& f) {
             }
             if (instruction == 9) {
                 lines.push_back("[\"buyTickSpeed\",[0]]");
+            }
+            if (instruction == 100) {
+                lines.push_back("[\"buyDimensionBoost\",[0]]");
             }
         }
     }

@@ -27,6 +27,8 @@ target_sources(main
 )
 target_link_libraries(main
     PRIVATE
+        interfaces
+        ioutils
         decimal
         constants
         dimensions
@@ -35,7 +37,6 @@ target_link_libraries(main
         gamestate
         permutations
         simulation
-        interfaces
 )
 
 add_executable(testing)
@@ -69,6 +70,18 @@ target_sources(interfaces
 target_link_libraries(interfaces
     PUBLIC
         nlohmann_json::nlohmann_json
+)
+
+add_library(ioutils)
+target_sources(ioutils
+    PRIVATE
+        libraries/ioutils/ioutils.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/ioutils
+        FILES
+            libraries/ioutils/ioutils.h
 )
 
 add_library(decimal)
@@ -172,6 +185,7 @@ target_sources(gamestate
 )
 target_link_libraries(gamestate
     PUBLIC
+        ioutils
         decimal
         dimensions
         tickspeed
@@ -205,5 +219,6 @@ target_sources(simulation
 target_link_libraries(simulation
     PRIVATE
         gamestate
+        ioutils
         permutations
 )
