@@ -81,6 +81,7 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
     // at the start there should be only the starting game state passed to the function
     vector<GameState> gameStates;
     vector<GameState> newGameStates;
+    newGameStates.clear();
     GameState bestState;
     Decimal bestAntimatter = DC::D1;
     Timer timer;
@@ -109,54 +110,22 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
     while (true) {
         ticks++;
         // Branching
-        bool isBranching = true;
         branchTimer.silentReset();
-        while (isBranching) {
-            isBranching = false;
-            for (GameState& gst : gameStates) {
-                // Savestate will branch if isn't currently busy with an instruction and can afford at least one purchase
-                while (gst.canBranch() && !gst.hasNextPurchaseInstruction()) {
-                    isBranching = true;
-                    Decimal priceRange = gst.getPriceRange();
-                    // Gets all possible purchases at current price range and populates the game states accordingly
-                    vector<double> variants;
-                    if (gst.tickspeed().canPurchase(priceRange)) {
-                        variants.push_back(9);
-                    }
-                    for (int i = 1; i <= 8; i++) {
-                        int purchases = gst.AD()[i].getPurchases();
-                        if (purchases < 10 || i == min(gst.dimensionBoosts() + 4, 8)) {
-                            if (gst.AD()[i].canPurchase(priceRange)) {
-                                variants.push_back(i);
-                            }
-                        } else {
-                            if (gst.AD()[i].canPurchase(priceRange / DC::D10)) {
-                                variants.push_back(i * 10);
-                            }
-                        }
-                    }
-                    if (variants.empty()) {
-                        continue;
-                    } else if (variants.size() == 1) {
-                        gst.addInstructions(variants);
-                    } else {
-                        for (int i = 1; i < variants.size(); i++) {
-                            GameState newGst = gst.copy();
-                            newGst.addInstructions({variants[i]});
-                            newGameStates.push_back(move(newGst));
-                        }
-                        gst.addInstructions({variants[0]});
-                    }
-                    gst.runNextInstructions();
-                }
+        vector<GameState>* branches = &gameStates;
+        vector<GameState> prevGameStates;
+        while (!(branches->empty())) {
+            for (GameState& gst : *branches) {
+                computePurchaseBranches(gst, newGameStates);
             }
             if (!newGameStates.empty()) {
                 adds += 1;
             }
+            prevGameStates = newGameStates;
             for (GameState& gst : newGameStates) {
                 gameStates.push_back(move(gst));
                 states++;
             }
+            branches = &prevGameStates;
             newGameStates.clear();
         }
         branchTime += branchTimer.silentReset();
@@ -180,7 +149,7 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
                 isFinished = true;
                 break;
             }
-            if (ticks % 25 == 0 && verbose) {
+            if (ticks % 50 == 0 && verbose) {
                 if (gst.antimatter() > bestAntimatter) {
                     bestAntimatter = Decimal::max(bestAntimatter, gst.antimatter());
                     bestState = gst;
@@ -188,7 +157,7 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
             }
         }
         if (isFinished) break;
-        if (ticks % 25 == 0 && verbose) {
+        if (ticks % 50 == 0 && verbose) {
             Decimal currLog = Decimal::max(bestAntimatter, DC::D1).log10();
             Decimal goalLog = bestState.getAntimatterGoalForDimboost().log10();
             renderProgressBar(Decimal::toNumber(currLog / goalLog));
@@ -292,7 +261,7 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
                 }
                 isFinished = true;
             }
-            if (ticks % 25 == 0 && verbose) {
+            if (ticks % 50 == 0 && verbose) {
                 if (gst.antimatter() > bestAntimatter) {
                     bestAntimatter = Decimal::max(bestAntimatter, gst.antimatter());
                     bestState = gst;
@@ -300,7 +269,7 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
             }
         }
         if (isFinished) break;
-        if (ticks % 25 == 0 && verbose) {
+        if (ticks % 50 == 0 && verbose) {
             Decimal currLog = Decimal::max(bestAntimatter, DC::D1).log10();
             Decimal goalLog = bestState.getAntimatterGoalForDimboost().log10();
             renderProgressBar(Decimal::toNumber(currLog / goalLog));
@@ -335,6 +304,45 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
         }
     }
     return finishedStates;
+}
+
+void computePurchaseBranches(GameState& gameState, vector<GameState>& branches) {
+    while (gameState.canBranch() && !gameState.hasNextPurchaseInstruction()) {
+        Decimal priceRange = gameState.getPriceRange();
+        // Gets all possible purchases at current price range and populates the game states accordingly
+        vector<double> variants;
+        bool onlyHighestDim = true;
+        if (gameState.tickspeed().canPurchase(priceRange)) {
+            variants.push_back(9);
+            onlyHighestDim = false;
+        }
+        for (int i = 1; i <= 8; i++) {
+            int purchases = gameState.AD()[i].getPurchases();
+            if (purchases < 10 || i == min(gameState.dimensionBoosts() + 4, 8)) {
+                if (gameState.AD()[i].canPurchase(priceRange)) {
+                    variants.push_back(i);
+                }
+            } else {
+                if (gameState.AD()[i].canPurchase(priceRange / DC::D10)) {
+                    variants.push_back(i * 10);
+                    onlyHighestDim = false;
+                }
+            }
+        }
+        if (variants.empty()) {
+            continue;
+        } else if (variants.size() == 1) {
+            gameState.addInstructions(variants);
+        } else {
+            for (int i = 1; i < variants.size(); i++) {
+                GameState newGst = gameState.copy();
+                newGst.addInstructions({variants[i]});
+                branches.push_back(move(newGst));
+            }
+            gameState.addInstructions({variants[0]});
+        }
+        gameState.runNextInstructions();
+    }
 }
 
 bool compare(vector<Decimal>& st1, vector<Decimal>& st2) {

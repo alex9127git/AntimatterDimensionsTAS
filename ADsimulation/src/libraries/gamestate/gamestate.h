@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <vector>
 #include <fstream>
+#include "../constants/constants.h"
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
 #include "../achievements/achievements.h"
@@ -10,29 +11,30 @@
 
 class GameState : public ISerializable {
     private:
-        Decimal _antimatter;
-        AntimatterDimensions _AD;
-        Tickspeed _tickspeed;
-        Achievements _achievements;
-        int32_t _dimensionBoosts;
-        int64_t _realTimePlayed;
-        bool _canUseKonami;
-        Decimal _sacrificed;
+        Decimal _antimatter = DC::D10;
+        AntimatterDimensions _AD = AntimatterDimensions();
+        Tickspeed _tickspeed = Tickspeed();
+        Achievements _achievements = Achievements();
+        int32_t _dimensionBoosts = 0;
+        int64_t _realTimePlayed = 0;
+        bool _canUseKonami = true;
+        Decimal _sacrificed = DC::D1;
 
         // volatile, shouldn't be serialized
         
+        Decimal achievementBonus = DC::D1;
+        Decimal sacrificeBonus = DC::D1;
+
         vector<double> purchaseInstructions;
         vector<double> sacrificeInstructions;
         vector<double> completedInstructions;
         vector<double> completedPurchases;
         vector<double> completedSacrifices;
         vector<Decimal> prices;
-        Decimal nextPurchaseBranch;
-        Decimal nextSacrificeBranch;
-        Decimal nextSacrificeInstruction;
-        Decimal currPriceRange;
-        Decimal achievementBonus;
-        Decimal sacrificeBonus;
+        Decimal nextPurchaseBranch = DC::D0;
+        Decimal nextSacrificeBranch = DC::D1;
+        Decimal nextSacrificeInstruction = DC::D1;
+        Decimal currPriceRange = DC::D1;
 
         void prepare();
         void calcNextPurchase();

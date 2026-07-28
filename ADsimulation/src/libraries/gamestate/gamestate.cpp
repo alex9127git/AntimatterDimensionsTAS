@@ -10,22 +10,7 @@
 using json = nlohmann::json;
 
 
-GameState::GameState() : 
-    _antimatter(DC::D10),
-    _AD(AntimatterDimensions()),
-    _tickspeed(Tickspeed()),
-    _achievements(Achievements()),
-    _sacrificed(DC::D1),
-    _dimensionBoosts(0),
-    _realTimePlayed(0),
-    _canUseKonami(true),
-    nextPurchaseBranch(DC::D0),
-    nextSacrificeBranch(DC::D1),
-    nextSacrificeInstruction(DC::D1),
-    currPriceRange(DC::D0),
-    achievementBonus(DC::D1),
-    sacrificeBonus(DC::D1)
-{
+GameState::GameState() {
     this->prepare();
 };
 
@@ -60,7 +45,7 @@ void GameState::calcNextPurchase() {
                 ? prices[i] : prices[i] * DC::D10;
         if (price < minStackPrice) {
             minStackPrice = price;
-            currPriceRange = price;
+            this->currPriceRange = price;
             this->nextPurchaseBranch = prices[i];
         } else if (price == minStackPrice) {
             if (prices[i] < this->nextPurchaseBranch) {
