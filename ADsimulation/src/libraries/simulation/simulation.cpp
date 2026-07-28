@@ -10,8 +10,8 @@ using namespace std;
 
 
 void renderProgressBar(double percentage) {
-    cout << format("{:>7.3f}%", percentage * 100);
-    int completedWidth = floor(percentage * 50);
+    cout << format("{:>7.3f}%", min(percentage * 100, 100.0));
+    int completedWidth = min(floor(percentage * 50), 50.0);
     cout << " [" << string(completedWidth, '#') << string(50 - completedWidth, ' ') << "]";
     cout << "\r" << flush;
 }
@@ -111,21 +111,19 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
         ticks++;
         // Branching
         branchTimer.silentReset();
-        vector<GameState>* branches = &gameStates;
-        vector<GameState> prevGameStates;
-        while (!(branches->empty())) {
-            for (GameState& gst : *branches) {
-                computePurchaseBranches(gst, newGameStates);
+        bool isBranching = true;
+        while (isBranching) {
+            isBranching = false;
+            for (GameState& gst : gameStates) {
+                isBranching = isBranching || computePurchaseBranches(gst, newGameStates);
             }
             if (!newGameStates.empty()) {
                 adds += 1;
             }
-            prevGameStates = newGameStates;
             for (GameState& gst : newGameStates) {
                 gameStates.push_back(move(gst));
                 states++;
             }
-            branches = &prevGameStates;
             newGameStates.clear();
         }
         branchTime += branchTimer.silentReset();
@@ -306,8 +304,10 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
     return finishedStates;
 }
 
-void computePurchaseBranches(GameState& gameState, vector<GameState>& branches) {
+bool computePurchaseBranches(GameState& gameState, vector<GameState>& branches) {
+    bool branched = false;
     while (gameState.canBranch() && !gameState.hasNextPurchaseInstruction()) {
+        branched = true;
         Decimal priceRange = gameState.getPriceRange();
         // Gets all possible purchases at current price range and populates the game states accordingly
         vector<double> variants;
@@ -318,13 +318,13 @@ void computePurchaseBranches(GameState& gameState, vector<GameState>& branches) 
         }
         for (int i = 1; i <= 8; i++) {
             int purchases = gameState.AD()[i].getPurchases();
-            if (purchases < 10 || i == min(gameState.dimensionBoosts() + 4, 8)) {
+            if ((purchases < 10 || i == min(gameState.dimensionBoosts() + 4, 8)) && gameState.getHighDimStrategy() != 1) {
                 if (gameState.AD()[i].canPurchase(priceRange)) {
                     variants.push_back(i);
                 }
             } else {
                 if (gameState.AD()[i].canPurchase(priceRange / DC::D10)) {
-                    variants.push_back(i * 10);
+                    variants.push_back(i * 10 + (10 - purchases) % 10);
                     onlyHighestDim = false;
                 }
             }
@@ -332,6 +332,14 @@ void computePurchaseBranches(GameState& gameState, vector<GameState>& branches) 
         if (variants.empty()) {
             continue;
         } else if (variants.size() == 1) {
+            // if (variants[0] == 8 && onlyHighestDim && gameState.getHighDimStrategy() == 0) {
+            //     GameState newGst = gameState.copy();
+            //     newGst.setDelayHighDim();
+            //     if (newGst.getHighDimStrategy() == 1) {
+            //         branches.push_back(move(newGst));
+            //         gameState.setForceHighDim();
+            //     }
+            // }
             gameState.addInstructions(variants);
         } else {
             for (int i = 1; i < variants.size(); i++) {
@@ -343,6 +351,7 @@ void computePurchaseBranches(GameState& gameState, vector<GameState>& branches) 
         }
         gameState.runNextInstructions();
     }
+    return branched;
 }
 
 bool compare(vector<Decimal>& st1, vector<Decimal>& st2) {

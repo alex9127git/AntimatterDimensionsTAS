@@ -37,11 +37,18 @@ void GameState::prepare() {
 }
 
 void GameState::calcNextPurchase() {
+    int highest = 1;
+    while (_AD[highest + 1].getPurchases() > 0) {
+        highest++;
+    }
+    if (prices[highest] / currPriceRange > DC::D10) {
+        highDimStrategy = 0;
+    }
     Decimal minStackPrice = prices[0];
     this->currPriceRange = prices[0];
     this->nextPurchaseBranch = prices[0];
     for (int i = 1; i <= min(_dimensionBoosts + 4, 8); i++) {
-        Decimal price = _AD[i].getPurchases() < 10 || i == min(_dimensionBoosts + 4, 8) 
+        Decimal price = (_AD[i].getPurchases() < 10 || i == min(_dimensionBoosts + 4, 8)) && highDimStrategy != 1
                 ? prices[i] : prices[i] * DC::D10;
         if (price < minStackPrice) {
             minStackPrice = price;
@@ -294,6 +301,20 @@ int GameState::instructionsExecuted() {
 
 bool GameState::canBranch() {
     return this->_antimatter > this->nextPurchaseBranch;
+}
+
+void GameState::setDelayHighDim() {
+    this->highDimStrategy = 1;
+    this->calcNextPurchase();
+}
+
+void GameState::setForceHighDim() {
+    this->highDimStrategy = 2;
+    this->calcNextPurchase();
+}
+
+int GameState::getHighDimStrategy() {
+    return this->highDimStrategy;
 }
 
 void GameState::initializeSacBranching() {

@@ -32,7 +32,7 @@ GameState runUntil(GameState st, function<bool(GameState&)> stopCondition, bool 
 vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondition, vector<vector<double>> sacrificeStrategies, bool verbose);
 vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCondition, int precision, vector<vector<double>> purchaseStrategies, bool verbose);
 
-void computePurchaseBranches(GameState& gameState, vector<GameState>& branches);
+bool computePurchaseBranches(GameState& gameState, vector<GameState>& branches);
 
 bool compare(vector<Decimal>& st1, vector<Decimal>& st2);
 void compareValues(Decimal v1, Decimal v2, int& score, int& totalFeatures);

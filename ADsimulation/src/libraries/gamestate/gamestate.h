@@ -35,6 +35,7 @@ class GameState : public ISerializable {
         Decimal nextSacrificeBranch = DC::D1;
         Decimal nextSacrificeInstruction = DC::D1;
         Decimal currPriceRange = DC::D1;
+        int highDimStrategy = 0;
 
         void prepare();
         void calcNextPurchase();
@@ -86,6 +87,9 @@ class GameState : public ISerializable {
         vector<double> getCompletedSacrifices();
         int instructionsExecuted();
         bool canBranch();
+        void setDelayHighDim();
+        void setForceHighDim();
+        int getHighDimStrategy();
         void initializeSacBranching();
         void setNextSacBranching(double sacValue);
         Decimal getReqForSac(Decimal sacValue);
