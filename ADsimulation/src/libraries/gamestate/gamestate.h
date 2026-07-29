@@ -12,6 +12,7 @@
 class GameState : public ISerializable {
     private:
         Decimal _antimatter = DC::D10;
+        Decimal _totalAntimatter = DC::D10;
         AntimatterDimensions _AD = AntimatterDimensions();
         Tickspeed _tickspeed = Tickspeed();
         Achievements _achievements = Achievements();
@@ -51,6 +52,7 @@ class GameState : public ISerializable {
         // getters
 
         Decimal antimatter();
+        Decimal totalAntimatter();
         AntimatterDimensions& AD();
         Tickspeed& tickspeed();
         Achievements& achievements();

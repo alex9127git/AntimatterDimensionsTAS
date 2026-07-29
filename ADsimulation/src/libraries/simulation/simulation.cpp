@@ -150,8 +150,8 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
                 break;
             }
             if (ticks % 50 == 0 && verbose) {
-                if (gst.antimatter() > bestAntimatter) {
-                    bestAntimatter = Decimal::max(bestAntimatter, gst.antimatter());
+                if (gst.totalAntimatter() > bestAntimatter) {
+                    bestAntimatter = Decimal::max(bestAntimatter, gst.totalAntimatter());
                     bestState = gst;
                 }
             }

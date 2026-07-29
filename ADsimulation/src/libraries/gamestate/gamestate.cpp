@@ -38,14 +38,21 @@ void GameState::prepare() {
 
 void GameState::calcNextPurchase() {
     Decimal minStackPrice = prices[0];
-    this->currPriceRange = prices[0];
+    Decimal newPriceRange = prices[0];
     this->nextPurchaseBranch = prices[0];
     for (int i = 1; i <= min(_dimensionBoosts + 4, 8); i++) {
-        Decimal price = _AD[i].getPurchases() < 10 || i == min(_dimensionBoosts + 4, 8) 
-                ? prices[i] : prices[i] * DC::D10;
+        Decimal price = DC::D0;
+        if (_AD[i].getPurchases() < 10 || i == min(_dimensionBoosts + 4, 8)) {
+            price = prices[i];
+            if (_AD[i].getPurchases() % 10 == 0 && newPriceRange > currPriceRange && currPriceRange == price) {
+                price = prices[i] * DC::D10;
+            }
+        } else {
+            price = prices[i] * DC::D10;
+        }
         if (price < minStackPrice) {
             minStackPrice = price;
-            this->currPriceRange = price;
+            newPriceRange = price;
             this->nextPurchaseBranch = prices[i];
         } else if (price == minStackPrice) {
             if (prices[i] < this->nextPurchaseBranch) {
@@ -53,6 +60,7 @@ void GameState::calcNextPurchase() {
             }
         }
     }
+    this->currPriceRange = newPriceRange;
 }
 
 void GameState::recalcAchievementBonus() {
@@ -100,6 +108,10 @@ Decimal GameState::antimatter() {
     return this->_antimatter;
 }
 
+Decimal GameState::totalAntimatter() {
+    return this->_totalAntimatter;
+}
+
 AntimatterDimensions& GameState::AD() {
     return this->_AD;
 }
@@ -129,6 +141,7 @@ void GameState::tick(double diff) {
     for (int i = 8; i >= 1; i--) {
         if (i == 1) {
             _AD[i].produceCurrency(_antimatter, diff);
+            _AD[i].produceCurrency(_totalAntimatter, diff);
         } else if (_AD[i].isUnlocked()) {
             _AD[i].produceDimensions(_AD[i - 1], diff / 10);
         };
@@ -321,8 +334,10 @@ Decimal GameState::getPriceRange() {
 
 Decimal GameState::getAntimatterGoalForDimboost() {
     Dimension& dimNeeded = this->AD()[min(8, 4 + _dimensionBoosts)];
-    int scalingNeeded = ceil((double) (20 + 15 * max(0, _dimensionBoosts - 4)) / 10) - 1;
-    return dimNeeded.getInitialCost() * Decimal::pow(dimNeeded.getScaling(), scalingNeeded);
+    int dimAmountRequied = 20 + 15 * max(0, _dimensionBoosts - 4);
+    int scalingNeeded = ceil(dimAmountRequied / 10.0) - 1;
+    int highPurchases = dimAmountRequied % 10 + (dimAmountRequied % 10 == 0 ? 10 : 0);
+    return dimNeeded.getInitialCost() * Decimal::pow(dimNeeded.getScaling(), scalingNeeded) * Decimal(highPurchases);
 }
 
 bool GameState::canBuyNextDimboost() {
@@ -389,6 +404,8 @@ json GameState::to_json() {
 void GameState::from_json(json& j) {
     if (j.contains("antimatter") && !j["antimatter"].is_null()) 
         this->_antimatter = Decimal(j["antimatter"]);
+    if (j.contains("totalAntimatter") && !j["totalAntimatter"].is_null()) 
+        this->_antimatter = Decimal(j["totalAntimatter"]);
     if (j.contains("antimatterDimensionState") && !j["antimatterDimensionState"].is_null()) 
         this->_AD = AntimatterDimensions(j["antimatterDimensionState"]);
     if (j.contains("tickspeedState") && !j["tickspeedState"].is_null()) 
