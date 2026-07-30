@@ -319,7 +319,9 @@ void computePurchaseBranches(GameState& gameState, vector<GameState>& branches) 
         for (int i = 1; i <= 8; i++) {
             int purchases = gameState.AD()[i].getPurchases();
             if (purchases < 10 || i == min(gameState.dimensionBoosts() + 4, 8)) {
-                if (gameState.AD()[i].canPurchase(priceRange)) {
+                if (gameState.AD()[i].canPurchase(priceRange / DC::D10)) {
+                    variants.push_back(i * 10);
+                } else if (gameState.AD()[i].canPurchase(priceRange)) {
                     variants.push_back(i);
                 }
             } else {
