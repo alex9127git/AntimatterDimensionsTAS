@@ -17,19 +17,19 @@ int main() {
 
     cout << "Started equivalence tests" << endl;
     a = Decimal(5);
-    b = Decimal(5, 0LL);
+    b = Decimal(5, (int64_t) 0LL);
     assert(a == b);
     a = Decimal(37);
-    b = Decimal(3.7, 1LL);
+    b = Decimal(3.7, (int64_t) 1LL);
     assert(a == b);
     a = Decimal(69420);
-    b = Decimal(6.942, 4LL);
-    c = Decimal(694.2, 2LL);
+    b = Decimal(6.942, (int64_t) 4LL);
+    c = Decimal(694.2, (int64_t) 2LL);
     assert(a == b);
     assert(b == c);
     assert(a == c);
-    a = Decimal(0, 0LL);
-    b = Decimal(0, 1LL);
+    a = Decimal(0, (int64_t) 0LL);
+    b = Decimal(0, (int64_t) 1LL);
     assert(a == b);
     cout << "All equivalence tests passed" << endl << endl;
 
@@ -84,14 +84,14 @@ int main() {
     a = Decimal(69420);
     b = Decimal(1337);
     assert(a * b == Decimal(69420 * 1337));
-    a = Decimal(1, 100LL);
-    b = Decimal(1, 150LL);
-    assert(a + b == Decimal(1, 150LL));
-    assert(a * b == Decimal(1, 250LL));
+    a = Decimal(1, (int64_t) 100LL);
+    b = Decimal(1, (int64_t) 150LL);
+    assert(a + b == Decimal(1, (int64_t) 150LL));
+    assert(a * b == Decimal(1, (int64_t) 250LL));
     a = Decimal(69);
     b = DC::D1E5;
     assert(Decimal::invert(a) == Decimal(1.0/69));
-    assert(Decimal::invert(b) == Decimal(1, -5LL));
+    assert(Decimal::invert(b) == Decimal(1, (int64_t) -5LL));
     a = Decimal(1001);
     b = Decimal(7);
     assert((a / b) == Decimal(143));
@@ -103,10 +103,10 @@ int main() {
     assert(Decimal::pow(a, b) > Decimal(3.1622776));
     assert(Decimal::pow(a, b) < Decimal(3.1622777));
     a = Decimal(2);
-    assert(Decimal::pow(a, 1024) > Decimal(1, 308LL));
-    a = Decimal(1, 200LL);
-    b = Decimal(1, 1000LL);
-    assert(a + b == Decimal(1, 1000LL));
+    assert(Decimal::pow(a, 1024) > Decimal(1, (int64_t) 308LL));
+    a = Decimal(1, (int64_t) 200LL);
+    b = Decimal(1, (int64_t) 1000LL);
+    assert(a + b == Decimal(1, (int64_t) 1000LL));
     cout << "All math tests passed" << endl << endl;
 
     cout << "Started permutation tests" << endl;

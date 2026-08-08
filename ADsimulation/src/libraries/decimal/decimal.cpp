@@ -7,13 +7,11 @@
 using namespace std;
 
 
-Decimal::Decimal(double _mant, long long _exp) {
+Decimal::Decimal(double _mant, int64_t _exp) {
     this->mantissa = _mant;
     this->exponent = _exp;
     this->normalize();
 }
-
-Decimal::Decimal(double _mant, int64_t _exp) : Decimal::Decimal(_mant, (long long) _exp) {};
 
 Decimal::Decimal(double _mant, double _exp) {
     int expFloor = std::floor(_exp);
