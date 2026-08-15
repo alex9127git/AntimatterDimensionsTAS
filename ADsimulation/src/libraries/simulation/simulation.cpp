@@ -412,6 +412,7 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
         i++;
     }
     double recreateTimer = timer.silentReset();
+    vector<vector<Decimal>>().swap(values);
     //cout << createArrayTimer << " " << compareTimer << " " << recreateTimer << endl;
     return result;
 }
