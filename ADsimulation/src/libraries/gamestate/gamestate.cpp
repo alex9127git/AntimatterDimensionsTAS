@@ -112,6 +112,10 @@ Decimal GameState::totalAntimatter() {
     return this->_totalAntimatter;
 }
 
+Decimal GameState::antimatterThisReset() {
+    return this->_antimatterThisReset;
+}
+
 AntimatterDimensions& GameState::AD() {
     return this->_AD;
 }
@@ -142,6 +146,7 @@ void GameState::tick(double diff) {
         if (i == 1) {
             _AD[i].produceCurrency(_antimatter, diff);
             _AD[i].produceCurrency(_totalAntimatter, diff);
+            _AD[i].produceCurrency(_antimatterThisReset, diff);
         } else if (_AD[i].isUnlocked()) {
             _AD[i].produceDimensions(_AD[i - 1], diff / 10);
         };
@@ -350,6 +355,7 @@ bool GameState::requestDimboost() {
         _AD = AntimatterDimensions();
         _tickspeed = Tickspeed();
         _antimatter = DC::D10;
+        _antimatterThisReset = DC::D10;
         _tickspeed.update(*this);
         _sacrificed = DC::D1;
         _AD.update(*this);
@@ -391,6 +397,7 @@ GameState GameState::copy() {
 json GameState::to_json() {
     json j;
     j["antimatter"] = this->_antimatter.to_json();
+    j["totalAntimatter"] = this->_totalAntimatter.to_json();
     j["antimatterDimensionState"] = this->_AD.to_json();
     j["tickspeedState"] = this->_tickspeed.to_json();
     j["achievementState"] = this->_achievements.to_json();
@@ -405,7 +412,7 @@ void GameState::from_json(json& j) {
     if (j.contains("antimatter") && !j["antimatter"].is_null()) 
         this->_antimatter = Decimal(j["antimatter"]);
     if (j.contains("totalAntimatter") && !j["totalAntimatter"].is_null()) 
-        this->_antimatter = Decimal(j["totalAntimatter"]);
+        this->_totalAntimatter = Decimal(j["totalAntimatter"]);
     if (j.contains("antimatterDimensionState") && !j["antimatterDimensionState"].is_null()) 
         this->_AD = AntimatterDimensions(j["antimatterDimensionState"]);
     if (j.contains("tickspeedState") && !j["tickspeedState"].is_null()) 

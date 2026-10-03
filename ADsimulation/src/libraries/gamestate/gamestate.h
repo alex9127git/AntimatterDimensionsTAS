@@ -26,6 +26,8 @@ class GameState : public ISerializable {
         Decimal achievementBonus = DC::D1;
         Decimal sacrificeBonus = DC::D1;
 
+        Decimal _antimatterThisReset = DC::D10;
+
         vector<double> purchaseInstructions;
         vector<double> sacrificeInstructions;
         vector<double> completedInstructions;
@@ -53,6 +55,7 @@ class GameState : public ISerializable {
 
         Decimal antimatter();
         Decimal totalAntimatter();
+        Decimal antimatterThisReset();
         AntimatterDimensions& AD();
         Tickspeed& tickspeed();
         Achievements& achievements();

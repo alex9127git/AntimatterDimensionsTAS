@@ -59,6 +59,7 @@ GameState runUntil(GameState st, function<bool(GameState&)> stopCondition, bool 
             cout << "Iteration " << iterationCounter << endl;
             cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
             cout << "Cumulative time: " << renderTime(iterationTime) << endl;
+            cout << "Winning strategies left: " << winnerStrategies.size() << endl;
         }
     } while (st.dimensionBoosts() >= 5 && useSacrifice && iterationTime < currentIterationTime);
     bestState.addInstructions({100});
@@ -150,8 +151,8 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
                 break;
             }
             if (ticks % 50 == 0 && verbose) {
-                if (gst.totalAntimatter() > bestAntimatter) {
-                    bestAntimatter = Decimal::max(bestAntimatter, gst.totalAntimatter());
+                if (gst.antimatterThisReset() > bestAntimatter) {
+                    bestAntimatter = Decimal::max(bestAntimatter, gst.antimatterThisReset());
                     bestState = gst;
                 }
             }
