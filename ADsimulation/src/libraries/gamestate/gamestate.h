@@ -28,10 +28,9 @@ class GameState : public ISerializable {
 
         Decimal _antimatterThisReset = DC::D10;
 
-        vector<double> purchaseInstructions;
+        vector<uint16_t> purchaseInstructions;
         vector<double> sacrificeInstructions;
-        vector<double> completedInstructions;
-        vector<double> completedPurchases;
+        vector<uint16_t> completedInstructions;
         vector<double> completedSacrifices;
         vector<Decimal> prices;
         Decimal nextPurchaseBranch = DC::D0;
@@ -86,7 +85,6 @@ class GameState : public ISerializable {
         void runNextInstructions();
         bool hasNextPurchaseInstruction();
         bool hasNextSacrificeInstruction();
-        vector<double> getCompletedInstructions();
         vector<double> getCompletedPurchases();
         vector<double> getCompletedSacrifices();
         int instructionsExecuted();

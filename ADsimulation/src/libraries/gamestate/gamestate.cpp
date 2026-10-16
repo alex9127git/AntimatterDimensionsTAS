@@ -266,23 +266,23 @@ bool GameState::runInstruction(double instruction) {
 }
 
 bool GameState::runSacInstruction(double instruction) {
+    if (this->sacrificeInstructions.empty()) return false;
     if (this->AD()[1].getAmount() < this->nextSacrificeInstruction) return false;
-    //if (nextSacrificeBoost() < Decimal(1, instruction)) return false;
     return sacrificeReset();
 }
 
 void GameState::runNextInstructions() {
     while (hasNextPurchaseInstruction() && this->runInstruction((this->purchaseInstructions.front()))) {
         this->completedInstructions.push_back(this->purchaseInstructions.front());
-        this->completedPurchases.push_back(this->purchaseInstructions.front());
         this->purchaseInstructions.erase(this->purchaseInstructions.begin());
     }
     while (hasNextSacrificeInstruction() && this->runSacInstruction((this->sacrificeInstructions.front()))) {
         this->completedInstructions.push_back(108);
-        this->completedInstructions.push_back(this->sacrificeInstructions.front());
         this->completedSacrifices.push_back(this->sacrificeInstructions.front());
         this->sacrificeInstructions.erase(this->sacrificeInstructions.begin());
-        this->nextSacrificeInstruction = getReqForSac(Decimal(1, this->sacrificeInstructions.front()));
+        if (!this->sacrificeInstructions.empty()) {
+            this->nextSacrificeInstruction = getReqForSac(Decimal(1, this->sacrificeInstructions.front()));
+        }
     }
 }
 
@@ -294,16 +294,18 @@ bool GameState::hasNextSacrificeInstruction() {
     return !this->sacrificeInstructions.empty();
 }
 
-vector<double> GameState::getCompletedInstructions() {
-    return this->completedInstructions;
-}
-
 vector<double> GameState::getCompletedPurchases() {
-    return this->completedPurchases;
+    vector<double> purchases;
+    for (double instruction : this->completedInstructions) {
+        if (instruction != 108) {
+            purchases.push_back(instruction);
+        }
+    }
+    return purchases;
 }
 
 vector<double> GameState::getCompletedSacrifices() {
-    return this->completedSacrifices;
+    return completedSacrifices;
 }
 
 int GameState::instructionsExecuted() {
@@ -435,6 +437,8 @@ void GameState::writeInstructions(ofstream& f) {
     int dim_tier = 0;
     int dim_bulk = 0;
     bool isNextSacrifice = 0;
+    Decimal sacMult = DC::D1;
+    int sacrificeIndex = 0;
     this->completedInstructions.push_back(0);
     vector<string> lines;
     for (double instruction : completedInstructions) {
@@ -455,6 +459,10 @@ void GameState::writeInstructions(ofstream& f) {
             }
             if (instruction == 100) {
                 lines.push_back("[\"buyDimensionBoost\",[0]]");
+            }
+            if (instruction == 108) {
+                sacMult *= Decimal(1, this->completedSacrifices[sacrificeIndex++]);
+                lines.push_back("[\"trySacrificeReset\",[" + sacMult.toString(3) + "]]");
             }
         }
     }

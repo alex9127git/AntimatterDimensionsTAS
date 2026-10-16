@@ -179,7 +179,7 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
             adds = 0;
             int beforeSize = gameStates.size();
             maxStates = max(maxStates, beforeSize);
-            gameStates = purge(gameStates, verbose);
+            purge(gameStates, verbose);
             statesAfterPurge = gameStates.size();
             states = statesAfterPurge;
             purgeTime += purgeTimer.silentReset();
@@ -291,7 +291,7 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
             adds = 0;
             int beforeSize = gameStates.size();
             maxStates = max(maxStates, beforeSize);
-            gameStates = purge(gameStates, verbose);
+            purge(gameStates, verbose);
             statesAfterPurge = gameStates.size();
             states = statesAfterPurge;
             purgeTime += purgeTimer.silentReset();
@@ -361,7 +361,7 @@ bool compare(vector<Decimal>& st1, vector<Decimal>& st2) {
     return false;
 }
 
-vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
+void purge(vector<GameState>& gamestates, bool verbose) {
     int size = gamestates.size();
     vector<vector<Decimal>> values;
     Timer timer;
@@ -385,7 +385,7 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
         for (Decimal& d : valueRow) d.cache();
         values.push_back(valueRow);
     }
-    int removedCopy[size];
+    vector<char> removedCopy(size);
     for (int i = 0; i < size; i++) {
         removedCopy[i] = 0;
     }
@@ -399,7 +399,7 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
             }
         }
     }
-    int removedOrig[size];
+    vector<char> removedOrig(size);
     for (int i = 0; i < size; i++) {
         removedOrig[indices[i]] = removedCopy[i];
     }
@@ -408,12 +408,12 @@ vector<GameState> purge(vector<GameState>& gamestates, bool verbose) {
     int i = 0;
     for (auto stIter = gamestates.begin(); stIter != gamestates.end(); stIter++) {
         if (removedOrig[i] == 0) {
-            result.push_back(*stIter);
+            result.push_back(move(*stIter));
         }
         i++;
     }
     double recreateTimer = timer.silentReset();
     vector<vector<Decimal>>().swap(values);
     //cout << createArrayTimer << " " << compareTimer << " " << recreateTimer << endl;
-    return result;
+    gamestates.swap(result);
 }
