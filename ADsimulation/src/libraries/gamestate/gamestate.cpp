@@ -26,10 +26,6 @@ void GameState::prepare() {
     this->purchaseInstructions = {};
     this->sacrificeInstructions = {};
     this->completedInstructions = {};
-    prices.push_back(_tickspeed.getCost());
-    for (int i = 1; i <= 8; i++) {
-        prices.push_back(_AD[i].getCost());
-    }
     calcNextPurchase();
     recalcAchievementBonus();
     this->tickspeed().update(*this);
@@ -37,26 +33,26 @@ void GameState::prepare() {
 }
 
 void GameState::calcNextPurchase() {
-    Decimal minStackPrice = prices[0];
-    Decimal newPriceRange = prices[0];
-    this->nextPurchaseBranch = prices[0];
+    Decimal minStackPrice = _tickspeed.getCost();
+    Decimal newPriceRange = _tickspeed.getCost();;
+    this->nextPurchaseBranch = _tickspeed.getCost();
     for (int i = 1; i <= min(_dimensionBoosts + 4, 8); i++) {
         Decimal price = DC::D0;
         if (_AD[i].getPurchases() < 10 || i == min(_dimensionBoosts + 4, 8)) {
-            price = prices[i];
+            price = _AD[i].getCost();
             if (_AD[i].getPurchases() % 10 == 0 && newPriceRange > currPriceRange && currPriceRange == price) {
-                price = prices[i] * DC::D10;
+                price = _AD[i].getCost() * DC::D10;
             }
         } else {
-            price = prices[i] * DC::D10;
+            price = _AD[i].getCost() * DC::D10;
         }
         if (price < minStackPrice) {
             minStackPrice = price;
             newPriceRange = price;
-            this->nextPurchaseBranch = prices[i];
+            this->nextPurchaseBranch = _AD[i].getCost();
         } else if (price == minStackPrice) {
-            if (prices[i] < this->nextPurchaseBranch) {
-                this->nextPurchaseBranch = prices[i];
+            if (_AD[i].getCost() < this->nextPurchaseBranch) {
+                this->nextPurchaseBranch = _AD[i].getCost();
             }
         }
     }
@@ -163,7 +159,6 @@ bool GameState::buyOneDimension(int tier) {
         if (_AD[tier].getPurchases() % 10 == 0) {
             _AD[tier].update(*this);
         }
-        prices[tier] = _AD[tier].getCost();
         unlockAchievement(10 + tier, true);
         calcNextPurchase();
         if (tier == 2) {
@@ -193,7 +188,6 @@ bool GameState::buyTickspeed() {
         _tickspeed.onPurchase();
         _tickspeed.update(*this);
         _AD.update(*this);
-        prices[0] = _tickspeed.getCost();
         calcNextPurchase();
         return true;
     }
@@ -294,9 +288,9 @@ bool GameState::hasNextSacrificeInstruction() {
     return !this->sacrificeInstructions.empty();
 }
 
-vector<double> GameState::getCompletedPurchases() {
-    vector<double> purchases;
-    for (double instruction : this->completedInstructions) {
+vector<uint16_t> GameState::getCompletedPurchases() {
+    vector<uint16_t> purchases;
+    for (uint16_t instruction : this->completedInstructions) {
         if (instruction != 108) {
             purchases.push_back(instruction);
         }

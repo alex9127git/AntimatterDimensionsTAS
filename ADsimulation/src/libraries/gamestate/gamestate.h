@@ -32,7 +32,6 @@ class GameState : public ISerializable {
         vector<double> sacrificeInstructions;
         vector<uint16_t> completedInstructions;
         vector<double> completedSacrifices;
-        vector<Decimal> prices;
         Decimal nextPurchaseBranch = DC::D0;
         Decimal nextSacrificeBranch = DC::D1;
         Decimal nextSacrificeInstruction = DC::D1;
@@ -77,7 +76,7 @@ class GameState : public ISerializable {
         Decimal getAchievementBonus();
         Decimal getSacrificeBonus();
 
-        // simulation methods
+        // instruction methods
 
         void addInstructions(vector<double> instructions);
         bool runInstruction(double instruction);
@@ -85,16 +84,21 @@ class GameState : public ISerializable {
         void runNextInstructions();
         bool hasNextPurchaseInstruction();
         bool hasNextSacrificeInstruction();
-        vector<double> getCompletedPurchases();
+        vector<uint16_t> getCompletedPurchases();
         vector<double> getCompletedSacrifices();
         int instructionsExecuted();
+        
+        // brnaching methods
+
+        Decimal getAntimatterGoalForDimboost();
+        
         bool canBranch();
+        Decimal getPriceRange();
+
         void initializeSacBranching();
         void setNextSacBranching(double sacValue);
         Decimal getReqForSac(Decimal sacValue);
         bool canSacBranch();
-        Decimal getPriceRange();
-        Decimal getAntimatterGoalForDimboost();
 
         // reset methods
 
