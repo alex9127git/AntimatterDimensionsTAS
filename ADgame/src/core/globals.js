@@ -91,4 +91,5 @@ export * from "./speedrun";
 
 export * from "./automator/script-templates";
 
-export * from "../tas"
+export * from "../tas";
+export * from "../pathsOfFiles";

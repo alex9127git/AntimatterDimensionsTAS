@@ -1,5 +1,6 @@
 import { bigCrunchReset, buyOneDimension, buyTickSpeed, GameIntervals, GameSaveSerializer, GameStorage, requestDimensionBoost, requestGalaxyReset, sacrificeReset } from "./core/globals"
 import { gainedInfinityPoints } from "./game";
+import { pathsToFiles } from "./pathsOfFiles";
 
 export const TAS = {
     isRunning: false,
@@ -34,15 +35,8 @@ export const TAS = {
             isSuccessful = this.runOneInstruction(this.currentInstruction);
             if (isSuccessful) {
                 // can remove '=== 1' as it's truthy/falsey either way.
-                if (TAS.variables.debug & 1 === 1) {
-                    console.log(`
-                        Instruction  : ${TAS.currentInstruction}, 
-                        cycleCounter : ${TAS.cycleCounter},
-                        tick         : ${TAS.variables.tick},
-                        realtime     : ${(performance.now() - this.startTime).toFixed(0)},
-                        gametime     : ${player.records.realTimePlayed}
-                        `);
-                };
+                if (TAS.variables.debug & 1 === 1) dumpLog();
+
 	            this.currentInstruction += 1;
             };
         };
@@ -92,14 +86,18 @@ export const TAS = {
         TAS.start();
     },
 
-    async prepare(pathsToInstructions, save=null) {
-        // if it includes /input, interpret it as a fetch request
-        if (typeof save === 'string' && save.includes('/input')) {
+    async prepare(pathsToInstructions, save=pathsToFiles.saves[0]) {
+        save ??= pathsToFiles.saves[0];
+
+        if (save?.includes('/input')) {
             save = await getSave(save);
         };
+
         TAS.reset(save);
-        let i = 1;
-        let max = pathsToInstructions.length;
+
+        let i = 1,
+            max = pathsToInstructions.length;
+
         for (const path of pathsToInstructions) {
             console.log("Loading instructions (" + i + "/" + max + ")");
             await this.getInstructions(path);
@@ -110,7 +108,7 @@ export const TAS = {
     },
 
     importSave(save) {
-        if (GameStorage.checkPlayerObject(GameSaveSerializer.deserialize(save)) === "") {
+        if (save?.includes('AntimatterDimensions')) {
             console.log("Save found, importing");
             GameStorage.import(save);
             return true;
@@ -122,20 +120,24 @@ export const TAS = {
     },
 
     async getInstructions(path) {
-        const response = await fetch(path);
-        const text = await response.text();
-        const commands = JSON.parse(text);
-        TAS.queue = commands.map(([fn, args]) => {
-            return {
+        try {
+            const response = await fetch(path);
+            if (!response.ok) {
+                throw new Error(`Error fetching save from ${path}. ${response.status}`);
+            };
+            const commands = await response.json();
+            TAS.queue = commands.map(([fn, args]) => ({
                 fn,
                 args,
                 action: actions[fn],
                 run() {
                     return this.action(...this.args);
                 }
-            };
-        });
-        return true;
+            }));
+            return true;
+        } catch(e) {
+            throw new Error(`Error parsing path to save: ${path}`, {cause: e});
+        };
     },
 
     loadInstructions() {
@@ -204,95 +206,7 @@ export const actions = {
     ["exportSave"]          :   exportSave,
     ["importSave"]          :   importSave
 };
-export const pathsToFiles = {
-    'instructions': [
-        "/input/instructions/0000 - start.json",
-        "/input/instructions/0001 - over in 0 seconds.json",
-        "/input/instructions/0002 - g0d0.json",
-        "/input/instructions/0003 - g0d1.json",
-        "/input/instructions/0004 - g0d2.json",
-        "/input/instructions/0005 - g0d3.json",
-        "/input/instructions/0006 - g0d4.json",
-        "/input/instructions/0007 - g0d5.json",
-        "/input/instructions/0008 - g0d6.json",
-        "/input/instructions/0009 - g0d7.json",
-        "/input/instructions/0010 - g0d8.json",
-        "/input/instructions/0011 - g1d0.json",
-        "/input/instructions/0012 - g1d1.json",
-        "/input/instructions/0013 - g1d2.json",
-        "/input/instructions/0014 - g1d3.json",
-        "/input/instructions/0015 - g1d4.json",
-        "/input/instructions/0016 - g1d5.json",
-        "/input/instructions/0017 - g1d6.json",
-        "/input/instructions/0018 - g1d7.json",
-        "/input/instructions/0019 - g1d8.json",
-        "/input/instructions/0020 - g1d9.json",
-        "/input/instructions/0021 - g1d10.json",
-        "/input/instructions/0022 - g1d11.json",
-        "/input/instructions/0023 - g1d12.json",
-        "/input/instructions/0024 - g2d0.json",
-        "/input/instructions/0025 - g2d1.json",
-        "/input/instructions/0026 - g2d2.json",
-        "/input/instructions/0027 - g2d3.json",
-        "/input/instructions/0028 - g2d4.json",
-        "/input/instructions/0029 - g2d5.json",
-        "/input/instructions/0030 - g2d6.json",
-        "/input/instructions/0031 - g2d7.json",
-        "/input/instructions/0032 - g2d8.json",
-        "/input/instructions/0033 - g2d9.json",
-        "/input/instructions/0034 - g2d10.json",
-        "/input/instructions/0035 - g2d11.json",
-        "/input/instructions/0036 - g2d12.json",
-        "/input/instructions/0037 - g2d13.json",
-        "/input/instructions/0038 - g2d14.json",
-        "/input/instructions/0039 - g2d15.json",
-        "/input/instructions/0040 - g2d16.json"
-    ],
-    'saves': [
-        '/input/savestates/0000 - start.txt', 
-        '/input/savestates/0001 - over in 0 seconds.txt', 
-        '/input/savestates/0002 - g0d0.txt', 
-        '/input/savestates/0003 - g0d1.txt', 
-        '/input/savestates/0004 - g0d2.txt', 
-        '/input/savestates/0005 - g0d3.txt', 
-        '/input/savestates/0006 - g0d4.txt', 
-        '/input/savestates/0007 - g0d5.txt', 
-        '/input/savestates/0008 - g0d6.txt', 
-        '/input/savestates/0009 - g0d7.txt', 
-        '/input/savestates/0010 - g0d8.txt', 
-        '/input/savestates/0011 - g1d0.txt', 
-        '/input/savestates/0012 - g1d1.txt', 
-        '/input/savestates/0013 - g1d2.txt', 
-        '/input/savestates/0014 - g1d3.txt', 
-        '/input/savestates/0015 - g1d4.txt', 
-        '/input/savestates/0016 - g1d5.txt', 
-        '/input/savestates/0017 - g1d6.txt', 
-        '/input/savestates/0018 - g1d7.txt', 
-        '/input/savestates/0019 - g1d8.txt', 
-        '/input/savestates/0020 - g1d9.txt', 
-        '/input/savestates/0021 - g1d10.txt', 
-        '/input/savestates/0022 - g1d11.txt', 
-        '/input/savestates/0023 - g1d12.txt', 
-        '/input/savestates/0024 - g2d0.txt', 
-        '/input/savestates/0025 - g2d1.txt', 
-        '/input/savestates/0026 - g2d2.txt', 
-        '/input/savestates/0027 - g2d3.txt', 
-        '/input/savestates/0028 - g2d4.txt', 
-        '/input/savestates/0029 - g2d5.txt', 
-        '/input/savestates/0030 - g2d6.txt', 
-        '/input/savestates/0031 - g2d7.txt', 
-        '/input/savestates/0032 - g2d8.txt', 
-        '/input/savestates/0033 - g2d9.txt', 
-        '/input/savestates/0034 - g2d10.txt', 
-        '/input/savestates/0035 - g2d11.txt', 
-        '/input/savestates/0036 - g2d12.txt', 
-        '/input/savestates/0037 - g2d13.txt', 
-        '/input/savestates/0038 - g2d14.txt', 
-        '/input/savestates/0039 - g2d15.txt', 
-        '/input/savestates/0040 - g2d16.txt', 
-        '/input/savestates/0041 - bigcrunch.txt'
-    ]
-};
+
 export async function getSave(path=null) {
     if (!path) path = pathsToFiles.saves[0];
 
@@ -303,6 +217,16 @@ export async function getSave(path=null) {
 
     return (await response.text()).trim();
 };
+
+export function dumpLog() {
+    console.log(`
+        Instruction  : ${TAS.currentInstruction}, 
+        cycleCounter : ${TAS.cycleCounter},
+        tick         : ${TAS.variables.tick},
+        realtime     : ${(performance.now() - TAS.startTime).toFixed(0)},
+        gametime     : ${player.records.realTimePlayed}
+    `);
+}
 export function tasTick() {
     TAS.variables.tick++;
     TAS.runNextPendingInstruction();
@@ -345,6 +269,8 @@ export function simulateEvent(type, key, keyCode) {
     });
     return document.dispatchEvent(event);
 };
+
+
 
 export function buyDimension(tier, times) {
     if (TAS.variables.dimPurchasesLeft === undefined) TAS.variables.dimPurchasesLeft = times;
