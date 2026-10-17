@@ -86,7 +86,7 @@ export const TAS = {
         TAS.start();
     },
 
-    async prepare(pathsToInstructions, save=pathsToFiles.saves[0]) {
+    async prepare(pathsToInstructions, save) {
         save ??= pathsToFiles.saves[0];
 
         if (save?.includes('/input')) {
@@ -180,6 +180,14 @@ export const TAS = {
         GameStorage.save();
         TAS.exportedSave = GameStorage.exportModifiedSave();
         return console.log(TAS.exportedSave);
+    },
+
+    get nextBoost() {
+        let amount = AntimatterDimension(1).amount;
+        let sacrificed = player.sacrificed.clampMin(1);
+        let unweighted = amount.add(sacrificed);
+        let weighted = new Decimal((unweighted.log10() / 10) / Math.max(sacrificed.log10() / 10, 1));
+        return weighted.clampMin(1).pow(Sacrifice.sacrificeExponent);
     }
 };
 
@@ -296,7 +304,7 @@ export function buyDimensionBoost() {
 };
 
 export function trySacrificeReset(value) {
-    if (new Decimal(value).divideBy(Sacrifice.totalBoost).lte(Sacrifice.nextBoost)) {
+    if (new Decimal(value).divideBy(Sacrifice.totalBoost).lte(TAS.nextBoost)) {
         sacrificeReset();
         return true;
     }
