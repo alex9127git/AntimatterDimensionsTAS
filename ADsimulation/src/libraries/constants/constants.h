@@ -4,6 +4,7 @@
 
 struct DC {
     static Decimal D0;
+    static Decimal D0_2;
     static Decimal D1;
 
     static Decimal D1_01;
@@ -20,6 +21,7 @@ struct DC {
     static Decimal D4;
     static Decimal D6;
     static Decimal D10;
+    static Decimal D20;
     static Decimal D100;
 
     static Decimal D1E3;

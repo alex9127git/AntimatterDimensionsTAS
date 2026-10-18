@@ -3,6 +3,7 @@
 
 
 Decimal DC::D0 = Decimal(0);
+Decimal DC::D0_2 = Decimal(0.2);
 Decimal DC::D1 = Decimal(1);
 
 Decimal DC::D1_01 = Decimal(1.01);
@@ -19,6 +20,7 @@ Decimal DC::D3 = Decimal(3);
 Decimal DC::D4 = Decimal(4);
 Decimal DC::D6 = Decimal(6);
 Decimal DC::D10 = Decimal(10);
+Decimal DC::D20 = Decimal(20);
 Decimal DC::D100 = Decimal(100);
 
 Decimal DC::D1E3 = Decimal(1, (int64_t) 3LL);

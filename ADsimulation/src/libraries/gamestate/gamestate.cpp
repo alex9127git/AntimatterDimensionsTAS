@@ -5,8 +5,9 @@
 #include "../tickspeed/tickspeed.h"
 #include "../achievements/achievements.h"
 #include <fstream>
+#include <algorithm>
 #include <nlohmann/json.hpp>
-
+using namespace std;
 using json = nlohmann::json;
 
 
@@ -26,37 +27,47 @@ void GameState::prepare() {
     this->purchaseInstructions = {};
     this->sacrificeInstructions = {};
     this->completedInstructions = {};
-    calcNextPurchase();
+    calcPurchases();
     recalcAchievementBonus();
     this->tickspeed().update(*this);
     this->AD().update(*this);
 }
 
-void GameState::calcNextPurchase() {
-    Decimal minStackPrice = _tickspeed.getCost();
-    Decimal newPriceRange = _tickspeed.getCost();;
-    this->nextPurchaseBranch = _tickspeed.getCost();
-    for (int i = 1; i <= min(_dimensionBoosts + 4, 8); i++) {
-        Decimal price = DC::D0;
-        if (_AD[i].getPurchases() < 10 || i == min(_dimensionBoosts + 4, 8)) {
-            price = _AD[i].getCost();
-            if (_AD[i].getPurchases() % 10 == 0 && newPriceRange > currPriceRange && currPriceRange == price) {
-                price = _AD[i].getCost() * DC::D10;
-            }
-        } else {
-            price = _AD[i].getCost() * DC::D10;
-        }
-        if (price < minStackPrice) {
-            minStackPrice = price;
-            newPriceRange = price;
-            this->nextPurchaseBranch = _AD[i].getCost();
-        } else if (price == minStackPrice) {
-            if (_AD[i].getCost() < this->nextPurchaseBranch) {
-                this->nextPurchaseBranch = _AD[i].getCost();
-            }
+void GameState::calcPurchases() {
+    allowedPurchases.clear();
+    int frontier = 1;
+    while (_AD[frontier].getPurchases() >= 10 && frontier < min(_dimensionBoosts + 4, 8)) {
+        frontier++;
+    }
+    for (int i = 1; i <= frontier; i++) {
+        if (_AD[i].getPurchases() > 10 && _AD[i].getPurchases() % 10 != 0) {
+            allowedPurchases.push_back(i);
+            return;
         }
     }
-    this->currPriceRange = newPriceRange;
+    Decimal minPrice = _tickspeed.getCost();
+    for (int i = 1; i < frontier; i++) {
+        minPrice = min(_AD[i].getCost() * DC::D10, minPrice);
+    }
+    Decimal frontierPrice = _AD[frontier].getCost() * DC::D10;
+    if (frontierPrice > DC::D0_2 * minPrice) {
+        if (_tickspeed.getCost() == minPrice) allowedPurchases.push_back(9);
+        for (int i = 1; i < frontier; i++) {
+            if (_AD[i].getCost() * DC::D10 == minPrice) allowedPurchases.push_back(i);
+        }
+    }
+    if (frontierPrice < DC::D20 * minPrice) {
+        allowedPurchases.push_back(frontier);
+    }
+    stable_sort(allowedPurchases.begin(), allowedPurchases.end(),
+        [&](uint16_t a, uint16_t b) {
+            Decimal a_cost = a == 9 ? _tickspeed.getCost() : _AD[a].getCost();
+            Decimal b_cost = b == 9 ? _tickspeed.getCost() : _AD[b].getCost();
+            return a_cost < b_cost;
+        }
+    );
+    int minPurchase = allowedPurchases.front();
+    nextPurchaseCost = minPurchase == 9 ? _tickspeed.getCost() : _AD[minPurchase].getCost();
 }
 
 void GameState::recalcAchievementBonus() {
@@ -160,7 +171,7 @@ bool GameState::buyOneDimension(int tier) {
             _AD[tier].update(*this);
         }
         unlockAchievement(10 + tier, true);
-        calcNextPurchase();
+        calcPurchases();
         if (tier == 2) {
             _tickspeed.unlock();
         }
@@ -188,7 +199,7 @@ bool GameState::buyTickspeed() {
         _tickspeed.onPurchase();
         _tickspeed.update(*this);
         _AD.update(*this);
-        calcNextPurchase();
+        calcPurchases();
         return true;
     }
     return false;
@@ -219,6 +230,11 @@ Decimal GameState::getAchievementBonus() {
 
 Decimal GameState::getSacrificeBonus() {
     return this->sacrificeBonus;
+}
+
+void GameState::clearAllInstructions() {
+    this->purchaseInstructions.clear();
+    this->sacrificeInstructions.clear();
 }
 
 void GameState::addInstructions(vector<double> instructions) {
@@ -288,9 +304,9 @@ bool GameState::hasNextSacrificeInstruction() {
     return !this->sacrificeInstructions.empty();
 }
 
-vector<uint16_t> GameState::getCompletedPurchases() {
-    vector<uint16_t> purchases;
-    for (uint16_t instruction : this->completedInstructions) {
+vector<double> GameState::getCompletedPurchases() {
+    vector<double> purchases;
+    for (double instruction : this->completedInstructions) {
         if (instruction != 108) {
             purchases.push_back(instruction);
         }
@@ -307,7 +323,11 @@ int GameState::instructionsExecuted() {
 }
 
 bool GameState::canBranch() {
-    return this->_antimatter > this->nextPurchaseBranch;
+    return this->_antimatter >= this->nextPurchaseCost;
+}
+
+vector<uint16_t> GameState::getPurchaseBranches() {
+    return this->allowedPurchases;
 }
 
 void GameState::initializeSacBranching() {
@@ -327,10 +347,6 @@ Decimal GameState::getReqForSac(Decimal sacValue) {
 
 bool GameState::canSacBranch() {
     return this->_AD[1].getAmount() >= this->nextSacrificeBranch;
-}
-
-Decimal GameState::getPriceRange() {
-    return this->currPriceRange;
 }
 
 Decimal GameState::getAntimatterGoalForDimboost() {

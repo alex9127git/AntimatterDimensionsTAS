@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <vector>
 #include <fstream>
+#include <algorithm>
 #include "../constants/constants.h"
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
@@ -32,13 +33,15 @@ class GameState : public ISerializable {
         vector<double> sacrificeInstructions;
         vector<uint16_t> completedInstructions;
         vector<double> completedSacrifices;
-        Decimal nextPurchaseBranch = DC::D0;
+
+        Decimal nextPurchaseCost = DC::D0;
+        vector<uint16_t> allowedPurchases;
+
         Decimal nextSacrificeBranch = DC::D1;
         Decimal nextSacrificeInstruction = DC::D1;
-        Decimal currPriceRange = DC::D1;
 
         void prepare();
-        void calcNextPurchase();
+        void calcPurchases();
         void recalcAchievementBonus();
         void recalcSacrificeBonus();
         Decimal getSacrificeExponent();
@@ -78,23 +81,24 @@ class GameState : public ISerializable {
 
         // instruction methods
 
+        void clearAllInstructions();
         void addInstructions(vector<double> instructions);
         bool runInstruction(double instruction);
         bool runSacInstruction(double instruction);
         void runNextInstructions();
         bool hasNextPurchaseInstruction();
         bool hasNextSacrificeInstruction();
-        vector<uint16_t> getCompletedPurchases();
+        vector<double> getCompletedPurchases();
         vector<double> getCompletedSacrifices();
         int instructionsExecuted();
         
         // brnaching methods
 
         Decimal getAntimatterGoalForDimboost();
-        
-        bool canBranch();
-        Decimal getPriceRange();
 
+        bool canBranch();
+        vector<uint16_t> getPurchaseBranches();
+        
         void initializeSacBranching();
         void setNextSacBranching(double sacValue);
         Decimal getReqForSac(Decimal sacValue);
