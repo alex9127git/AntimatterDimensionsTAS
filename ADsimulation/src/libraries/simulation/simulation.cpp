@@ -62,6 +62,7 @@ GameState runUntil(GameState st, function<bool(GameState&)> stopCondition, bool 
             cout << "Winning strategies left: " << winnerStrategies.size() << endl;
         }
     } while (st.dimensionBoosts() >= 5 && useSacrifice && iterationTime < currentIterationTime);
+    bestState.clearAllInstructions();
     bestState.addInstructions({100});
     bestState.runNextInstructions();
     return bestState;
@@ -112,22 +113,19 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
         ticks++;
         // Branching
         branchTimer.silentReset();
-        vector<GameState>* branches = &gameStates;
-        vector<GameState> prevGameStates;
-        while (!(branches->empty())) {
-            for (GameState& gst : *branches) {
-                computePurchaseBranches(gst, newGameStates);
+        size_t begin = 0;
+        size_t end = gameStates.size();
+        while (begin < end) {
+            for (size_t i = begin; i < end; i++) {
+                gameStates[i].runNextInstructions();
+                computePurchaseBranches(gameStates[i], newGameStates);
             }
-            if (!newGameStates.empty()) {
-                adds += 1;
-            }
-            prevGameStates = newGameStates;
-            for (GameState& gst : newGameStates) {
-                gameStates.push_back(move(gst));
-                states++;
-            }
-            branches = &prevGameStates;
+            if (!newGameStates.empty()) adds++;
+            states += newGameStates.size();
+            for (GameState& gst : newGameStates) gameStates.push_back(move(gst));
             newGameStates.clear();
+            begin = end;
+            end = gameStates.size();
         }
         branchTime += branchTimer.silentReset();
         // Checking for condition
@@ -309,41 +307,14 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
 
 void computePurchaseBranches(GameState& gameState, vector<GameState>& branches) {
     while (gameState.canBranch() && !gameState.hasNextPurchaseInstruction()) {
-        Decimal priceRange = gameState.getPriceRange();
-        // Gets all possible purchases at current price range and populates the game states accordingly
-        vector<double> variants;
-        bool onlyHighestDim = true;
-        if (gameState.tickspeed().canPurchase(priceRange)) {
-            variants.push_back(9);
-            onlyHighestDim = false;
+        vector<uint16_t> variants = gameState.getPurchaseBranches();
+        for (int i = 1; i < variants.size(); i++) {
+            GameState newGst = gameState.copy();
+            newGst.addInstructions({(double) variants[i]});
+            newGst.runNextInstructions();
+            branches.push_back(move(newGst));
         }
-        for (int i = 1; i <= 8; i++) {
-            int purchases = gameState.AD()[i].getPurchases();
-            if (purchases < 10 || i == min(gameState.dimensionBoosts() + 4, 8)) {
-                if (gameState.AD()[i].canPurchase(priceRange / DC::D10)) {
-                    variants.push_back(i * 10);
-                } else if (gameState.AD()[i].canPurchase(priceRange)) {
-                    variants.push_back(i);
-                }
-            } else {
-                if (gameState.AD()[i].canPurchase(priceRange / DC::D10)) {
-                    variants.push_back(i * 10);
-                    onlyHighestDim = false;
-                }
-            }
-        }
-        if (variants.empty()) {
-            continue;
-        } else if (variants.size() == 1) {
-            gameState.addInstructions(variants);
-        } else {
-            for (int i = 1; i < variants.size(); i++) {
-                GameState newGst = gameState.copy();
-                newGst.addInstructions({variants[i]});
-                branches.push_back(move(newGst));
-            }
-            gameState.addInstructions({variants[0]});
-        }
+        gameState.addInstructions({(double) variants[0]});
         gameState.runNextInstructions();
     }
 }

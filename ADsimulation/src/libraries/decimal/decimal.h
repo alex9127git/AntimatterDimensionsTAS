@@ -37,10 +37,10 @@ class Decimal : public ISerializable {
         Decimal operator/(const Decimal& b);
         Decimal& operator/=(const Decimal& b);
         Decimal operator-();
-        bool operator>=(const Decimal& b);
-        bool operator>(const Decimal& b);
-        bool operator<=(const Decimal& b);
-        bool operator<(const Decimal& b);
+        bool operator>=(const Decimal& b) const;
+        bool operator>(const Decimal& b) const;
+        bool operator<=(const Decimal& b) const;
+        bool operator<(const Decimal& b) const;
         bool operator==(const Decimal& b) const;
         friend ostream& operator<<(ostream& os, const Decimal& d);
 

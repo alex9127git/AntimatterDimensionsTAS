@@ -89,19 +89,19 @@ Decimal Decimal::operator-() {
     return Decimal::unary_negate(*this);
 }
 
-bool Decimal::operator>=(const Decimal& b) {
+bool Decimal::operator>=(const Decimal& b) const {
     return Decimal::gte(*this, b);
 }
 
-bool Decimal::operator>(const Decimal& b) {
+bool Decimal::operator>(const Decimal& b) const {
     return Decimal::gt(*this, b);
 }
 
-bool Decimal::operator<=(const Decimal& b) {
+bool Decimal::operator<=(const Decimal& b) const {
     return Decimal::gte(b, *this);
 }
 
-bool Decimal::operator<(const Decimal& b) {
+bool Decimal::operator<(const Decimal& b) const {
     return Decimal::gt(b, *this);
 }
 
