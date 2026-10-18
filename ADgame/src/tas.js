@@ -1,6 +1,7 @@
 import { bigCrunchReset, buyOneDimension, buyTickSpeed, GameIntervals, GameSaveSerializer, GameStorage, requestDimensionBoost, requestGalaxyReset, sacrificeReset } from "./core/globals"
 import { gainedInfinityPoints } from "./game";
 import { pathsToFiles } from "./pathsOfFiles";
+import { dispatch, container } from "./tasUI/injectUI";
 
 export const TAS = {
     isRunning: false,
@@ -20,7 +21,7 @@ export const TAS = {
     /*
      --- debug binary bitmask ---
      debug & 1 === logging
-     
+     debug & 2 === write output to ui
     */
     variables: {
         debug: 0,
@@ -34,8 +35,7 @@ export const TAS = {
         while (isSuccessful) {
             isSuccessful = this.runOneInstruction(this.currentInstruction);
             if (isSuccessful) {
-                // can remove '=== 1' as it's truthy/falsey either way.
-                if (TAS.variables.debug & 1 === 1) dumpLog();
+                if (TAS.variables.debug & 1) dumpLog();
 
 	            this.currentInstruction += 1;
             };
@@ -237,6 +237,15 @@ export function dumpLog() {
 }
 export function tasTick() {
     TAS.variables.tick++;
+    if ((TAS.variables.debug & 2) && container?.__is_dependency__ !== undefined) {
+        dispatch('cycle', TAS.variables.cycleCounter ?? 0);
+        dispatch('inst1', TAS.currentInstruction);
+        dispatch('inst2', TAS.instructions[TAS.currentInstruction].fn + TAS.instructions[TAS.currentInstruction].args.join(' '));
+        dispatch('gala1', player.galaxies);
+        dispatch('dimb1', player.dimensionBoosts);
+        dispatch('time1', (performance.now() - TAS.startTime).toFixed(0));
+        dispatch('time2', player.records.realTimePlayed);
+    };
     TAS.runNextPendingInstruction();
     return true;
 };
