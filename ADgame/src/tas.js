@@ -1,7 +1,7 @@
 import { bigCrunchReset, buyOneDimension, buyTickSpeed, GameIntervals, GameSaveSerializer, GameStorage, requestDimensionBoost, requestGalaxyReset, sacrificeReset } from "./core/globals"
 import { gainedInfinityPoints } from "./game";
 import { pathsToFiles } from "./pathsOfFiles";
-import { dispatch, container } from "./tasUI/injectUI";
+import { dispatch } from "./tasUI/injectUI";
 
 export const TAS = {
     isRunning: false,
@@ -20,6 +20,7 @@ export const TAS = {
     segments: [],
     /*
      --- debug binary bitmask ---
+     debug = - 1 for all
      debug & 1 === logging
      debug & 2 === write output to ui
     */
@@ -149,7 +150,7 @@ export const TAS = {
 
     start() {
         console.log("TAS started running");
-        this.startTime = performance.now();
+        this.startTime = Date.now();
         this.isRunning = true;
         this.variables.dimPurchasesLeft = undefined;
         GameIntervals.restart();
@@ -231,21 +232,24 @@ export function dumpLog() {
         Instruction  : ${TAS.currentInstruction}, 
         cycleCounter : ${TAS.cycleCounter},
         tick         : ${TAS.variables.tick},
-        realtime     : ${(performance.now() - TAS.startTime).toFixed(0)},
+        realtime     : ${(Date.now() - TAS.startTime).toFixed(0)},
         gametime     : ${player.records.realTimePlayed}
     `);
 }
-export function tasTick() {
-    TAS.variables.tick++;
-    if ((TAS.variables.debug & 2) && container?.__is_dependency__ !== undefined) {
-        dispatch('cycle', TAS.variables.cycleCounter ?? 0);
+function dispatch_events() {
+    if (TAS.variables.debug & 2) {
+        dispatch('cycle', TAS.cycleCounter ?? 0);
         dispatch('inst1', TAS.currentInstruction);
-        dispatch('inst2', TAS.instructions[TAS.currentInstruction].fn + TAS.instructions[TAS.currentInstruction].args.join(' '));
+        dispatch('inst2', TAS.instructions[TAS.currentInstruction]?.fn + TAS.instructions[TAS.currentInstruction]?.args?.join(' '));
         dispatch('gala1', player.galaxies);
         dispatch('dimb1', player.dimensionBoosts);
-        dispatch('time1', (performance.now() - TAS.startTime).toFixed(0));
-        dispatch('time2', player.records.realTimePlayed);
-    };
+        dispatch('time1', new Date(player.records.realTimePlayed).toISOString().slice(11,23));
+        dispatch('time2', new Date(Date.now() - TAS.startTime).toISOString().slice(11, 23));
+    }
+}
+export function tasTick() {
+    TAS.variables.tick++;
+    dispatch_events();
     TAS.runNextPendingInstruction();
     return true;
 };

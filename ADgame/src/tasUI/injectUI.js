@@ -1,227 +1,339 @@
-const host = document.createElement("div");
-host.id = 'shadowDOM';
-host.style.cssText = `
-    position: fixed;
-    inset: 0;
-    z-index: 2147483647;
-    pointer-events: none;
-`;
-document.body.appendChild(host);
-const shadow = host.attachShadow({mode: 'open'});
-/* ----- container for everything ------ */
-export const container = createChildElement(shadow, 'div', 'container', {
-    style: 'display: grid; grid-column: 1/3; grid-template-columns: 1fr; grid-template-rows: 40px minmax(0, 1fr) 30px; position: absolute; background-color: white; width: 300px; height: 200px; user-select: none; border: 1px solid black; box-sizing: border-box; left: 0px; top: 0px; z-index: 99999; color: black; pointer-events: auto;'
-});
-const $ = e => container.querySelector(`#${e}`);
-/* ------ append ALL of the containers children here ------ */
-const header = createChildElement(container, 'div', 'header', {
-    textContent: "Advanced Layout (for) Easy eXecution",
-    style: 'display: flex; justify-content: space-between; background-color: pink; width: 100%; height: 30px; margin: 0; padding: 0; cursor: move; overflow: hidden; font-size: 12px;',
-    _isMoving: false,
-    _startX: 0,
-    _startY: 0
-});
-// wrapper
-const trigroup = createChildElement(header, 'div', 'grouper', {
-    style: 'display: flex; flex-direction: row; margin: 0; padding: 0;'
-});
-// semantic style that all of the trigroups elements have
-let trigroup_style = 'display: flex; justify-content: center; align-text: center; width: 15px; height: 100%; font-size: 20px; padding-right: 5px; padding-left: 5px; user-select: none; cursor: pointer;';
-const restore = createChildElement(trigroup, 'div', 'close', {
-    textContent: '□',
-    style: trigroup_style,
-    _startX: null,
-    _startY: null,
-    _startW: null,
-    _startH: null,
-    _resized: false
-});
-const minimize = createChildElement(trigroup, 'div', 'minimize', {
-    textContent: '_',
-    style: 'line-height: .2;' + trigroup_style,
-    _minimized: false,
-    _startH: '200px'
-});
-const close = createChildElement(trigroup, 'div', 'close', {
-    textContent: 'x',
-    style: trigroup_style
-});
 
-const body = createChildElement(container, 'div', 'body', {
-    style: 'display: flex; flex-direction: column; width: 100%; height: fit-content; overflow: hidden; font-family: monospace;'
-});
-const footer = createChildElement(container, 'div', 'footer', {
-    style: 'display: flex; justify-content: flex-end; background-color: pink; height: 30px;'
-});
-// a wrapper for the resize
-const monogroup = createChildElement(footer, 'div', 'digroup', {
-    style: 'width: 10px; background-color: inherit;display: flex; justify-content: flex-end; flex-direction: column; padding: 0; margin: 0;'
-});
-const resize = createChildElement(monogroup, 'div', 'resize', {
-    textContent: '◢',
-    style: 'line-height: .7; cursor: se-resize;',
-    _startX: null,
-    _startY: null,
-    _startW: container.offsetWidth,
-    _startH: container.offsetHeight,
-    _resizing: false
-});
-// when hovering these elements, give them a certain color
-registerHoverEvent(close, 'rgba(255,0,0,.9)');
-registerHoverEvent(minimize, 'rgba(245, 245, 245, .55)');
-registerHoverEvent(restore, 'rgba(245, 245, 245, .55)');
-
-close.addEventListener("click", () => {
-    container.style.display = 'none';
-    container.hidden = true;
-});
-/* ------ full screen ------ */
-restore.addEventListener("click", () => {
-    if (restore._resized === false) {
-        header.style.cursor = 'default';
-        
-        restore._startX = container.offsetLeft + 'px';
-        restore._startY = container.offsetTop + 'px';
-        restore._startW = container.offsetWidth + 'px';
-        restore._startH = container.offsetHeight + 'px';
-        
-        container.style.left = '0px';
-        container.style.top = '0px';
-        container.style.width = '100%';
-        container.style.height = '100%';
-
-        restore._resized = true;
-        restore.textContent = '■';
-    } else if (restore._resized === true) {
-        header.style.cursor = 'move';
-        
-        container.style.left = restore._startX;
-        container.style.top = restore._startY;
-        container.style.width = restore._startW
-        container.style.height = restore._startH;
-        
-        restore._resized = false;
-        restore.textContent = '□';
-    };
-});
-/* ------ minimize ------ */
-minimize.addEventListener("click", () => {
-    if (restore._resized) return;
-
-    if (minimize._minimized === false) {
-        minimize._startH = container.style.height;
-        body.style.display = 'none';
-        footer.style.display = 'none';
-        container.style.height = '30px';
-        minimize._minimized = true;
-        
-        container.style.height = header.style.height;
-    } else if (minimize._minimized === true) {
-        body.style.display = 'flex';
-        footer.style.display = 'flex';
-        container.style.height = minimize._startH;
-        minimize._minimized = false;
-    }
-});
-/* ------ dragging ------ */
-header.addEventListener("mousedown", e => {
-    if (e.target !== header) return;
-    header._isMoving = true
-    header._startX = e.clientX - container.offsetLeft;
-    header._startY = e.clientY - container.offsetTop;
-}); document.addEventListener("mouseup", ()=> {
-    header._isMoving = false
-}); document.addEventListener("mousemove", e => {
-    if (header._isMoving === false || restore._resized) return;
-    container.style.left = Math.max(0, (e.clientX - header._startX)) + 'px';
-    container.style.top = Math.max(0, (e.clientY - header._startY)) + 'px' ;
-});
-/* ------ resize ------ */
-resize.addEventListener("pointerdown", e => {
-    resize._startX = e.clientX;
-    resize._startY = e.clientY;
-    resize._startW = container.offsetWidth;
-    resize._startH = container.offsetHeight;
-    resize._resizing = true;
-}); document.addEventListener("pointerup", () => {
-    resize._resizing = false;
-}); document.addEventListener("mousemove", e => {
-    if (!resize._resizing || restore._resized) return;
-    container.style.width = Math.max(resize._startW - (resize._startX - e.clientX), 200) + 'px';
-    container.style.height = Math.max(resize._startH - (resize._startY - e.clientY), 100) + 'px';
-});
-/* ---------------------- */
-
-// diagnostics
-const b = createChildElement(body, 'div', 'cycle', {
-    textContent: 'Cycle counter:'
-});
-createChildElement(body, 'div', 'inst1', {
-    textContent: 'Instruction#:'
-});
-createChildElement(body, 'div', 'inst2', {
-    textContent: 'Current instruction:'
-});
-createChildElement(body, 'div', 'gala1', {
-    textContent: 'Current galaxies:'
-});
-createChildElement(body, 'div', 'dimb1', {
-    textContent: 'Current dimboosts:'
-});
-createChildElement(body, 'div', 'time1', {
-    textContent: 'Current rt in run:'
-});
-createChildElement(body, 'div', 'time2', {
-    textContent: 'Current gt in run:'
-});
-
-container.__is_dependency__ = true;
-
-
-
-export function registerHoverEvent(node, color) {
-    node.addEventListener("mouseover", () => {
-        node.style.backgroundColor = color;
-    }); node.addEventListener("mouseout", () => {
-        node.style.backgroundColor = 'inherit';
+    const host = document.createElement("div");
+    // it requires no pointer events otherwise it will capture all of them
+    host.style.cssText = `
+        position: fixed;
+        inset: 0;
+        z-index: 99999999;
+        pointer-events: none;
+    `;
+    document.body.appendChild(host);
+    // open mode means I can affect the internals with javascript
+    const shadow = host.attachShadow({mode: 'open'});
+    const style = document.createElement("style");
+    /*
+     * normally I would use inline styles, but it's getting so annoying to work with
+     * that I might as well just create a style and change it's text content. 
+     * it works better because it's easier to manipulate, and creating
+     * class's are so much more easier.
+     */
+    // radial-gradient is soo nice to make the flat color look more lively
+    // same with border-radius
+    // with the downside of looking vibe coded, as Alex pointed out.
+    style.textContent = `
+      #root {
+        border: 1px solid green;
+        padding: 5px;
+        font-family: monospace Typewriter;
+        position: fixed;
+        left: 20px;
+        top: 20px;
+        width: 380px;
+        height: 280px;
+        display: grid;
+        grid-template-rows: 48px minmax(0, 1fr) 20px;
+        overflow: hidden;
+        white-space: nowrap;
+        color: white;
+        background: radial-gradient(ellipse at 5% 8%, rgba(50, 255, 105, .20), transparent 100%), #0c1220;
+        border: 2px solid black;
+        font: monospace;
+        pointer-events: auto;
+        user-select: text;
+      }
+      header {
+        cursor: move;
+        user-select: none;
+        display: flex;
+        justify-content: space-between;
+        padding-left: 15px;
+        padding-top: 5px;
+        box-sizing: border-box;
+      }
+      tri-group {
+        display: flex;
+        flex-stretch: flex-start;
+      }
+      tri-group > * {
+        user-select: none;
+        cursor: pointer;
+        align-self: flex-start;
+        min-height: 20px;
+        min-width: 25px;
+        display: flex;
+        justify-content: center;
+      }
+      tri-group > span:hover {
+        background-color: rgba(240, 240, 240, .5);
+      }
+      tri-group > div:hover {
+        background-color: rgba(240, 0, 0, .8);
+      }
+      section-header {
+        display: inline;
+        font-weight: bold;
+      }
+      #table {
+        width: 100%;
+        table-layout: fixed;
+        padding-left: 10px;
+        border-spacing: 5px 6px;
+      }
+      td {
+        color: white;
+        text-align: left;
+      }
+      [data-tab="1"] {
+        width: 100%;
+        height: 100%;
+      }
+      #resize {
+        display: flex;
+        color: white;
+        height: fit-content;
+        width: fit-content;
+        justify-self: flex-end;
+        cursor: nwse-resize;
+        margin-top: 12px;
+      }
+    `;
+    shadow.appendChild(style);
+    const root = document.createElement("div");
+    root.id = 'root';
+    shadow.appendChild(root);
+    root.innerHTML = `
+        <header id="header">
+            <section-header id="title"> Advanced Layout (for) Easy eXecution </section-header>
+            <tri-group>
+                <span id='minimize' style='line-height: 1.1'>-</span>
+                <span id='restore' style='line-height: 1.2;'>▢</span>
+                <div id='close'>X</div>
+            </tri-group>
+        </header>
+        <div id="body" data-tab="1">
+            <section data-tab="1">
+                <table id="table">
+                    <tbody></tbody>
+                </table>
+            </section>
+            <section data-tab="2" hidden></section>
+        </div>
+        <div id="footer">
+            <div id='reizewrapper'>
+                <div id="resize">◢</div>
+            </div>
+        </div>
+    `;
+    const $ = id => root.querySelector(`#${id}`);
+    
+    
+    const close = $('close');
+    close.addEventListener('click', () => {
+        root.hidden = true;
+        root.style.display = 'none';
     });
-};
-
-export function createChildElement(parent, type, id, meta) {
-    return parent.appendChild(Object.assign(document.createElement(type), {id}, meta));
-};
-
-const registeredEvents = {};
-function registerEvent(name, fn) {
-    if (!(name in registeredEvents)) {
-        registeredEvents[name] = [];
-    };
-    registeredEvents[name].push(fn);
-};
-export function flushEvent(name) {
-    return delete registeredEvents[name]
-};
-export function dispatch(name, ...args) {
-    for (const callback of registeredEvents[name]) {
-        callback(...args);
-    };
-};
-window['dispatch'] = dispatch;
-export const events = [
-    'cycle',
-    'inst1',
-    'inst2',
-    'gala1',
-    'dimb1',
-    'time1',
-    'time2'
-];
-const basetext = {};
-events.forEach(name => {
-    basetext[name] = $(name).textContent +' ';
-});
-events.forEach(name => {
-    registerEvent(name, data => {
-        $(name).textContent = basetext[name] + data;
+    
+    const restore = $('restore');
+    let restore_start = null;
+    let restore_maximized = false;
+    restore.addEventListener('click', () => {
+        if (!restore_maximized) {
+            restore_start = root.getBoundingClientRect();
+    
+            root.style.left = '0px';
+            root.style.top = '0px';
+            root.style.width = '100%';
+            root.style.height = '100%';
+    
+            restore.textContent = '❐';
+            root.style.borderRadius = '0px';
+            restore_maximized = true;
+        } else {
+            root.style.left = restore_start.x + 'px';
+            root.style.top = restore_start.y + 'px'
+            root.style.width = restore_start.width + 'px';
+            root.style.height = restore_start.height + 'px';
+    
+            restore.textContent = '▢';
+            root.style.borderRadius = '';
+            restore_maximized = false;
+        };
     });
-});
+    
+    const minimize = $('minimize');
+    let minimize_minimized = false;
+    let minimize_start = null;
+    
+    minimize.addEventListener('click', () => {
+        if (restore_maximized) return;
+        if (!minimize_minimized) {
+            minimize_start = root.getBoundingClientRect();
+    
+            root.style.height = header.getBoundingClientRect().height + 'px';
+            body.hidden = true;
+            footer.hidden = true;
+    
+            minimize_minimized = true;
+        } else {
+            root.style.height = minimize_start.height + 'px';
+            body.hidden = false;
+            footer.hidden = false;
+    
+            minimize_minimized = false;
+        }
+    });
+    
+    const header = $('header');
+    
+    let header_dragging = false;
+    let header_val = null;
+    let pointerid = null;
+    header.addEventListener('pointerup', () => {
+        if (!header_dragging) return
+        header.releasePointerCapture(pointerid);
+        header_dragging = false;
+    })
+    header.addEventListener('pointercancel', () => {
+        if (!header_dragging) return; // this is so it doesn't error with the releasepointercapture
+        header.releasePointerCapture(pointerid);
+        header_dragging = false;
+    });
+    
+    header.addEventListener('pointerdown', e => {
+        if (restore_maximized || e.button !== 0 || e.target.tagName == "DIV" || e.target.tagName == "SPAN") return;
+        header_dragging = true;
+        header_val = {
+            x: e.clientX,
+            y: e.clientY
+        };
+        header_val['left'] = root.offsetLeft;
+        header_val['top'] = root.offsetTop;
+        /* I skimmed the article [https://blog.r0b.io/post/creating-drag-interactions-with-set-pointer-capture-in-java-script/] it was a big help, and apparently setPointerCapture is helpful
+        */
+        pointerid = e.pointerId;
+        header.setPointerCapture(e.pointerId); 
+    });
+    
+    header.addEventListener('pointermove', e => {
+        if (!header_dragging || restore_maximized) return;
+        root.style.left = header_val.left + e.clientX - header_val.x + 'px';
+        root.style.top = header_val.top + e.clientY - header_val.y + 'px';
+    });
+    
+    const resize = $('resize');
+    let resize_resizing = false;
+    let resize_pointerid = null;
+    let base = null;
+    
+    resize.addEventListener('pointerup', () => {
+        if (!resize_resizing) return;
+        resize.releasePointerCapture(resize_pointerid);
+        resize_resizing = false
+    });
+    resize.addEventListener('pointercancel', () => {
+        if (!resize_resizing) return;
+        resize.releasePointerCapture(resize_pointerid);
+        resize_resizing = false
+    });
+    resize.addEventListener('pointerdown', e => {
+        if (restore_maximized) return;
+    
+        base = root.getBoundingClientRect();
+        base['x'] = e.clientX;
+        base['y'] = e.clientY;
+        
+        resize_resizing = true
+        resize_pointerid = e.pointerId;
+        resize.setPointerCapture(e.pointerId);
+    });
+    document.addEventListener('pointermove', e => {
+        if (!resize_resizing || restore_maximized) return;
+
+        root.style.width = Math.max(400, base.width + (e.clientX - base['x'])) + 'px';
+        root.style.height = Math.max(80, base.height + (e.clientY - base['y'])) + 'px';
+    });
+    
+    const body = $('body');
+    const footer = $('footer');
+    
+    const tablebody = $("table").children[0];
+    function appendToTable(title, id) {
+        const tr = document.createElement("tr");
+        tablebody.appendChild(tr);
+        
+        const td = document.createElement("td");
+        td.textContent = title;
+        tr.appendChild(td);
+        
+        const value = document.createElement("td");
+        value.style.paddingLeft = '10px';
+        tr.appendChild(value);
+        
+        value.id = id;
+        return value;
+    };
+    
+    appendToTable("Cycle counter", 'cycle');
+    appendToTable("Instruction #", 'inst1');
+    appendToTable("Current instruction", 'inst2');
+    appendToTable("Galaxies", 'gala1');
+    appendToTable("Dimboosts", 'dimb1');
+    appendToTable("Current game time", 'time1');
+    appendToTable("Current real time", 'time2');
+    const events = [
+        'cycle',
+        'inst1',
+        'inst2',
+        'gala1',
+        'dimb1',
+        'time1',
+        'time2'
+    ];
+    const registeredEvents = {};
+    function registerEvent(name, fn) {
+        if (!(name in registeredEvents)) {
+            registeredEvents[name] = [];
+        };
+        registeredEvents[name].push(fn);
+    };
+    function flushEvent(name) {
+        return delete registeredEvents[name]
+    };
+    export function dispatch(name, ...args) {
+        for (const callback of registeredEvents[name] ?? []) {
+            callback(...args);
+        };
+    };
+    for (const event of events) {
+        let el = $(event);
+        el.textContent = "Awaiting signal"
+        registerEvent(event, txt => el.textContent = txt);
+        blinkyText(el, '...', 300);
+    };
+    function blinkyText(node, text, delay) {
+        let base = node.textContent;
+        function* iterate() {
+            for (const char of text) {
+                yield char
+            };
+        };
+        function checkTamper() {
+            console.log(node.textContent.slice(0, base.length));
+            return node.textContent.slice(0, base.length) != base
+        }
+        let iterator = iterate(text);
+        let id = setInterval(() => {
+            if (checkTamper()) {
+                clearInterval(id);
+                return;
+            }
+            let iter = iterator.next();
+            if (iter.done) {
+                node.textContent = base;
+                iterator = iterate(text);
+            } else {
+                node.textContent += iter.value;
+            }
+        }, delay);
+        return id;
+    };

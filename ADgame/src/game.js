@@ -625,8 +625,6 @@ export function gameLoop(passDiff, options = {}) {
   GalaxyGenerator.loop(realDiff);
   GameEnd.gameLoop(realDiff);
 
-  tasTick();
-
   if (!Enslaved.canAmplify) {
     Enslaved.boostReality = false;
   }
@@ -645,6 +643,7 @@ export function gameLoop(passDiff, options = {}) {
   }
 
   EventHub.dispatch(GAME_EVENT.GAME_TICK_AFTER);
+  tasTick();
   GameUI.update();
   player.lastUpdate = thisUpdate;
   PerformanceStats.end("Game Update");
