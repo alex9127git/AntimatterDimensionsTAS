@@ -3,226 +3,220 @@
 #include "../gamestate/gamestate.h"
 #include "../constants/constants.h"
 
+function<Decimal(Decimal&)> AchConstants::NO_EFFECT = 
+        [](Decimal& _) {return DC::D1;};
 
-Achievement::Achievement(
-    int _id,
-    Decimal _effect,
-    Decimal _defaultEffect,
-    function<bool(GameState&)> _unlockCondition
-)   :   id(_id),
-        effect([_effect](Decimal _) {return _effect;}),
-        defaultEffect(_defaultEffect),
-        unlockCondition(_unlockCondition),
-        unlocked(false),
-        unlockTime(0)
-    {};
+vector<function<Decimal(Decimal&)>> AchConstants::effectFormulae = {
+    NO_EFFECT,
+    NO_EFFECT,
+    NO_EFFECT,
+    NO_EFFECT,
+    NO_EFFECT,
+    NO_EFFECT,
+    NO_EFFECT,
+    NO_EFFECT,
 
-Achievement::Achievement(
-    int _id,
-    function<Decimal(Decimal)> _effect,
-    Decimal _defaultEffect,
-    function<bool(GameState&)> _unlockCondition
-)   :   id(_id),
-        effect(_effect),
-        defaultEffect(_defaultEffect),
-        unlockCondition(_unlockCondition),
-        unlocked(false),
-        unlockTime(0)
-    {}
+    [](Decimal& _) {return DC::D100;},
+    NO_EFFECT,
+    [](Decimal& _) {return DC::D1_1;},
+    NO_EFFECT,
+    NO_EFFECT,
+    NO_EFFECT,
+    NO_EFFECT,
+    [](Decimal& _) {return DC::D1_1;},
 
-void Achievement::unlock() {
-    this->unlocked = true;
-}
+    [](Decimal& _) {return DC::D1_05;},
+    [](Decimal& _) {return DC::D1_1;},
+    NO_EFFECT,
+    [](Decimal& _) {return DC::D1_02;},
+    NO_EFFECT,
+    [](Decimal& _) {return DC::D1_02;},
+    [](Decimal& _) {return DC::D5E3;},
+    NO_EFFECT,
 
-void Achievement::setUnlockTime(long t) {
-    this->unlockTime = t;
-}
+    NO_EFFECT,
+    NO_EFFECT,
+    [](Decimal& tier) {return DC::D1_01 * tier;},
+    NO_EFFECT,
+    [](Decimal& _) {return DC::D1_02;},
+    NO_EFFECT,
+    NO_EFFECT,
+    [](Decimal& _) {return DC::D1_1;},
 
-void Achievement::lock() {
-    this->unlocked = false;
-}
+    NO_EFFECT,
+    NO_EFFECT,
+    NO_EFFECT,
+    [](Decimal& _) {return DC::D5E5;},
+    [](Decimal& _) {return DC::D5E10;},
+    [](Decimal minutes) {return Decimal::max(DC::D6 / (minutes + DC::D3), DC::D1);},
+    [](Decimal& _) {return DC::D1_1;},
+    [](Decimal& _) {return DC::D1_01;},
 
-int Achievement::getId() {
-    return this->id;
-}
+    NO_EFFECT,
+    NO_EFFECT,
+    NO_EFFECT,
+    [](Decimal& _) {return DC::D1_25;},
+    [](Decimal minutes) {return Decimal::max(DC::D4 / (minutes + DC::D1), DC::D1);},
+    [](Decimal& _) {return DC::D1_02;},
+    NO_EFFECT,
+    [](Decimal& _) {return DC::D1_5;},
 
-bool Achievement::isUnlocked() {
-    return this->unlocked;
-}
+    [](Decimal& _) {return DC::D3;},
+    [](Decimal& _) {return DC::D1_1;},
+    [](Decimal antimatter) {return Decimal::pow(antimatter, 0.00002) + DC::D1;},
+    [](Decimal& _) {return DC::D1_4;},
+    NO_EFFECT,
+    [](Decimal days) {return Decimal::max(Decimal::pow(days / DC::D2, 0.05), DC::D1);},
+    NO_EFFECT,
+    [](Decimal& _) {return DC::D5E25;},
+};
 
-bool Achievement::checkUnlockCondition(GameState& st) {
-    return this->unlockCondition(st);
-}
+function<bool(GameState&)> AchConstants::NOT_APPLICABLE = 
+        [](GameState& st) {return false;};
+function<bool(GameState&)> AchConstants::ALWAYS_UNLOCKED = 
+        [](GameState& st) {return true;};
+function<bool(GameState&)> AchConstants::NOT_IMPLEMENTED_YET = 
+        [](GameState& st) {return false;};
 
-void Achievement::print() {
-    cout << this->id << " " << this->unlocked << " " << this->isUnlocked() << endl;
-}
+vector<function<bool(GameState&)>> AchConstants::unlockConditions = {
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+
+    NOT_APPLICABLE,
+    ALWAYS_UNLOCKED,
+    NOT_APPLICABLE,
+    [](GameState& st) {return st.antimatter() >= DC::D1E80;},
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+
+    [](GameState& st) {
+        for (int i = 1; i <= 8; i++) {
+            if (st.AD()[i].getMult() >= DC::D1E31) {
+                return true;
+            }
+        }
+        return false;
+    },
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+    ALWAYS_UNLOCKED,
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+
+    NOT_APPLICABLE,
+    [](GameState& st) {
+        return st.antimatter() >= DC::D1E63 && 
+            st.AD()[1].productionPerSecond() > st.antimatter();
+    },
+    [](GameState& st) {
+        for (int i = 1; i <= 7; i++) {
+            if (st.AD()[i].getMult() >= st.AD()[i+1].getMult()) return false;
+        }
+        return true;
+    },
+    ALWAYS_UNLOCKED,
+    [](GameState& st) {return st.tickspeed().perSecond() >= DC::D1E26;},
+    [](GameState& st) {return st.AD()[7].getAmount() >= DC::D1E12;},
+    NOT_APPLICABLE,
+    NOT_APPLICABLE,
+
+
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET,
+    ALWAYS_UNLOCKED,
+    NOT_IMPLEMENTED_YET,
+    NOT_IMPLEMENTED_YET
+};
+
+vector<int> AchConstants::achIdList = {
+    11, 12, 13, 14, 15, 16, 17, 18,
+    21, 22, 23, 24, 25, 26, 27, 28,
+    31, 32, 33, 34, 35, 36, 37, 38,
+    41, 42, 43, 44, 45, 46, 47, 48,
+    51, 52, 53, 54, 55, 56, 57, 58,
+    61, 62, 63, 64, 65, 66, 67, 68,
+    71, 72, 73, 74, 75, 76, 77, 78
+};
+
 
 Achievements::Achievements() {
-    _achievements = {
-        Achievement(11, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(12, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(13, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(14, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(15, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(16, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(17, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(18, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-
-        Achievement(21, DC::D100, DC::D0,
-            [](GameState& st) {return false;}),
-        Achievement(22, DC::D1, DC::D1,
-            [](GameState& st) {return true;}),
-        Achievement(23, DC::D1_1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(24, DC::D1, DC::D1,
-            [](GameState& st) {return st.antimatter() >= DC::D1E80;}),
-        Achievement(25, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(26, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(27, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(28, DC::D1_1, DC::D1,
-            [](GameState& st) {return false;}),
-
-        Achievement(31, DC::D1_05, DC::D1,
-            [](GameState& st) {
-                for (int i = 1; i <= 8; i++) {
-                    if (st.AD()[i].getMult() >= DC::D1E31) {
-                        return true;
-                    }
-                }
-                return false;
-            }),
-        Achievement(32, DC::D1_1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(33, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(34, DC::D1_02, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(35, DC::D1, DC::D1,
-            [](GameState& st) {return true;}),
-        Achievement(36, DC::D1_02, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(37, DC::D5E3, DC::D0,
-            [](GameState& st) {return false;}),
-        Achievement(38, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-
-        Achievement(41, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(42, DC::D1, DC::D1,
-            [](GameState& st) {
-                return st.antimatter() >= DC::D1E63 && 
-                    st.AD()[1].productionPerSecond() > st.antimatter();
-            }),
-        Achievement(43, 
-            [](Decimal tier) {return DC::D1_01 * tier;}, 
-            DC::D1,
-            [](GameState& st) {
-                for (int i = 1; i <= 7; i++) {
-                    if (st.AD()[i].getMult() >= st.AD()[i+1].getMult()) return false;
-                }
-                return true;
-            }),
-        Achievement(44, DC::D1, DC::D1,
-            [](GameState& st) {return true;}),
-        Achievement(45, DC::D1_02, DC::D1,
-            [](GameState& st) {return st.tickspeed().perSecond() >= DC::D1E26;}),
-        Achievement(46, DC::D1, DC::D1,
-            [](GameState& st) {return st.AD()[7].getAmount() >= DC::D1E12;}),
-        Achievement(47, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(48, DC::D1_1, DC::D1,
-            [](GameState& st) {return false;}),
-
-        Achievement(51, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(52, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(53, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(54, DC::D5E5, DC::D0,
-            [](GameState& st) {return false;}),
-        Achievement(55, DC::D5E10, DC::D0,
-            [](GameState& st) {return false;}),
-        Achievement(56, 
-            [](Decimal minutes) {return Decimal::max(DC::D6 / (minutes + DC::D3), DC::D1);}, 
-            DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(57, DC::D1_1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(58, DC::D1_01, DC::D1,
-            [](GameState& st) {return false;}),
-
-        Achievement(61, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(62, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(63, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(64, DC::D1_25, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(65, 
-            [](Decimal minutes) {return Decimal::max(DC::D4 / (minutes + DC::D1), DC::D1);}, 
-            DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(66, DC::D1_02, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(67, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(68, DC::D1_5, DC::D1,
-            [](GameState& st) {return false;}),
-
-        Achievement(71, DC::D3, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(72, DC::D1_1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(73, 
-            [](Decimal antimatter) {return Decimal::pow(antimatter, 0.00002) + DC::D1;},
-            DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(74, DC::D1_4, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(75, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(76, 
-            [](Decimal days) {return Decimal::max(Decimal::pow(days / DC::D2, 0.05), DC::D1);}, 
-            DC::D1,
-            [](GameState& st) {return true;}),
-        Achievement(77, DC::D1, DC::D1,
-            [](GameState& st) {return false;}),
-        Achievement(78, DC::D5E25, DC::D0,
-            [](GameState& st) {return false;}),
-    };
+    bitmasks = {0, 0, 0, 0, 0, 0, 0};
+    for (int i = 0; i < bitmasks.size() * 8; i++) {
+        unlockTimes.push_back(-1LL);
+    }
 }
 
 Achievements::Achievements(json& j) : Achievements::Achievements() {
     this->from_json(j);
 }
 
-vector<Achievement>& Achievements::achievements() {
-    return this->_achievements;
+void Achievements::unlockAchievement(int id, int64_t time) {
+    bitmasks[id / 10 - 1] |= (1 << (id % 10 - 1));
+    unlockTimes[idToIndex(id)] = time;
 }
 
-Achievement& Achievements::operator[] (int index) {
-    return this->_achievements[(index / 10 - 1) * 8 + (index % 10 - 1)];
+void Achievements::lockAchievement(int id) {
+    bitmasks[id / 10 - 1] &= (255 - (1 << (id % 10 - 1)));
+    unlockTimes[idToIndex(id)] = -1;
+}
+
+bool Achievements::checkUnlockCondition(int id, GameState& st) {
+    return AchConstants::unlockConditions[Achievements::idToIndex(id)](st);
+}
+
+bool Achievements::isUnlocked(int id) {
+    return (bitmasks[id / 10 - 1] & (1 << (id % 10 - 1))) != 0;
+}
+
+int Achievements::idToIndex(int id) {
+    return (id / 10 - 1) * 8 + (id % 10 - 1);
+}
+
+int Achievements::indexToId(int index) {
+    return (index / 8 + 1) * 10 + (index % 8 + 1);
+}
+
+int Achievements::achCount() {
+    return unlockTimes.size();
 }
 
 json Achievements::to_json() {
     json j;
     vector<int> ids;
-    for (Achievement& ach : this->achievements()) {
-        if (ach.isUnlocked()) ids.push_back(ach.getId());
+    for (int i = 0; i < unlockTimes.size(); i++) {
+        int id = indexToId(i);
+        if (isUnlocked(id)) ids.push_back(id);
     }
     j["unlockedAchievements"] = ids;
     return j;
@@ -231,6 +225,6 @@ json Achievements::to_json() {
 void Achievements::from_json(json& j) {
     vector<int> ids = j["unlockedAchievements"];
     for (int id : ids) {
-        (*this)[id].unlock();
+        unlockAchievement(id, 0);
     }
 }

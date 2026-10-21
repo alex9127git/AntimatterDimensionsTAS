@@ -118,6 +118,10 @@ Decimal Decimal::log10() {
     return Decimal(this->exponent + std::log10(this->mantissa));
 }
 
+double Decimal::log10value() {
+    return this->exponent + std::log10(this->mantissa);
+}
+
 double Decimal::toNumber(const Decimal& d) {
     return d.mantissa * std::pow(10, d.exponent);
 }
@@ -185,7 +189,6 @@ bool Decimal::gte(const Decimal& a, const Decimal& b) {
 }
 
 bool Decimal::gt(const Decimal& a, const Decimal& b) {
-    if (a.isCached && b.isCached) return a.cachedValue > b.cachedValue;
     if (a.mantissa == 0) return b.mantissa < 0;
     if (b.mantissa == 0) return a.mantissa > 0;
     if (a.exponent == b.exponent) return a.mantissa > b.mantissa;
@@ -217,11 +220,6 @@ void Decimal::normalize() {
 
 void Decimal::repr() {
     cout << "Decimal(" << this->mantissa << ", " << this->exponent << ")" << endl;
-}
-
-void Decimal::cache() {
-    this->cachedValue = this->mantissa * std::pow(10, this->exponent);
-    this->isCached = !isinf(this->cachedValue);
 }
 
 string Decimal::toString(const Decimal& d, int precision) {
