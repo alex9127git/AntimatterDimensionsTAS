@@ -22,32 +22,47 @@
     // with the downside of looking vibe coded, as Alex pointed out.
     style.textContent = `
       #root {
-        border: 1px solid green;
-        padding: 5px;
-        font-family: monospace Typewriter;
+        --border-style: 1px solid rgb(27, 187, 54);
+        --text-color: rgb(27, 187, 54);
+        --button-bg: rgb(18,18,18);
+        --button-bg-hover: rgb(27, 187, 54);
+        --button-text: white;
+        --button-text-hover: rgb(18,18,18);
+        --text-main: white;
+        --font-family: monospace Typewriter;
+        --root-bg: rgba(18,18,18,1);
+        --table-bg-odd: rgba(18,18,18,1);;
+        --table-bg-even: #df50504d;
+
+        border: var(--border-style);
+        font-family: var(--font-family);
         position: fixed;
         left: 20px;
         top: 20px;
-        width: 380px;
+        width: 400px;
         height: 280px;
         display: grid;
         grid-template-rows: 48px minmax(0, 1fr) 20px;
+        border-radius: 5px;
         overflow: hidden;
         white-space: nowrap;
         color: white;
-        background: radial-gradient(ellipse at 5% 8%, rgba(50, 255, 105, .20), transparent 100%), #0c1220;
-        border: 2px solid black;
-        font: monospace;
+        background: var(--root-bg);
         pointer-events: auto;
         user-select: text;
       }
+      #root > *:not(#footer) {
+        margin: 5px;
+      }
       header {
+        color: var(--text-color);
         cursor: move;
         user-select: none;
         display: flex;
         justify-content: space-between;
         padding-left: 15px;
         padding-top: 5px;
+        font-size: 14px;
         box-sizing: border-box;
       }
       tri-group {
@@ -77,24 +92,85 @@
         width: 100%;
         table-layout: fixed;
         padding-left: 10px;
-        border-spacing: 5px 6px;
+        padding-right: 20px;
+        border-spacing: 0;
       }
       td {
         color: white;
         text-align: left;
+        padding: 7px 0 7px 8px;
+      }
+      tr:nth-child(even) {
+        background-color: var(--table-bg-even);
+      }
+      tr:nth-child(odd) {
+        background-color: var(--table-bg-odd);
       }
       [data-tab="1"] {
         width: 100%;
         height: 100%;
       }
-      #resize {
+      #resizewrapper {
         display: flex;
-        color: white;
-        height: fit-content;
-        width: fit-content;
-        justify-self: flex-end;
+        justify-content: flex-end;
+        align-items: flex-end;
+        box-sizing: border-box;
+      }
+      #resize {
         cursor: nwse-resize;
-        margin-top: 12px;
+        color: var(--text-color);
+        margin-top: 6px;
+      }
+      #tab {
+        justify-self: center;
+        color: var(--text-color);
+        display: flex;
+        width: fit-content;
+        gap: 20px;
+        padding-bottom: 4px;
+      }     
+      #tab > * {
+        cursor: pointer;
+        user-select: none;
+        border: var(--border-style);
+        background-color: var(--button-bg);
+        color: var(--button-text);
+        padding: 0 6px 0 6px;
+        border-radius: 4px;
+      }
+      #tab > *:hover {
+        background-color: var(--button-bg-hover);
+        color: var(--button-text-hover);
+      }
+      #tab > *.active {
+        background-color: var(--button-bg-hover) !important;
+        color: var(--button-text-hover) !important;
+      }
+      textarea {
+        resize: none;
+        margin-top: 15px;
+        padding: 10px;
+        background-color: var(--root-bg);
+        border: var(--border-style);
+        border-radius: 4px;
+        color: var(--text-main);
+        font-size: 12px;
+        width: 75%;
+        font-size: 16px;
+        height: 2rem;
+      }
+      #startTAS {
+        user-select: none;
+        justify-self: center;
+        border: var(--border-style);
+        border-radius: 4px;
+        margin: 10px;
+        padding: 3px;
+        width: fit-content;
+      }
+      #startTAS:hover {
+        background: var(--button-bg-hover);
+        color: var(--button-text-hover);
       }
     `;
     shadow.appendChild(style);
@@ -110,23 +186,58 @@
                 <div id='close'>X</div>
             </tri-group>
         </header>
-        <div id="body" data-tab="1">
-            <section data-tab="1">
+        <div id="body">
+            <div id='tab'>
+                <div id="tab1" class="active">Diagnostics</div>
+                <div id="tab2">TAS GUI</div>
+            </div>
+            <div data-tab="0">
                 <table id="table">
                     <tbody></tbody>
                 </table>
-            </section>
-            <section data-tab="2" hidden></section>
+            </div>
+
+            <div data-tab="1" hidden>
+                <div id="contentwrapper">
+                    <div><textarea spellcheck='false' type='text' placeholder='Enter expression for the paths' id='enterpath'></textarea></div>
+                    <div><textarea spellcheck='false' type='text' placeholder='Enter expression for the save' id='entersave'></textarea></div>
+                    <div id='options'> <span> With TAS Diagnostics? <input type='checkbox' id='o1'></span> </div>
+                    <div id="startTAS"> Start TAS </div>
+                </div>
+            </div>
+
         </div>
         <div id="footer">
-            <div id='reizewrapper'>
+            <div id='resizewrapper'>
                 <div id="resize">◢</div>
             </div>
         </div>
     `;
     const $ = id => root.querySelector(`#${id}`);
+    const $$ = (role, val) => root.querySelector(`[data-${role}="${val}"]`);
     
-    
+    const paths = $('enterpath');
+    const save = $('entersave');
+    const start = $('startTAS');
+    const diag = $('o1');
+
+    start.addEventListener("click", () => {
+        let val1, val2;
+        try {
+            val1 = eval(paths.value);
+            val2 = eval(save.value);
+            if (!Array.isArray(val1)) val1 = [val1];
+            if (diag.checked) {
+                TAS.variables.debug |= 2;
+            };
+            TAS.prepareAndStart(val1, val2);
+        } catch(e) {
+            alert(e);
+        };
+    });
+
+
+
     const close = $('close');
     close.addEventListener('click', () => {
         root.hidden = true;
@@ -147,6 +258,7 @@
     
             restore.textContent = '❐';
             root.style.borderRadius = '0px';
+            header.style.setProperty('cursor', 'default', 'important')
             restore_maximized = true;
         } else {
             root.style.left = restore_start.x + 'px';
@@ -155,7 +267,9 @@
             root.style.height = restore_start.height + 'px';
     
             restore.textContent = '▢';
+            header.style.removeProperty('cursor');
             root.style.borderRadius = '';
+            
             restore_maximized = false;
         };
     });
@@ -256,6 +370,31 @@
     const body = $('body');
     const footer = $('footer');
     
+    const tabs = {
+        0: $('tab1'),
+        1:$('tab2')
+    };
+
+    let current_tab = 0;
+    tabs[0].addEventListener("click", () => {
+        current_tab = 0;
+        tabChanged();
+    });
+    tabs[1].addEventListener("click", () => {
+        current_tab = 1;
+        tabChanged();
+    });
+    function tabChanged() {
+        let active =  $$('tab', `${current_tab}`);
+        let inactive = $$('tab', `${+!current_tab}`);
+
+        active.hidden = false;
+        inactive.hidden = true;
+
+        tabs[current_tab].classList.add('active');
+        tabs[+!current_tab].classList.remove('active');
+    };
+
     const tablebody = $("table").children[0];
     function appendToTable(title, id) {
         const tr = document.createElement("tr");
@@ -279,7 +418,7 @@
     appendToTable("Galaxies", 'gala1');
     appendToTable("Dimboosts", 'dimb1');
     appendToTable("Current game time", 'time1');
-    appendToTable("Current real time", 'time2');
+    appendToTable("TAS run time", 'time2');
     const events = [
         'cycle',
         'inst1',
@@ -317,8 +456,10 @@
                 yield char
             };
         };
+        // if the text content ever changes outside the normal
+        // then it has been manually overwritten, and we 
+        // want to stop the blinky text.
         function checkTamper() {
-            console.log(node.textContent.slice(0, base.length));
             return node.textContent.slice(0, base.length) != base
         }
         let iterator = iterate(text);
