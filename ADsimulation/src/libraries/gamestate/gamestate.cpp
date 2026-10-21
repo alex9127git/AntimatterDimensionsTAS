@@ -21,8 +21,8 @@ GameState::GameState(json& j) : GameState()
 };
 
 void GameState::prepare() {
-    for (Achievement& ach : this->achievements().achievements()) {
-        this->unlockAchievement(ach.getId(), false);
+    for (int id : AchConstants::achIdList) {
+        this->unlockAchievement(id, false);
     }
     this->purchaseInstructions = {};
     this->sacrificeInstructions = {};
@@ -74,8 +74,8 @@ void GameState::recalcAchievementBonus() {
     Decimal result = DC::D1;
     int rowCounter = 0;
     int cycle = 0;
-    for (Achievement& ach : this->achievements().achievements()) {
-        if (ach.isUnlocked()) {
+    for (int id : AchConstants::achIdList) {
+        if (achievements().isUnlocked(id)) {
             result *= DC::D1_03;
             rowCounter++;
         }
@@ -215,12 +215,10 @@ bool GameState::handleKonamiCode() {
 }
 
 void GameState::unlockAchievement(int ach, bool force) {
-    if (force || this->achievements()[ach].checkUnlockCondition(*this)) {
-        if (!this->achievements()[ach].isUnlocked()) {
-            this->achievements()[ach].unlock();
-            this->achievements()[ach].setUnlockTime(this->realTimePlayed());
-            this->recalcAchievementBonus();
-        }
+    if (this->achievements().isUnlocked(ach)) return;
+    if (force || this->achievements().checkUnlockCondition(ach, *this)) {
+        this->achievements().unlockAchievement(ach, this->realTimePlayed());
+        this->recalcAchievementBonus();
     }
 }
 

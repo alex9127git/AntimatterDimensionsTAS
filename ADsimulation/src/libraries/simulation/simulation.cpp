@@ -319,42 +319,44 @@ void computePurchaseBranches(GameState& gameState, vector<GameState>& branches) 
     }
 }
 
-bool compare(vector<Decimal>& st1, vector<Decimal>& st2) {
+bool compare(const double* st1, const double* st2, size_t width) {
     // Compare the two game states together.
-    // Returns true if all st1's values are bigger or equal than that of st2.
+    // Returns true if all st1's values are bigger or equal than that of st2,
+    // and at least one value is strictly bigger.
     // Otherwise, return false.
-    for (int i = 0; i < st1.size(); i++) {
+    bool strictlyBetter = false;
+    for (size_t i = 0; i < width; i++) {
         if (st1[i] < st2[i]) return false;
+        if (st1[i] > st2[i]) strictlyBetter = true;
     }
-    for (int i = 0; i < st1.size(); i++) {
-        if (st1[i] > st2[i]) return true;
-    }
-    return false;
+    return strictlyBetter;
 }
 
 void purge(vector<GameState>& gamestates, bool verbose) {
     int size = gamestates.size();
-    vector<vector<Decimal>> values;
     Timer timer;
     vector<int> indices(size);
     iota(indices.begin(), indices.end(), 0);
     sort(indices.begin(), indices.end(), [&gamestates](int i, int j) {
         return gamestates[i].AD()[1].getAmount() > gamestates[j].AD()[1].getAmount();
     });
+    vector<double> values;
+    int width = 0;
     for (int i = 0; i < size; i++) {
         GameState& gst = gamestates[indices[i]];
-        vector<Decimal> valueRow;
-        valueRow.push_back(gst.antimatter());
-        for (int i = 1; i <= 8; i++) {
-            valueRow.push_back(gst.AD()[i].getAmount());
-            valueRow.push_back(Decimal(gst.AD()[i].getPurchases()));
+        values.push_back(gst.antimatter().log10value());
+        for (int d = 1; d <= 8; d++) {
+            values.push_back(gst.AD()[d].getAmount().log10value());
+            values.push_back(gst.AD()[d].getPurchases());
         }
-        valueRow.push_back(gst.getSacrificeBonus());
-        valueRow.push_back(Decimal(gst.tickspeed().getPurchases()));
-        valueRow.push_back(gst.tickspeed().perSecond());
-        valueRow.push_back(gst.getAchievementBonus());
-        for (Decimal& d : valueRow) d.cache();
-        values.push_back(valueRow);
+        values.push_back(gst.getSacrificeBonus().log10value());
+        values.push_back(gst.tickspeed().getPurchases());
+        values.push_back(gst.tickspeed().perSecond().log10value());
+        values.push_back(gst.getAchievementBonus().log10value());
+        if (i == 0) {
+            width = values.size();
+            values.reserve(size * width);
+        }
     }
     vector<char> removedCopy(size);
     for (int i = 0; i < size; i++) {
@@ -365,7 +367,7 @@ void purge(vector<GameState>& gamestates, bool verbose) {
         if (removedCopy[i] == 1) continue;
         for (int j = i + 1; j < size; j++) {
             if (removedCopy[j] == 1) continue;
-            if (compare(values[i], values[j])) {
+            if (compare(&values[i * width], &values[j * width], width)) {
                 removedCopy[j] = 1;
             }
         }
@@ -384,7 +386,7 @@ void purge(vector<GameState>& gamestates, bool verbose) {
         i++;
     }
     double recreateTimer = timer.silentReset();
-    vector<vector<Decimal>>().swap(values);
+    vector<double>().swap(values);
     //cout << createArrayTimer << " " << compareTimer << " " << recreateTimer << endl;
     gamestates.swap(result);
 }

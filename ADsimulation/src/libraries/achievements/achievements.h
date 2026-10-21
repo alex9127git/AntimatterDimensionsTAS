@@ -10,43 +10,20 @@ using namespace std;
 class GameState;
 
 
-class Achievement {
-    private:
-        int16_t id;
-        function<Decimal(Decimal)> effect;
-        Decimal defaultEffect;
-        function<bool(GameState&)> unlockCondition;
-        bool unlocked;
-        int64_t unlockTime;
-
-    public:
-        Achievement(
-            int _id, 
-            Decimal _effect, 
-            Decimal _defaultEffect,
-            function<bool(GameState&)> _unlockCondition
-        );
-        Achievement(
-            int _id, 
-            function<Decimal(Decimal)> _effect, 
-            Decimal _defaultEffect,
-            function<bool(GameState&)> _unlockCondition
-        );
-
-        void unlock();
-        void setUnlockTime(long t);
-        void lock();
-
-        int getId();
-        bool isUnlocked();
-        bool checkUnlockCondition(GameState& st);
-
-        void print();
+struct AchConstants {
+    static function<Decimal(Decimal&)> NO_EFFECT;
+    static vector<function<Decimal(Decimal&)>> effectFormulae;
+    static function<bool(GameState&)> NOT_APPLICABLE;
+    static function<bool(GameState&)> ALWAYS_UNLOCKED;
+    static function<bool(GameState&)> NOT_IMPLEMENTED_YET;
+    static vector<function<bool(GameState&)>> unlockConditions;
+    static vector<int> achIdList;
 };
 
 class Achievements : public ISerializable {
     private:
-        vector<Achievement> _achievements;
+        vector<uint8_t> bitmasks;
+        vector<int64_t> unlockTimes;
 
     public:
         inline static const vector<int> afterTickAchievements = {
@@ -55,10 +32,15 @@ class Achievements : public ISerializable {
 
         Achievements();
         Achievements(json& j);
+        
+        void unlockAchievement(int id, int64_t time);
+        void lockAchievement(int id);
+        bool checkUnlockCondition(int id, GameState& st);
+        bool isUnlocked(int id);
 
-        vector<Achievement>& achievements();
-
-        Achievement& operator[](int index);
+        static int idToIndex(int id);
+        static int indexToId(int index);
+        int achCount();
 
         json to_json() override;
         void from_json(json& j) override;

@@ -5,15 +5,10 @@
 using namespace std;
 
 
-class Decimal : public ISerializable {
+class Decimal {
     private:
         double mantissa;
         int64_t exponent;
-        
-        // volatile, shouldn't be serialized
-        
-        double cachedValue = 0;
-        bool isCached = false;
 
     public:
         inline static const double pow10_table[41] = {
@@ -45,6 +40,7 @@ class Decimal : public ISerializable {
         friend ostream& operator<<(ostream& os, const Decimal& d);
 
         Decimal log10();
+        double log10value();
 
         static double toNumber(const Decimal& d);
 
@@ -65,11 +61,10 @@ class Decimal : public ISerializable {
         void normalize();
 
         void repr();
-        void cache();
 
         static string toString(const Decimal& d, int precision);
         string toString(int precision);
 
-        json to_json() override;
-        void from_json(json& j) override;
+        json to_json();
+        void from_json(json& j);
 };
