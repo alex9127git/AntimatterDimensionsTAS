@@ -80,10 +80,10 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    save_out = ofstream(outputFile);
     vector<double> instructions;
     gameState = runDimboost(gameState, useSacrifice, 1000);
     cout << "Finished simulation; dumping result game state into " << outputFile << endl;
+    save_out = ofstream(outputFile);
     save_out << gameState.to_json();
     if (saveCommands) {
         cout << "Dumping command sequence into " << cmdOutFile << endl;

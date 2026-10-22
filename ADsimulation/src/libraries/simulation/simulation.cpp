@@ -165,7 +165,6 @@ vector<GameState> purchaseRun(
                     cout << "purge: " << purgeTime << " ms" << endl;
                 }
                 isFinished = true;
-                break;
             }
             if (ticks % 50 == 0 && verbose) {
                 if (gst.antimatterThisReset() > bestAntimatter) {
