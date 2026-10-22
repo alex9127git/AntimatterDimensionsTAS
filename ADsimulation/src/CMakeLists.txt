@@ -4,9 +4,16 @@ cmake_minimum_required(VERSION 3.23)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
+
 project(J.A.D.E. VERSION 0.0.1
                  DESCRIPTION "Jade's (and Alex9127's) Antimatter Dimensions Estimator"
                  LANGUAGES CXX)
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipoSupported)
+if(ipoSupported)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

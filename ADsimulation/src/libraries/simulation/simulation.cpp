@@ -90,12 +90,10 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
     Timer branchTimer;
     Timer checkTimer;
     Timer tickTimer;
-    Timer buyTimer;
     Timer purgeTimer;
     double branchTime = 0;
     double checkTime = 0;
     double tickTime = 0;
-    double buyTime = 0;
     double purgeTime = 0;
     bool isFinished = false;
     int ticks = 0;
@@ -142,7 +140,6 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
                     cout << "branch: " << branchTime << " ms" << endl;
                     cout << "check: " << checkTime << " ms" << endl;
                     cout << "tick: " << tickTime << " ms" << endl;
-                    cout << "buy: " << buyTime << " ms" << endl;
                     cout << "purge: " << purgeTime << " ms" << endl;
                 }
                 isFinished = true;
@@ -162,15 +159,13 @@ vector<GameState> purchaseRun(GameState st, function<bool(GameState&)> stopCondi
             renderProgressBar(Decimal::toNumber(currLog / goalLog));
         }
         checkTime += checkTimer.silentReset();
+        tickTimer.silentReset();
         // Tick and purchases
         for (GameState& gst : gameStates) {
-            tickTimer.silentReset();
             gst.tick(0.033);
-            tickTime += tickTimer.silentReset();
-            buyTimer.silentReset();
             gst.runNextInstructions();
-            buyTime += buyTimer.silentReset();
         }
+        tickTime += tickTimer.silentReset();
         // Purge and updating progress
         if (adds >= 300 || states >= statesAfterPurge * 1.5) {
             purgeTimer.silentReset();
@@ -201,12 +196,10 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
     Timer branchTimer;
     Timer checkTimer;
     Timer tickTimer;
-    Timer buyTimer;
     Timer purgeTimer;
     double branchTime = 0;
     double checkTime = 0;
     double tickTime = 0;
-    double buyTime = 0;
     double purgeTime = 0;
     bool isFinished = false;
     int ticks = 0;
@@ -255,7 +248,6 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
                     cout << "branch: " << branchTime << " ms" << endl;
                     cout << "check: " << checkTime << " ms" << endl;
                     cout << "tick: " << tickTime << " ms" << endl;
-                    cout << "buy: " << buyTime << " ms" << endl;
                     cout << "purge: " << purgeTime << " ms" << endl;
                 }
                 isFinished = true;
@@ -274,15 +266,13 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
             renderProgressBar(Decimal::toNumber(currLog / goalLog));
         }
         checkTime += checkTimer.silentReset();
+        tickTimer.silentReset();
         // Tick and purchases
         for (GameState& gst : gameStates) {
-            tickTimer.silentReset();
             gst.tick(0.033);
-            tickTime += tickTimer.silentReset();
-            buyTimer.silentReset();
             gst.runNextInstructions();
-            buyTime += buyTimer.silentReset();
         }
+        tickTime += tickTimer.silentReset();
         // Purge and updating progress
         if (adds >= 300 || states >= statesAfterPurge * 1.5) {
             purgeTimer.silentReset();
