@@ -376,6 +376,7 @@ bool GameState::canBuyNextDimboost() {
 bool GameState::requestDimboost() {
     if (canBuyNextDimboost()) {
         _dimensionBoosts += 1;
+        sacrificesDone = 0;
         _AD = AntimatterDimensions();
         _tickspeed = Tickspeed();
         _antimatter = DC::D10;
@@ -411,12 +412,16 @@ Decimal GameState::nextSacrificeBoost(Decimal AD1amount) {
 bool GameState::sacrificeReset() {
     if (!canSacrifice()) return false;
     _sacrificed += _AD[1].getAmount();
-    this->nextSacrificeBranch = _sacrificed;
+    sacrificesDone++;
     this->recalcSacrificeBonus();
     for (int i = 1; i <= 7; i++) {
         _AD[i].resetAmount();
     }
     return true;
+}
+
+int GameState::getSacrificesDone() {
+    return sacrificesDone;
 }
 
 GameState GameState::copy() {

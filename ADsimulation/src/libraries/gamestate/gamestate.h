@@ -37,6 +37,7 @@ class GameState : public ISerializable {
         Decimal nextPurchaseCost = DC::D0;
         vector<uint16_t> allowedPurchases;
 
+        int sacrificesDone = 0;
         Decimal prevAD1 = DC::D1;
         Decimal nextSacrificeBranch = DC::D1;
         Decimal nextSacrificeInstruction = DC::D1;
@@ -114,6 +115,7 @@ class GameState : public ISerializable {
         Decimal nextSacrificeBoost();
         Decimal nextSacrificeBoost(Decimal AD1amount);
         bool sacrificeReset();
+        int getSacrificesDone();
 
         // data & i/o manipulation
 
