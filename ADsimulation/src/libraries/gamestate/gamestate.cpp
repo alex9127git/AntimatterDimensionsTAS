@@ -28,6 +28,7 @@ void GameState::prepare() {
     this->sacrificeInstructions = {};
     this->completedInstructions = {};
     calcPurchases();
+    recalcSacrificeBonus();
     recalcAchievementBonus();
     this->tickspeed().update(*this);
     this->AD().update(*this);
@@ -93,7 +94,14 @@ void GameState::recalcAchievementBonus() {
 }
 
 void GameState::recalcSacrificeBonus() {
-    this->sacrificeBonus = Decimal::pow(Decimal(_sacrificed.log10()) / DC::D10, this->getSacrificeExponent());
+    if (_sacrificed == DC::D0) {
+        this->sacrificeBonus = DC::D1;
+    } else {
+        this->sacrificeBonus = max(Decimal::pow(
+            Decimal(_sacrificed.log10()) / DC::D10,
+            this->getSacrificeExponent()
+        ), DC::D1);
+    }
     this->_AD[8].update(*this);
 }
 
@@ -164,6 +172,7 @@ void GameState::tick(double diff) {
 }
 
 bool GameState::buyOneDimension(int tier) {
+    if (tier > 1 && _AD[tier - 1].getAmount() == DC::D0) return false;
     if (_AD[tier].canPurchase(_antimatter)) {
         _antimatter -= _AD[tier].getCost();
         _AD[tier].onPurchase();
@@ -367,7 +376,8 @@ bool GameState::requestDimboost() {
         _antimatter = DC::D10;
         _antimatterThisReset = DC::D10;
         _tickspeed.update(*this);
-        _sacrificed = DC::D1;
+        _sacrificed = DC::D0;
+        recalcSacrificeBonus();
         _AD.update(*this);
         return true;
     }
@@ -377,7 +387,7 @@ bool GameState::requestDimboost() {
 bool GameState::canSacrifice() {
     if (_dimensionBoosts < 5) return false;
     if (_AD[8].getAmount() == DC::D0) return false;
-    if (_AD[1].getAmount() <= _sacrificed) return false;
+    if (_AD[1].getAmount() <= max(_sacrificed, DC::D1E10)) return false;
     return true;
 }
 
@@ -394,7 +404,7 @@ bool GameState::sacrificeReset() {
 
 Decimal GameState::nextSacrificeBoost() {
     Decimal a = (_sacrificed + _AD[1].getAmount()).log10() / DC::D10;
-    Decimal b = Decimal::max(_sacrificed.log10() / DC::D10, DC::D1);
+    Decimal b = Decimal::max(Decimal::max(_sacrificed, DC::D1).log10() / DC::D10, DC::D1);
     Decimal c = a / b;
     Decimal e = getSacrificeExponent();
     return Decimal::pow(c, e);

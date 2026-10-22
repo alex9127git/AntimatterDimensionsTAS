@@ -53,8 +53,9 @@ GameState runUntil(GameState st, function<bool(GameState&)> stopCondition, bool 
                 winnerStrategies.push_back(gst.getCompletedSacrifices());
             }
         }
-        bestState = gameStates[0].copy();
-        iterationTime = bestState.realTimePlayed();
+        GameState iterationBestState = gameStates[0].copy();
+        iterationTime = iterationBestState.realTimePlayed();
+        if (iterationTime < currentIterationTime) bestState = iterationBestState;
         if (verbose) {
             cout << "Iteration " << iterationCounter << endl;
             cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;

@@ -20,7 +20,7 @@ class GameState : public ISerializable {
         int32_t _dimensionBoosts = 0;
         int64_t _realTimePlayed = 0;
         bool _canUseKonami = true;
-        Decimal _sacrificed = DC::D1;
+        Decimal _sacrificed = DC::D0;
 
         // volatile, shouldn't be serialized
         
