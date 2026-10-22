@@ -37,6 +37,7 @@ class GameState : public ISerializable {
         Decimal nextPurchaseCost = DC::D0;
         vector<uint16_t> allowedPurchases;
 
+        Decimal prevAD1 = DC::D1;
         Decimal nextSacrificeBranch = DC::D1;
         Decimal nextSacrificeInstruction = DC::D1;
 
@@ -58,6 +59,7 @@ class GameState : public ISerializable {
         Decimal totalAntimatter();
         Decimal antimatterThisReset();
         AntimatterDimensions& AD();
+        Decimal getPrevAD1();
         Tickspeed& tickspeed();
         Achievements& achievements();
         bool canUseKonami();
@@ -100,7 +102,7 @@ class GameState : public ISerializable {
         vector<uint16_t> getPurchaseBranches();
         
         void initializeSacBranching();
-        void setNextSacBranching(double sacValue);
+        void setNextSacBranching(Decimal sacValue);
         Decimal getReqForSac(Decimal sacValue);
         bool canSacBranch();
 
@@ -110,6 +112,7 @@ class GameState : public ISerializable {
         bool requestDimboost();
         bool canSacrifice();
         Decimal nextSacrificeBoost();
+        Decimal nextSacrificeBoost(Decimal AD1amount);
         bool sacrificeReset();
 
         // data & i/o manipulation

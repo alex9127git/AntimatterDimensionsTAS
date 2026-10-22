@@ -212,6 +212,7 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
         gameStates[i].addInstructions(purchaseStrategies[i]);
     }
     int states = gameStates.size();
+    Decimal p = DC::D1 + DC::D1 / Decimal(precision);
     while (true) {
         ticks++;
         // Branching
@@ -219,10 +220,13 @@ vector<GameState> sacrificeRun(GameState st, function<bool(GameState&)> stopCond
         for (GameState& gst : gameStates) {
             if (gst.canSacrifice() && gst.canSacBranch()) {
                 GameState newGst = gst.copy();
-                double sacValue = Decimal::toNumber(newGst.nextSacrificeBoost());
-                newGst.addInstructions({108.0, log10(sacValue)});
-                double nextSacValue = (floor(sacValue * precision) + 1) / precision;
-                gst.setNextSacBranching(nextSacValue);
+                Decimal currSac = newGst.getSacrificeBonus() * newGst.nextSacrificeBoost();
+                Decimal prevSac = newGst.getSacrificeBonus() * 
+                    Decimal::max(newGst.nextSacrificeBoost(newGst.getPrevAD1()), DC::D1);
+                Decimal target = (currSac + prevSac) / DC::D2;
+                newGst.addInstructions({108.0, target.log10value()});
+                Decimal nextSac = currSac * p;
+                gst.setNextSacBranching(nextSac);
                 newGameStates.push_back(move(newGst));
             }
         }

@@ -135,6 +135,10 @@ AntimatterDimensions& GameState::AD() {
     return this->_AD;
 }
 
+Decimal GameState::getPrevAD1() {
+    return prevAD1;
+}
+
 Tickspeed& GameState::tickspeed() {
     return this->_tickspeed;
 }
@@ -156,6 +160,7 @@ int32_t GameState::dimensionBoosts() {
 }
 
 void GameState::tick(double diff) {
+    prevAD1 = _AD[1].getAmount();
     _realTimePlayed += diff * 1000;
     for (int i = 8; i >= 1; i--) {
         if (i == 1) {
@@ -329,6 +334,14 @@ int GameState::instructionsExecuted() {
     return this->completedInstructions.size();
 }
 
+Decimal GameState::getAntimatterGoalForDimboost() {
+    Dimension& dimNeeded = this->AD()[min(8, 4 + _dimensionBoosts)];
+    int dimAmountRequied = 20 + 15 * max(0, _dimensionBoosts - 4);
+    int scalingNeeded = ceil(dimAmountRequied / 10.0) - 1;
+    int highPurchases = dimAmountRequied % 10 + (dimAmountRequied % 10 == 0 ? 10 : 0);
+    return dimNeeded.getInitialCost() * Decimal::pow(dimNeeded.getScaling(), scalingNeeded) * Decimal(highPurchases);
+}
+
 bool GameState::canBranch() {
     return this->_antimatter >= this->nextPurchaseCost;
 }
@@ -341,27 +354,19 @@ void GameState::initializeSacBranching() {
     this->nextSacrificeBranch = this->_AD[1].getAmount();
 }
 
-void GameState::setNextSacBranching(double sacValue) {
-    this->nextSacrificeBranch = getReqForSac(Decimal(sacValue));
+void GameState::setNextSacBranching(Decimal sacValue) {
+    this->nextSacrificeBranch = getReqForSac(sacValue);
 }
 
 Decimal GameState::getReqForSac(Decimal sacValue) {
     return Decimal::pow(
         10, 
-        Decimal::pow(sacValue * this->sacrificeBonus, 0.5) * 10
+        Decimal::pow(sacValue, DC::D1 / getSacrificeExponent()) * 10
     ) - _sacrificed;
 }
 
 bool GameState::canSacBranch() {
     return this->_AD[1].getAmount() >= this->nextSacrificeBranch;
-}
-
-Decimal GameState::getAntimatterGoalForDimboost() {
-    Dimension& dimNeeded = this->AD()[min(8, 4 + _dimensionBoosts)];
-    int dimAmountRequied = 20 + 15 * max(0, _dimensionBoosts - 4);
-    int scalingNeeded = ceil(dimAmountRequied / 10.0) - 1;
-    int highPurchases = dimAmountRequied % 10 + (dimAmountRequied % 10 == 0 ? 10 : 0);
-    return dimNeeded.getInitialCost() * Decimal::pow(dimNeeded.getScaling(), scalingNeeded) * Decimal(highPurchases);
 }
 
 bool GameState::canBuyNextDimboost() {
@@ -391,6 +396,18 @@ bool GameState::canSacrifice() {
     return true;
 }
 
+Decimal GameState::nextSacrificeBoost() {
+    return nextSacrificeBoost(_AD[1].getAmount());
+}
+
+Decimal GameState::nextSacrificeBoost(Decimal AD1amount) {
+    Decimal a = (_sacrificed + AD1amount).log10() / DC::D10;
+    Decimal b = Decimal::max(Decimal::max(_sacrificed, DC::D1).log10() / DC::D10, DC::D1);
+    Decimal c = a / b;
+    Decimal e = getSacrificeExponent();
+    return Decimal::pow(c, e);
+}
+
 bool GameState::sacrificeReset() {
     if (!canSacrifice()) return false;
     _sacrificed += _AD[1].getAmount();
@@ -400,14 +417,6 @@ bool GameState::sacrificeReset() {
         _AD[i].resetAmount();
     }
     return true;
-}
-
-Decimal GameState::nextSacrificeBoost() {
-    Decimal a = (_sacrificed + _AD[1].getAmount()).log10() / DC::D10;
-    Decimal b = Decimal::max(Decimal::max(_sacrificed, DC::D1).log10() / DC::D10, DC::D1);
-    Decimal c = a / b;
-    Decimal e = getSacrificeExponent();
-    return Decimal::pow(c, e);
 }
 
 GameState GameState::copy() {
@@ -455,7 +464,7 @@ void GameState::writeInstructions(ofstream& f) {
     int dim_tier = 0;
     int dim_bulk = 0;
     bool isNextSacrifice = 0;
-    Decimal sacMult = DC::D1;
+    Decimal sacTarget = DC::D1;
     int sacrificeIndex = 0;
     this->completedInstructions.push_back(0);
     vector<string> lines;
@@ -479,8 +488,8 @@ void GameState::writeInstructions(ofstream& f) {
                 lines.push_back("[\"buyDimensionBoost\",[0]]");
             }
             if (instruction == 108) {
-                sacMult *= Decimal(1, this->completedSacrifices[sacrificeIndex++]);
-                lines.push_back("[\"trySacrificeReset\",[" + sacMult.toString(3) + "]]");
+                sacTarget = Decimal(1, this->completedSacrifices[sacrificeIndex++]);
+                lines.push_back("[\"trySacrificeReset\",[\"" + sacTarget.toString(10) + "\"]]");
             }
         }
     }
