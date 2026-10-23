@@ -48,8 +48,7 @@ vector<GameState> deepSacRun(
 
 void computePurchaseBranches(GameState& gameState, vector<GameState>& branches);
 
-bool compare(vector<Decimal>& st1, vector<Decimal>& st2);
-void compareValues(Decimal v1, Decimal v2, int& score, int& totalFeatures);
-void compareValues(int v1, int v2, int& score, int& totalFeatures);
+//void check(GameStates& gameStates, bool& isFinished);
 
+bool compare(const double* st1, const double* st2, size_t width);
 void purge(vector<GameState>& gamestates, bool verbose);

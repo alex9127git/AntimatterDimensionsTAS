@@ -91,7 +91,6 @@ vector<GameState> purchaseRun(
     GameState st, function<bool(GameState&)> stopCondition, 
     vector<vector<double>> sacrificeStrategies, bool verbose
 ) {
-    Decimal priceRange = DC::D10;
     // If Konami code exploit isn't used, assume this is the starting game state 
     // and add some default instructions.
     // Otherwise, buy the first dimension - this is likely an unavoidable purchase.
@@ -105,7 +104,6 @@ vector<GameState> purchaseRun(
     // at the start there should be only the starting game state passed to the function
     vector<GameState> gameStates;
     vector<GameState> newGameStates;
-    newGameStates.clear();
     GameState bestState;
     Decimal bestAntimatter = DC::D1;
     Timer timer;
@@ -282,8 +280,8 @@ vector<GameState> sacrificeRun(
                 isFinished = true;
             }
             if (ticks % 50 == 0 && verbose) {
-                if (gst.antimatter() > bestAntimatter) {
-                    bestAntimatter = Decimal::max(bestAntimatter, gst.antimatter());
+                if (gst.antimatterThisReset() > bestAntimatter) {
+                    bestAntimatter = Decimal::max(bestAntimatter, gst.antimatterThisReset());
                     bestState = gst;
                 }
             }
@@ -408,8 +406,8 @@ vector<GameState> deepSacRun(
                 isFinished = true;
             }
             if (ticks % 50 == 0 && verbose) {
-                if (gst.antimatter() > bestAntimatter) {
-                    bestAntimatter = Decimal::max(bestAntimatter, gst.antimatter());
+                if (gst.antimatterThisReset() > bestAntimatter) {
+                    bestAntimatter = Decimal::max(bestAntimatter, gst.antimatterThisReset());
                     bestState = gst;
                 }
             }
