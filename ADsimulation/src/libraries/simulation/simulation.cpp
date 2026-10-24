@@ -17,19 +17,27 @@ void renderProgressBar(double percentage) {
 }
 
 GameState runDimboost(GameState st, bool useSacrifice) {
-    return runUntil(st, [](GameState& st) {return st.canBuyNextDimboost();}, useSacrifice, 1000, true);
+    return runUntil(
+        st, [](GameState& st) {return st.canBuyNextDimboost();}, 
+        [](GameState& st) {
+            return st.antimatterThisReset().log10value() / st.getAntimatterGoalForDimboost().log10value();
+        }, useSacrifice, true
+    );
 }
 
-GameState runDimboost(GameState st, bool useSacrifice, int precision) {
-    return runUntil(st, [](GameState& st) {return st.canBuyNextDimboost();}, useSacrifice, precision, true);
+GameState runDimboost(GameState st, bool useSacrifice, bool verbose) {
+    return runUntil(
+        st, [](GameState& st) {return st.canBuyNextDimboost();}, 
+        [](GameState& st) {
+            return st.antimatterThisReset().log10value() / st.getAntimatterGoalForDimboost().log10value();
+        }, useSacrifice, verbose
+    );
 }
 
-GameState runDimboost(GameState st, bool useSacrifice, int precision, bool verbose) {
-    return runUntil(st, [](GameState& st) {return st.canBuyNextDimboost();}, useSacrifice, precision, verbose);
-}
-
-GameState runUntil(GameState st, function<bool(
-    GameState&)> stopCondition, bool useSacrifice, int precision, bool verbose
+GameState runUntil(
+    GameState st, function<bool(GameState&)> stopCondition, 
+    function<double(GameState&)> progressFunction,
+    bool useSacrifice, bool verbose
 ) {
     vector<GameState> gameStates;
     GameState bestState;
@@ -45,14 +53,18 @@ GameState runUntil(GameState st, function<bool(
         cout << "Running iteration " << iterationCounter << endl;
         switch (iterationCounter % 2) {
             case 1:
-                gameStates = purchaseRun(st, stopCondition, sacrificeStrategies, verbose);
+                gameStates = purchaseRun(
+                    st, stopCondition, progressFunction, sacrificeStrategies, verbose
+                );
                 purchaseStrategies.clear();
                 for (GameState& gst : gameStates) {
                     purchaseStrategies.push_back(gst.getCompletedPurchases());
                 }
                 break;
             case 0:
-                gameStates = sacrificeRun(st, stopCondition, precision, purchaseStrategies, verbose);
+                gameStates = sacrificeRun(
+                    st, stopCondition, progressFunction, purchaseStrategies, verbose
+                );
                 purchaseStrategies.clear();
                 sacrificeStrategies.clear();
                 for (GameState& gst : gameStates) {
@@ -64,7 +76,9 @@ GameState runUntil(GameState st, function<bool(
                     sacrificeStrategies.push_back(sacStrat);
                 }
                 cout << "Optimizing sacrifices" << endl;
-                gameStates = deepSacRun(st, stopCondition, purchaseStrategies, sacrificeStrategies, verbose);
+                gameStates = deepSacRun(
+                    st, stopCondition, progressFunction, purchaseStrategies, sacrificeStrategies, verbose
+                );
                 sacrificeStrategies.clear();
                 for (GameState& gst : gameStates) {
                     sacrificeStrategies.push_back(gst.getCompletedSacrifices());
@@ -87,10 +101,107 @@ GameState runUntil(GameState st, function<bool(
     return bestState;
 }
 
-vector<GameState> purchaseRun(
-    GameState st, function<bool(GameState&)> stopCondition, 
-    vector<vector<double>> sacrificeStrategies, bool verbose
-) {
+Progress::Progress(function<double(GameState&)> _func) 
+    :   progressFunction(_func) 
+    {};
+
+Iteration::Iteration(
+    function<double(GameState&)> progressFunction,
+    function<bool(GameState&)> _stopCondition, bool _verbose
+)   :   stopCondition(_stopCondition),
+        verbose(_verbose),
+        progress(Progress(progressFunction))
+    {}
+
+void Iteration::appendNewStates() {
+    if (!newGameStates.empty()) adds++;
+    states += newGameStates.size();
+    for (GameState& gst : newGameStates) gameStates.push_back(move(gst));
+    newGameStates.clear();
+}
+
+void Iteration::checkProgress() {
+    checkTimer.silentReset();
+    GameState* bestState = &gameStates[0];
+    for (GameState& gst : gameStates) {
+        gst.runNextInstructions();
+        if (stopCondition(gst)) {
+            if (verbose && !isFinished) {
+                renderProgressBar(1);
+                cout << endl;
+                cout << "Finished! Total time elapsed: ";
+                timer.reset();
+                cout << "Max States: " << maxStates << endl;
+                cout << "branch: " << branchTime << " ms" << endl;
+                cout << "check: " << checkTime << " ms" << endl;
+                cout << "tick: " << tickTime << " ms" << endl;
+                cout << "purge: " << purgeTime << " ms" << endl;
+            }
+            isFinished = true;
+        }
+        if (ticks % 50 == 0 && verbose) {
+            if (gst.antimatterThisReset() > bestState->antimatterThisReset()) {
+                bestState = &gst;
+            }
+        }
+    }
+    if (!isFinished && ticks % 50 == 0 && verbose) {
+        renderProgressBar(progress.calculate(*bestState));
+    }
+    checkTime += checkTimer.silentReset();
+}
+
+void Iteration::tickAllStates() {
+    tickTimer.silentReset();
+    // Tick and purchases
+    for (GameState& gst : gameStates) {
+        gst.tick(0.033);
+        gst.runNextInstructions();
+    }
+    tickTime += tickTimer.silentReset();
+}
+
+void Iteration::purgeObsoleteStates() {
+    if (adds >= 300 || states >= statesAfterPurge * 1.5) {
+        purgeTimer.silentReset();
+        adds = 0;
+        int beforeSize = gameStates.size();
+        maxStates = max(maxStates, beforeSize);
+        purge(gameStates, verbose);
+        statesAfterPurge = gameStates.size();
+        states = statesAfterPurge;
+        purgeTime += purgeTimer.silentReset();
+    }
+}
+
+vector<GameState> Iteration::run() {
+    while (true) {
+        ticks++;
+        // Branching
+        branchTimer.silentReset();
+        addBranches();
+        branchTime += branchTimer.silentReset();
+        checkProgress();
+        if (isFinished) break;
+        tickAllStates();
+        purgeObsoleteStates();
+    }
+    vector<GameState> finishedStates;
+    for (GameState& gst : gameStates) {
+        if (stopCondition(gst)) {
+            finishedStates.push_back(gst);
+        }
+    }
+    return finishedStates;
+}
+
+PurchaseIteration::PurchaseIteration(
+    GameState st,
+    function<bool(GameState&)> _stopCondition,
+    function<double(GameState&)> progressFunction,
+    vector<vector<double>> sacrificeStrategies, bool _verbose
+)   :   Iteration(progressFunction, _stopCondition, _verbose)
+{
     // If Konami code exploit isn't used, assume this is the starting game state 
     // and add some default instructions.
     // Otherwise, buy the first dimension - this is likely an unavoidable purchase.
@@ -100,352 +211,133 @@ vector<GameState> purchaseRun(
         st.addInstructions({11});
     }
     st.runNextInstructions();
-    // The function will have a list of all game states that are currently running;
-    // at the start there should be only the starting game state passed to the function
-    vector<GameState> gameStates;
-    vector<GameState> newGameStates;
-    GameState bestState;
-    Decimal bestAntimatter = DC::D1;
-    Timer timer;
-    Timer branchTimer;
-    Timer checkTimer;
-    Timer tickTimer;
-    Timer purgeTimer;
-    double branchTime = 0;
-    double checkTime = 0;
-    double tickTime = 0;
-    double purgeTime = 0;
-    bool isFinished = false;
-    int ticks = 0;
-    int statesAfterPurge = 1;
-    int adds = 0;
-    int maxStates = 0;
     for (int i = 0; i < sacrificeStrategies.size(); i++) {
         gameStates.push_back(st.copy());
         for (double instruction : sacrificeStrategies[i]) {
             gameStates[i].addInstructions({108, instruction});
         }
     }
-    int states = gameStates.size();
-    while (true) {
-        ticks++;
-        // Branching
-        branchTimer.silentReset();
-        size_t begin = 0;
-        size_t end = gameStates.size();
-        while (begin < end) {
-            for (size_t i = begin; i < end; i++) {
-                gameStates[i].runNextInstructions();
-                computePurchaseBranches(gameStates[i], newGameStates);
-            }
-            if (!newGameStates.empty()) adds++;
-            states += newGameStates.size();
-            for (GameState& gst : newGameStates) gameStates.push_back(move(gst));
-            newGameStates.clear();
-            begin = end;
-            end = gameStates.size();
-        }
-        branchTime += branchTimer.silentReset();
-        // Checking for condition
-        checkTimer.silentReset();
-        for (GameState& gst : gameStates) {
-            gst.runNextInstructions();
-            if (stopCondition(gst)) {
-                if (verbose && !isFinished) {
-                    renderProgressBar(1);
-                    cout << endl;
-                    cout << "Finished! Total time elapsed: ";
-                    timer.reset();
-                    cout << "Max States: " << maxStates << endl;
-                    cout << "branch: " << branchTime << " ms" << endl;
-                    cout << "check: " << checkTime << " ms" << endl;
-                    cout << "tick: " << tickTime << " ms" << endl;
-                    cout << "purge: " << purgeTime << " ms" << endl;
-                }
-                isFinished = true;
-            }
-            if (ticks % 50 == 0 && verbose) {
-                if (gst.antimatterThisReset() > bestAntimatter) {
-                    bestAntimatter = Decimal::max(bestAntimatter, gst.antimatterThisReset());
-                    bestState = gst;
-                }
-            }
-        }
-        if (isFinished) break;
-        if (ticks % 50 == 0 && verbose) {
-            Decimal currLog = Decimal::max(bestAntimatter, DC::D1).log10();
-            Decimal goalLog = bestState.getAntimatterGoalForDimboost().log10();
-            renderProgressBar(Decimal::toNumber(currLog / goalLog));
-        }
-        checkTime += checkTimer.silentReset();
-        tickTimer.silentReset();
-        // Tick and purchases
-        for (GameState& gst : gameStates) {
-            gst.tick(0.033);
-            gst.runNextInstructions();
-        }
-        tickTime += tickTimer.silentReset();
-        // Purge and updating progress
-        if (adds >= 300 || states >= statesAfterPurge * 1.5) {
-            purgeTimer.silentReset();
-            adds = 0;
-            int beforeSize = gameStates.size();
-            maxStates = max(maxStates, beforeSize);
-            purge(gameStates, verbose);
-            statesAfterPurge = gameStates.size();
-            states = statesAfterPurge;
-            purgeTime += purgeTimer.silentReset();
-        }
-    }
-    vector<GameState> finishedStates;
-    for (GameState& gst : gameStates) {
-        if (stopCondition(gst)) {
-            finishedStates.push_back(gst);
-        }
-    }
-    return finishedStates;
+    states = gameStates.size();
 }
 
-vector<GameState> sacrificeRun(
-    GameState st, function<bool(GameState&)> stopCondition, int precision, 
-    vector<vector<double>> purchaseStrategies, bool verbose
+void PurchaseIteration::addBranches() {
+    size_t begin = 0;
+    size_t end = gameStates.size();
+    while (begin < end) {
+        for (size_t i = begin; i < end; i++) {
+            gameStates[i].runNextInstructions();
+            computePurchaseBranches(gameStates[i], newGameStates);
+        }
+        appendNewStates();
+        begin = end;
+        end = gameStates.size();
+    }
+}
+
+vector<GameState> purchaseRun(
+    GameState st, function<bool(GameState&)> stopCondition, 
+    function<double(GameState&)> progressFunction,
+    vector<vector<double>> sacrificeStrategies, bool verbose
 ) {
-    vector<GameState> gameStates;
-    vector<GameState> newGameStates;
-    GameState bestState;
-    Decimal bestAntimatter = DC::D1;
-    Timer timer;
-    Timer branchTimer;
-    Timer checkTimer;
-    Timer tickTimer;
-    Timer purgeTimer;
-    double branchTime = 0;
-    double checkTime = 0;
-    double tickTime = 0;
-    double purgeTime = 0;
-    bool isFinished = false;
-    int ticks = 0;
-    int statesAfterPurge = 1;
-    int adds = 0;
-    int maxStates = 0;
+    return PurchaseIteration(
+        st, stopCondition, progressFunction, sacrificeStrategies, verbose
+    ).run();
+}
+
+ApproxSacrificeIteration::ApproxSacrificeIteration(
+    GameState st,
+    function<bool(GameState&)> _stopCondition,
+    function<double(GameState&)> progressFunction,
+    vector<vector<double>> purchaseStrategies, bool _verbose
+)   :   Iteration(progressFunction, _stopCondition, _verbose)
+{
     for (int i = 0; i < purchaseStrategies.size(); i++) {
         gameStates.push_back(st.copy());
         gameStates[i].addInstructions(purchaseStrategies[i]);
     }
-    int states = gameStates.size();
-    Decimal p = DC::D1 + DC::D1 / Decimal(precision);
-    while (true) {
-        ticks++;
-        // Branching
-        branchTimer.silentReset();
-        for (GameState& gst : gameStates) {
-            if (gst.canSacrifice() && gst.canSacBranch()) {
-                GameState newGst = gst.copy();
-                Decimal currSac = newGst.getSacrificeBonus() * newGst.nextSacrificeBoost();
-                Decimal prevSac = newGst.getSacrificeBonus() * 
-                    Decimal::max(newGst.nextSacrificeBoost(newGst.getPrevAD1()), DC::D1);
-                Decimal target = (currSac + prevSac) / DC::D2;
-                newGst.addInstructions({108.0, target.log10value()});
-                Decimal nextSac = currSac * p;
-                newGst.setNextSacBranching(DC::D1);
-                gst.setNextSacBranching(nextSac);
-                newGameStates.push_back(move(newGst));
-            }
-        }
-        if (!newGameStates.empty()) {
-            adds += 1;
-        }
-        for (GameState& gst : newGameStates) {
-            gameStates.push_back(move(gst));
-            states++;
-        }
-        branchTime += branchTimer.silentReset();
-        newGameStates.clear();
-        // Checking for condition
-        checkTimer.silentReset();
-        for (GameState& gst : gameStates) {
-            gst.runNextInstructions();
-            if (stopCondition(gst)) {
-                if (verbose && !isFinished) {
-                    renderProgressBar(1);
-                    cout << endl;
-                    cout << "Finished! Total time elapsed: ";
-                    timer.reset();
-                    cout << "Max States: " << maxStates << endl;
-                    cout << "branch: " << branchTime << " ms" << endl;
-                    cout << "check: " << checkTime << " ms" << endl;
-                    cout << "tick: " << tickTime << " ms" << endl;
-                    cout << "purge: " << purgeTime << " ms" << endl;
-                }
-                isFinished = true;
-            }
-            if (ticks % 50 == 0 && verbose) {
-                if (gst.antimatterThisReset() > bestAntimatter) {
-                    bestAntimatter = Decimal::max(bestAntimatter, gst.antimatterThisReset());
-                    bestState = gst;
-                }
-            }
-        }
-        if (isFinished) break;
-        if (ticks % 50 == 0 && verbose) {
-            Decimal currLog = Decimal::max(bestAntimatter, DC::D1).log10();
-            Decimal goalLog = bestState.getAntimatterGoalForDimboost().log10();
-            renderProgressBar(Decimal::toNumber(currLog / goalLog));
-        }
-        checkTime += checkTimer.silentReset();
-        tickTimer.silentReset();
-        // Tick and purchases
-        for (GameState& gst : gameStates) {
-            gst.tick(0.033);
-            gst.runNextInstructions();
-        }
-        tickTime += tickTimer.silentReset();
-        // Purge and updating progress
-        if (adds >= 300 || states >= statesAfterPurge * 1.5) {
-            purgeTimer.silentReset();
-            adds = 0;
-            int beforeSize = gameStates.size();
-            maxStates = max(maxStates, beforeSize);
-            purge(gameStates, verbose);
-            statesAfterPurge = gameStates.size();
-            states = statesAfterPurge;
-            purgeTime += purgeTimer.silentReset();
-            //cout << "tick: " << ticks << "; before: " << beforeSize << "; after: " << statesAfterPurge << string(100, ' ') << endl;
-        }
-    }
-    vector<GameState> finishedStates;
-    for (GameState& gst : gameStates) {
-        if (stopCondition(gst)) {
-            finishedStates.push_back(gst);
-        }
-    }
-    return finishedStates;
+    states = gameStates.size();
 }
 
-vector<GameState> deepSacRun(
+void ApproxSacrificeIteration::addBranches() {
+    for (GameState& gst : gameStates) {
+        if (gst.canSacrifice() && gst.canSacBranch()) {
+            GameState newGst = gst.copy();
+            Decimal currSac = newGst.getSacrificeBonus() * newGst.nextSacrificeBoost();
+            Decimal prevSac = newGst.getSacrificeBonus() * 
+                Decimal::max(newGst.nextSacrificeBoost(newGst.getPrevAD1()), DC::D1);
+            Decimal target = (currSac + prevSac) / DC::D2;
+            newGst.addInstructions({108.0, target.log10value()});
+            Decimal nextSac = currSac * precision;
+            newGst.setNextSacBranching(DC::D1);
+            gst.setNextSacBranching(nextSac);
+            newGameStates.push_back(move(newGst));
+        }
+    }
+    appendNewStates();
+}
+
+vector<GameState> sacrificeRun(
     GameState st, function<bool(GameState&)> stopCondition, 
-    vector<vector<double>> purchaseStrategies, vector<vector<double>> sacrificeStrategies, bool verbose
+    function<double(GameState&)> progressFunction,
+    vector<vector<double>> purchaseStrategies, bool verbose
 ) {
-    vector<GameState> gameStates;
-    vector<GameState> newGameStates;
-    GameState bestState;
-    Decimal bestAntimatter = DC::D1;
-    Timer timer;
-    Timer branchTimer;
-    Timer checkTimer;
-    Timer tickTimer;
-    Timer purgeTimer;
-    double branchTime = 0;
-    double checkTime = 0;
-    double tickTime = 0;
-    double purgeTime = 0;
-    bool isFinished = false;
-    int ticks = 0;
-    int statesAfterPurge = 1;
-    int adds = 0;
-    int maxStates = 0;
-    vector<double> projectedSacrifices = sacrificeStrategies[0];
-    Decimal tolerance = DC::D1_01;
+    return ApproxSacrificeIteration(
+        st, stopCondition, progressFunction, purchaseStrategies, verbose
+    ).run();
+}
+
+PreciseSacrificeIteration::PreciseSacrificeIteration(
+    GameState st,
+    function<bool(GameState&)> _stopCondition,
+    function<double(GameState&)> progressFunction,
+    vector<vector<double>> purchaseStrategies, 
+    vector<vector<double>> sacrificeStrategies, bool _verbose
+)   :   Iteration(progressFunction, _stopCondition, _verbose)
+{
+    projectedSacrifices = sacrificeStrategies[0];
     for (int i = 0; i < purchaseStrategies.size(); i++) {
         gameStates.push_back(st.copy());
         gameStates[i].addInstructions(purchaseStrategies[i]);
         gameStates[i].setNextSacBranching(Decimal(1, projectedSacrifices[0]) / tolerance);
     }
-    int states = gameStates.size();
-    Decimal p = DC::D1 + Decimal(1e-9);
-    while (true) {
-        ticks++;
-        // Branching
-        branchTimer.silentReset();
-        for (GameState& gst : gameStates) {
-            if (gst.canSacrifice() && gst.canSacBranch()) {
-                Decimal currSac = gst.getSacrificeBonus() * gst.nextSacrificeBoost();
-                Decimal prevSac = gst.getSacrificeBonus() * 
-                    Decimal::max(gst.nextSacrificeBoost(gst.getPrevAD1()), DC::D1);
-                Decimal target = (currSac + prevSac) / DC::D2;
-                if (currSac > Decimal(1, projectedSacrifices[gst.getSacrificesDone()]) * tolerance) {
-                    gst.addInstructions({108.0, target.log10value()});
-                    gst.setNextSacBranching(
-                        Decimal(1, projectedSacrifices[gst.getSacrificesDone() + 1]) / tolerance);
-                } else {
-                    GameState newGst = gst.copy();
-                    newGst.addInstructions({108.0, target.log10value()});
-                    newGst.setNextSacBranching(
-                        Decimal(1, projectedSacrifices[gst.getSacrificesDone() + 1]) / tolerance);
-                    Decimal nextSac = currSac * p;
-                    gst.setNextSacBranching(nextSac);
-                    newGameStates.push_back(move(newGst));
-                }
-            }
-        }
-        if (!newGameStates.empty()) {
-            adds += 1;
-        }
-        for (GameState& gst : newGameStates) {
-            gameStates.push_back(move(gst));
-            states++;
-        }
-        branchTime += branchTimer.silentReset();
-        newGameStates.clear();
-        // Checking for condition
-        checkTimer.silentReset();
-        for (GameState& gst : gameStates) {
-            gst.runNextInstructions();
-            if (stopCondition(gst)) {
-                if (verbose && !isFinished) {
-                    renderProgressBar(1);
-                    cout << endl;
-                    cout << "Finished! Total time elapsed: ";
-                    timer.reset();
-                    cout << "Max States: " << maxStates << endl;
-                    cout << "branch: " << branchTime << " ms" << endl;
-                    cout << "check: " << checkTime << " ms" << endl;
-                    cout << "tick: " << tickTime << " ms" << endl;
-                    cout << "purge: " << purgeTime << " ms" << endl;
-                }
-                isFinished = true;
-            }
-            if (ticks % 50 == 0 && verbose) {
-                if (gst.antimatterThisReset() > bestAntimatter) {
-                    bestAntimatter = Decimal::max(bestAntimatter, gst.antimatterThisReset());
-                    bestState = gst;
-                }
-            }
-        }
-        if (isFinished) break;
-        if (ticks % 50 == 0 && verbose) {
-            Decimal currLog = Decimal::max(bestAntimatter, DC::D1).log10();
-            Decimal goalLog = bestState.getAntimatterGoalForDimboost().log10();
-            renderProgressBar(Decimal::toNumber(currLog / goalLog));
-        }
-        checkTime += checkTimer.silentReset();
-        tickTimer.silentReset();
-        // Tick and purchases
-        for (GameState& gst : gameStates) {
-            gst.tick(0.033);
-            gst.runNextInstructions();
-        }
-        tickTime += tickTimer.silentReset();
-        // Purge and updating progress
-        if (adds >= 300 || states >= statesAfterPurge * 1.5) {
-            purgeTimer.silentReset();
-            adds = 0;
-            int beforeSize = gameStates.size();
-            maxStates = max(maxStates, beforeSize);
-            purge(gameStates, verbose);
-            statesAfterPurge = gameStates.size();
-            states = statesAfterPurge;
-            purgeTime += purgeTimer.silentReset();
-            //cout << "tick: " << ticks << "; before: " << beforeSize << "; after: " << statesAfterPurge << string(100, ' ') << endl;
-        }
-    }
-    vector<GameState> finishedStates;
+    states = gameStates.size();
+}
+
+void PreciseSacrificeIteration::addBranches() {
     for (GameState& gst : gameStates) {
-        if (stopCondition(gst)) {
-            finishedStates.push_back(gst);
+        if (gst.canSacrifice() && gst.canSacBranch()) {
+            Decimal currSac = gst.getSacrificeBonus() * gst.nextSacrificeBoost();
+            Decimal prevSac = gst.getSacrificeBonus() * 
+                Decimal::max(gst.nextSacrificeBoost(gst.getPrevAD1()), DC::D1);
+            Decimal target = (currSac + prevSac) / DC::D2;
+            if (currSac > Decimal(1, projectedSacrifices[gst.getSacrificesDone()]) * tolerance) {
+                gst.addInstructions({108.0, target.log10value()});
+                gst.setNextSacBranching(
+                    Decimal(1, projectedSacrifices[gst.getSacrificesDone() + 1]) / tolerance);
+            } else {
+                GameState newGst = gst.copy();
+                newGst.addInstructions({108.0, target.log10value()});
+                newGst.setNextSacBranching(
+                    Decimal(1, projectedSacrifices[gst.getSacrificesDone() + 1]) / tolerance);
+                Decimal nextSac = currSac * precision;
+                gst.setNextSacBranching(nextSac);
+                newGameStates.push_back(move(newGst));
+            }
         }
     }
-    return finishedStates;
+    appendNewStates();
+}
+
+vector<GameState> deepSacRun(
+    GameState st, function<bool(GameState&)> stopCondition, 
+    function<double(GameState&)> progressFunction,
+    vector<vector<double>> purchaseStrategies, 
+    vector<vector<double>> sacrificeStrategies, bool verbose
+) {
+    return PreciseSacrificeIteration(
+        st, stopCondition, progressFunction,
+        purchaseStrategies, sacrificeStrategies, verbose
+    ).run();
 }
 
 void computePurchaseBranches(GameState& gameState, vector<GameState>& branches) {

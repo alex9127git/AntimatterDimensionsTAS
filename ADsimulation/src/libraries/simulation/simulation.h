@@ -25,30 +25,121 @@ class Timer {
         }
 };
 
+class Progress {
+    private:
+        function<double(GameState&)> progressFunction;
+
+    public:
+        Progress(function<double(GameState&)> _func);
+        double calculate(GameState& st) {
+            return clamp(progressFunction(st), 0.0, 1.0);
+        };
+};
+
+class Iteration {
+    protected:
+        Progress progress;
+        function<bool(GameState&)> stopCondition;
+        bool verbose;
+        
+        vector<GameState> gameStates;
+        vector<GameState> newGameStates;
+        Timer timer;
+        Timer branchTimer;
+        Timer checkTimer;
+        Timer tickTimer;
+        Timer purgeTimer;
+        double branchTime = 0;
+        double checkTime = 0;
+        double tickTime = 0;
+        double purgeTime = 0;
+        bool isFinished = false;
+        int ticks = 0;
+        int statesAfterPurge = 1;
+        int adds = 0;
+        int maxStates = 0;
+        int states;
+
+    public:
+        Iteration(
+            function<double(GameState&)> progressFunction,
+            function<bool(GameState&)> _stopCondition, bool _verbose
+        );
+
+        virtual void addBranches() {};
+        void appendNewStates();
+        void checkProgress();
+        void tickAllStates();
+        void purgeObsoleteStates();
+
+        virtual vector<GameState> run();
+};
+
+class PurchaseIteration : public Iteration {
+    public:
+        PurchaseIteration(
+            GameState st,
+            function<bool(GameState&)> _stopCondition,
+            function<double(GameState&)> progressFunction,
+            vector<vector<double>> sacrificeStrategies, bool _verbose
+        );
+        void addBranches() override;
+};
+
+class ApproxSacrificeIteration : public Iteration {
+    private:
+        Decimal precision = DC::D1 + Decimal(1e-3);
+
+    public:
+        ApproxSacrificeIteration(
+            GameState st,
+            function<bool(GameState&)> _stopCondition,
+            function<double(GameState&)> progressFunction,
+            vector<vector<double>> purchaseStrategies, bool _verbose
+        );
+        void addBranches() override;
+};
+
+class PreciseSacrificeIteration : public Iteration {
+    private:
+        Decimal tolerance = DC::D1_01;
+        Decimal precision = DC::D1 + Decimal(1e-9);
+        vector<double> projectedSacrifices;
+
+    public:
+        PreciseSacrificeIteration(
+            GameState st,
+            function<bool(GameState&)> _stopCondition,
+            function<double(GameState&)> progressFunction,
+            vector<vector<double>> purchaseStrategies, 
+            vector<vector<double>> sacrificeStrategies, bool verbose
+        );
+        void addBranches() override;
+};
+
 GameState runDimboost(GameState st, bool useSacrifice);
-GameState runDimboost(GameState st, bool useSacrifice, int precision);
-GameState runDimboost(GameState st, bool useSacrifice, int precision, bool verbose);
+GameState runDimboost(GameState st, bool useSacrifice, bool verbose);
 GameState runUntil(
-    GameState st, 
-    function<bool(GameState&)> stopCondition, 
-    bool useSacrifice, int precision, bool verbose);
+    GameState st, function<bool(GameState&)> stopCondition, 
+    function<double(GameState&)> progressFunction, bool useSacrifice, bool verbose);
 vector<GameState> purchaseRun(
     GameState st, 
     function<bool(GameState&)> stopCondition, 
+    function<double(GameState&)> progressFunction, 
     vector<vector<double>> sacrificeStrategies, bool verbose);
 vector<GameState> sacrificeRun(
     GameState st, 
-    function<bool(GameState&)> stopCondition, int precision, 
+    function<bool(GameState&)> stopCondition, 
+    function<double(GameState&)> progressFunction, 
     vector<vector<double>> purchaseStrategies, bool verbose);
 vector<GameState> deepSacRun(
     GameState st, 
     function<bool(GameState&)> stopCondition, 
+    function<double(GameState&)> progressFunction, 
     vector<vector<double>> purchaseStrategies, 
     vector<vector<double>> sacrificeStrategies, bool verbose);
 
 void computePurchaseBranches(GameState& gameState, vector<GameState>& branches);
-
-//void check(GameStates& gameStates, bool& isFinished);
 
 bool compare(const double* st1, const double* st2, size_t width);
 void purge(vector<GameState>& gamestates, bool verbose);

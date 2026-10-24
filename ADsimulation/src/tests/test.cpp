@@ -253,7 +253,7 @@ int main() {
 
     cout << "Starting test simulation" << endl;
     gameState = GameState();
-    gameState = runDimboost(gameState, true, 1000, true);
+    gameState = runDimboost(gameState, true, true);
     instructions = gameState.getCompletedPurchases();
     for (double instruction : instructions) {
         cout << instruction << " ";
