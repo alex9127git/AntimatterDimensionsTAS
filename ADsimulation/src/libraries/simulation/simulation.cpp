@@ -1,7 +1,6 @@
 #include "simulation.h"
 #include "../ioutils/ioutils.h"
 #include "../constants/constants.h"
-#include "../permutations/permutations.h"
 #include <cstdint>
 #include <vector>
 #include <list>
@@ -17,21 +16,27 @@ void renderProgressBar(double percentage) {
 }
 
 GameState runDimboost(GameState st, bool useSacrifice) {
-    return runUntil(
+    GameState result =  runUntil(
         st, [](GameState& st) {return st.canBuyNextDimboost();}, 
         [](GameState& st) {
             return st.antimatterThisReset().log10value() / st.getAntimatterGoalForDimboost().log10value();
         }, useSacrifice, true
     );
+    result.addInstructions({100});
+    result.runNextInstructions();
+    return result;
 }
 
 GameState runDimboost(GameState st, bool useSacrifice, bool verbose) {
-    return runUntil(
+    GameState result = runUntil(
         st, [](GameState& st) {return st.canBuyNextDimboost();}, 
         [](GameState& st) {
             return st.antimatterThisReset().log10value() / st.getAntimatterGoalForDimboost().log10value();
         }, useSacrifice, verbose
     );
+    result.addInstructions({100});
+    result.runNextInstructions();
+    return result;
 }
 
 GameState runUntil(
@@ -96,8 +101,6 @@ GameState runUntil(
         }
     } while (st.dimensionBoosts() >= 5 && useSacrifice && iterationTime < currentIterationTime);
     bestState.clearAllInstructions();
-    bestState.addInstructions({100});
-    bestState.runNextInstructions();
     return bestState;
 }
 

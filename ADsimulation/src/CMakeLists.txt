@@ -44,7 +44,24 @@ target_link_libraries(main
         tickspeed
         achievements
         gamestate
-        permutations
+        simulation
+)
+
+add_executable(custom)
+target_sources(custom 
+    PRIVATE 
+        customRun.cpp
+)
+target_link_libraries(custom
+    PRIVATE
+        interfaces
+        ioutils
+        decimal
+        constants
+        dimensions
+        tickspeed
+        achievements
+        gamestate
         simulation
 )
 
@@ -61,7 +78,6 @@ target_link_libraries(testing
         tickspeed
         achievements
         gamestate
-        permutations
         simulation
 )
 
@@ -202,18 +218,6 @@ target_link_libraries(gamestate
         nlohmann_json::nlohmann_json
 )
 
-add_library(permutations)
-target_sources(permutations
-    PRIVATE
-        libraries/permutations/permutations.cpp
-    PUBLIC
-        FILE_SET HEADERS
-        BASE_DIRS
-            libraries/permutations
-        FILES
-            libraries/permutations/permutations.h
-)
-
 add_library(simulation)
 target_sources(simulation
     PRIVATE
@@ -229,5 +233,4 @@ target_link_libraries(simulation
     PRIVATE
         gamestate
         ioutils
-        permutations
 )
