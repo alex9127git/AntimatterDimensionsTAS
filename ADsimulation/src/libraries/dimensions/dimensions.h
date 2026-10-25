@@ -63,7 +63,6 @@ class AntimatterDimension : public Dimension {
             Decimal _scaling,
             bool _unlocked
         );
-        AntimatterDimension(json& j);
 
         friend ostream& operator<<(ostream& os, const AntimatterDimension& d);
         void update(GameState& st) override;

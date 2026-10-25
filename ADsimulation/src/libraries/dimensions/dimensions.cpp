@@ -106,10 +106,6 @@ AntimatterDimension::AntimatterDimension(
 )   :   Dimension(_tier, _cost, _scaling, _unlocked)
     {}
 
-AntimatterDimension::AntimatterDimension(json& j) {
-    this->from_json(j);
-}
-
 ostream& operator<<(ostream& os, const AntimatterDimension& d) {
     string suffix;
     switch (d.tier) {
@@ -162,13 +158,12 @@ json AntimatterDimension::to_json() {
 }
 
 void AntimatterDimension::from_json(json& j) {
-    this->tier = j["tier"];
-    this->initialCost = Decimal(j["initialCost"]);
-    this->scaling = Decimal(j["scaling"]);
+    readIfPresent(j, "initialCost", this->initialCost);
+    readIfPresent(j, "scaling", this->scaling);
+    readIfPresent(j, "amount", this->amount);
+    readIfPresent(j, "purchases", this->purchases);
+    readIfPresent(j, "unlocked", this->unlocked);
     this->cost = this->initialCost * Decimal::pow(this->scaling, floor(purchases / 10));
-    this->amount = Decimal(j["amount"]);
-    this->purchases = j["purchases"];
-    this->unlocked = j["unlocked"];
 }
 
 
@@ -217,8 +212,7 @@ json AntimatterDimensions::to_json() {
 
 void AntimatterDimensions::from_json(json& j) {
     vector<json> jsons = j["dims"];
-    dims.clear();
-    for (json& item : jsons) {
-        dims.push_back(AntimatterDimension(item));
+    for (int i = 0; i < min(jsons.size(), dims.size()); i++) {
+        dims[i].from_json(jsons[i]);
     }
 }

@@ -432,6 +432,7 @@ json GameState::to_json() {
     json j;
     j["antimatter"] = this->_antimatter.to_json();
     j["totalAntimatter"] = this->_totalAntimatter.to_json();
+    j["antimatterThisReset"] = this->_antimatterThisReset.to_json();
     j["antimatterDimensionState"] = this->_AD.to_json();
     j["tickspeedState"] = this->_tickspeed.to_json();
     j["achievementState"] = this->_achievements.to_json();
@@ -443,24 +444,16 @@ json GameState::to_json() {
 }
 
 void GameState::from_json(json& j) {
-    if (j.contains("antimatter") && !j["antimatter"].is_null()) 
-        this->_antimatter = Decimal(j["antimatter"]);
-    if (j.contains("totalAntimatter") && !j["totalAntimatter"].is_null()) 
-        this->_totalAntimatter = Decimal(j["totalAntimatter"]);
-    if (j.contains("antimatterDimensionState") && !j["antimatterDimensionState"].is_null()) 
-        this->_AD = AntimatterDimensions(j["antimatterDimensionState"]);
-    if (j.contains("tickspeedState") && !j["tickspeedState"].is_null()) 
-        this->_tickspeed = Tickspeed(j["tickspeedState"]);
-    if (j.contains("achievementState") && !j["achievementState"].is_null()) 
-        this->_achievements = Achievements(j["achievementState"]);
-    if (j.contains("sacrificed") && !j["sacrificed"].is_null()) 
-        this->_sacrificed = Decimal(j["sacrificed"]);
-    if (j.contains("dimensionBoosts") && !j["dimensionBoosts"].is_null()) 
-        this->_dimensionBoosts = j["dimensionBoosts"];
-    if (j.contains("realTimePlayed") && !j["realTimePlayed"].is_null()) 
-        this->_realTimePlayed = j["realTimePlayed"];
-    if (j.contains("canUseKonami") && !j["canUseKonami"].is_null()) 
-        this->_canUseKonami = j["canUseKonami"];
+    readIfPresent(j, "antimatter", this->_antimatter);
+    readIfPresent(j, "totalAntimatter", this->_totalAntimatter);
+    readIfPresent(j, "antimatterThisReset", this->_antimatterThisReset);
+    readIfPresent(j, "antimatterDimensionState", this->_AD);
+    readIfPresent(j, "tickspeedState", this->_tickspeed);
+    readIfPresent(j, "achievementState", this->_achievements);
+    readIfPresent(j, "sacrificed", this->_sacrificed);
+    readIfPresent(j, "dimensionBoosts", this->_dimensionBoosts);
+    readIfPresent(j, "realTimePlayed", this->_realTimePlayed);
+    readIfPresent(j, "canUseKonami", this->_canUseKonami);
     this->prepare();
 }
 
