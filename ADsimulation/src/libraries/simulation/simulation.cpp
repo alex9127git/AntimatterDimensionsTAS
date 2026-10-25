@@ -15,24 +15,9 @@ void renderProgressBar(double percentage) {
     cout << "\r" << flush;
 }
 
-GameState runDimboost(GameState st, bool useSacrifice) {
-    GameState result =  runUntil(
-        st, [](GameState& st) {return st.canBuyNextDimboost();}, 
-        [](GameState& st) {
-            return st.antimatterThisReset().log10value() / st.getAntimatterGoalForDimboost().log10value();
-        }, useSacrifice, true
-    );
-    result.addInstructions({100});
-    result.runNextInstructions();
-    return result;
-}
-
 GameState runDimboost(GameState st, bool useSacrifice, bool verbose) {
     GameState result = runUntil(
-        st, [](GameState& st) {return st.canBuyNextDimboost();}, 
-        [](GameState& st) {
-            return st.antimatterThisReset().log10value() / st.getAntimatterGoalForDimboost().log10value();
-        }, useSacrifice, verbose
+        st, Progress::untilDimboost(), useSacrifice, verbose
     );
     result.addInstructions({100});
     result.runNextInstructions();
@@ -40,9 +25,7 @@ GameState runDimboost(GameState st, bool useSacrifice, bool verbose) {
 }
 
 GameState runUntil(
-    GameState st, function<bool(GameState&)> stopCondition, 
-    function<double(GameState&)> progressFunction,
-    bool useSacrifice, bool verbose
+    GameState st, Progress progress, bool useSacrifice, bool verbose
 ) {
     vector<GameState> gameStates;
     GameState bestState;
@@ -58,18 +41,14 @@ GameState runUntil(
         cout << "Running iteration " << iterationCounter << endl;
         switch (iterationCounter % 2) {
             case 1:
-                gameStates = purchaseRun(
-                    st, stopCondition, progressFunction, sacrificeStrategies, verbose
-                );
+                gameStates = PurchaseIteration(st, progress, sacrificeStrategies, verbose).run();
                 purchaseStrategies.clear();
                 for (GameState& gst : gameStates) {
                     purchaseStrategies.push_back(gst.getCompletedPurchases());
                 }
                 break;
             case 0:
-                gameStates = sacrificeRun(
-                    st, stopCondition, progressFunction, purchaseStrategies, verbose
-                );
+                gameStates = ApproxSacrificeIteration(st, progress, purchaseStrategies, verbose).run();
                 purchaseStrategies.clear();
                 sacrificeStrategies.clear();
                 for (GameState& gst : gameStates) {
@@ -81,9 +60,8 @@ GameState runUntil(
                     sacrificeStrategies.push_back(sacStrat);
                 }
                 cout << "Optimizing sacrifices" << endl;
-                gameStates = deepSacRun(
-                    st, stopCondition, progressFunction, purchaseStrategies, sacrificeStrategies, verbose
-                );
+                gameStates = PreciseSacrificeIteration(
+                    st, progress, purchaseStrategies, sacrificeStrategies, verbose).run();
                 sacrificeStrategies.clear();
                 for (GameState& gst : gameStates) {
                     sacrificeStrategies.push_back(gst.getCompletedSacrifices());
@@ -104,16 +82,15 @@ GameState runUntil(
     return bestState;
 }
 
-Progress::Progress(function<double(GameState&)> _func) 
-    :   progressFunction(_func) 
+Progress::Progress(function<bool(GameState&)> stopFunc, function<double(GameState&)> progressFunc)
+    :   stopCondition(stopFunc),
+        progressFunction(progressFunc) 
     {};
 
 Iteration::Iteration(
-    function<double(GameState&)> progressFunction,
-    function<bool(GameState&)> _stopCondition, bool _verbose
-)   :   stopCondition(_stopCondition),
-        verbose(_verbose),
-        progress(Progress(progressFunction))
+    Progress _progress, bool _verbose
+)   :   progress(_progress),
+        verbose(_verbose)
     {}
 
 void Iteration::appendNewStates() {
@@ -128,7 +105,7 @@ void Iteration::checkProgress() {
     GameState* bestState = &gameStates[0];
     for (GameState& gst : gameStates) {
         gst.runNextInstructions();
-        if (stopCondition(gst)) {
+        if (progress.isFinished(gst)) {
             if (verbose && !isFinished) {
                 renderProgressBar(1);
                 cout << endl;
@@ -191,7 +168,7 @@ vector<GameState> Iteration::run() {
     }
     vector<GameState> finishedStates;
     for (GameState& gst : gameStates) {
-        if (stopCondition(gst)) {
+        if (progress.isFinished(gst)) {
             finishedStates.push_back(gst);
         }
     }
@@ -199,11 +176,9 @@ vector<GameState> Iteration::run() {
 }
 
 PurchaseIteration::PurchaseIteration(
-    GameState st,
-    function<bool(GameState&)> _stopCondition,
-    function<double(GameState&)> progressFunction,
-    vector<vector<double>> sacrificeStrategies, bool _verbose
-)   :   Iteration(progressFunction, _stopCondition, _verbose)
+    GameState st, Progress progress,
+    vector<vector<double>> sacrificeStrategies, bool verbose
+)   :   Iteration(progress, verbose)
 {
     // If Konami code exploit isn't used, assume this is the starting game state 
     // and add some default instructions.
@@ -237,22 +212,10 @@ void PurchaseIteration::addBranches() {
     }
 }
 
-vector<GameState> purchaseRun(
-    GameState st, function<bool(GameState&)> stopCondition, 
-    function<double(GameState&)> progressFunction,
-    vector<vector<double>> sacrificeStrategies, bool verbose
-) {
-    return PurchaseIteration(
-        st, stopCondition, progressFunction, sacrificeStrategies, verbose
-    ).run();
-}
-
 ApproxSacrificeIteration::ApproxSacrificeIteration(
-    GameState st,
-    function<bool(GameState&)> _stopCondition,
-    function<double(GameState&)> progressFunction,
-    vector<vector<double>> purchaseStrategies, bool _verbose
-)   :   Iteration(progressFunction, _stopCondition, _verbose)
+    GameState st, Progress progress,
+    vector<vector<double>> purchaseStrategies, bool verbose
+)   :   Iteration(progress, verbose)
 {
     for (int i = 0; i < purchaseStrategies.size(); i++) {
         gameStates.push_back(st.copy());
@@ -279,23 +242,11 @@ void ApproxSacrificeIteration::addBranches() {
     appendNewStates();
 }
 
-vector<GameState> sacrificeRun(
-    GameState st, function<bool(GameState&)> stopCondition, 
-    function<double(GameState&)> progressFunction,
-    vector<vector<double>> purchaseStrategies, bool verbose
-) {
-    return ApproxSacrificeIteration(
-        st, stopCondition, progressFunction, purchaseStrategies, verbose
-    ).run();
-}
-
 PreciseSacrificeIteration::PreciseSacrificeIteration(
-    GameState st,
-    function<bool(GameState&)> _stopCondition,
-    function<double(GameState&)> progressFunction,
+    GameState st, Progress progress,
     vector<vector<double>> purchaseStrategies, 
-    vector<vector<double>> sacrificeStrategies, bool _verbose
-)   :   Iteration(progressFunction, _stopCondition, _verbose)
+    vector<vector<double>> sacrificeStrategies, bool verbose
+)   :   Iteration(progress, verbose)
 {
     projectedSacrifices = sacrificeStrategies[0];
     for (int i = 0; i < purchaseStrategies.size(); i++) {
@@ -329,18 +280,6 @@ void PreciseSacrificeIteration::addBranches() {
         }
     }
     appendNewStates();
-}
-
-vector<GameState> deepSacRun(
-    GameState st, function<bool(GameState&)> stopCondition, 
-    function<double(GameState&)> progressFunction,
-    vector<vector<double>> purchaseStrategies, 
-    vector<vector<double>> sacrificeStrategies, bool verbose
-) {
-    return PreciseSacrificeIteration(
-        st, stopCondition, progressFunction,
-        purchaseStrategies, sacrificeStrategies, verbose
-    ).run();
 }
 
 void computePurchaseBranches(GameState& gameState, vector<GameState>& branches) {
