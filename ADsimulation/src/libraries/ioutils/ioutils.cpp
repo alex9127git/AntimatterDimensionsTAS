@@ -1,7 +1,19 @@
 #include "ioutils.h"
 #include <format>
-#include <map>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
+
+void enableAnsiEscapes() {
+#ifdef _WIN32
+    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD mode = 0;
+    if (GetConsoleMode(out, &mode)) {
+        SetConsoleMode(out, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    }
+#endif
+}
 
 string renderTime(long ms) {
     int hours = ms / 3600000;

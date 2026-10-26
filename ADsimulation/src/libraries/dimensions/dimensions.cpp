@@ -1,4 +1,7 @@
 #include <cmath>
+#include <algorithm>
+#include <ostream>
+#include <string>
 #include "dimensions.h"
 #include "../constants/constants.h"
 #include "../gamestate/gamestate.h"

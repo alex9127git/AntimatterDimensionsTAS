@@ -2,16 +2,17 @@
 
 #include <iostream>
 #include <cassert>
+#include "../libraries/ioutils/ioutils.h"
 #include "../libraries/constants/constants.h"
 #include "../libraries/decimal/decimal.h"
 #include "../libraries/gamestate/gamestate.h"
 #include "../libraries/simulation/simulation.h"
-#include <nlohmann/json.hpp>
+#include <cmath>
 using namespace std;
-using json = nlohmann::json;
 
 
 int main() {
+    enableAnsiEscapes();
     Decimal a = DC::D0;
     Decimal b = DC::D0;
     Decimal c = DC::D0;

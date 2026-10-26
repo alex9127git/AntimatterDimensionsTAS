@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include "libraries/ioutils/ioutils.h"
-#include "libraries/constants/constants.h"
 #include "libraries/gamestate/gamestate.h"
 #include "libraries/simulation/simulation.h"
 
@@ -9,6 +8,8 @@ using namespace std;
 
 
 int main(int argc, char* argv[]) {
+    enableAnsiEscapes();
+
     string inputFile;
     string outputFile;
     string cmdOutFile;

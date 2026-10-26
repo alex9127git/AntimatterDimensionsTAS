@@ -15,6 +15,8 @@ inline const vector<string> DEFAULTARGS = {
 };
 
 
+void enableAnsiEscapes();
+
 string renderTime(long ms);
 bool needsHelp(int argc, char* argv[]);
 map<string, string> parseArgs(int argc, char* argv[]);

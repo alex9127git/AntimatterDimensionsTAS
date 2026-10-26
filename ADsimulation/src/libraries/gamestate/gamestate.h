@@ -1,8 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <vector>
-#include <fstream>
-#include <algorithm>
+#include <iosfwd>
 #include "../constants/constants.h"
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"

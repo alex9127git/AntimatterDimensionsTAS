@@ -1,12 +1,9 @@
 #pragma once
 #include <cstdint>
+#include <iosfwd>
 #include <vector>
 #include "../decimal/decimal.h"
 #include "../interfaces/interfaces.h"
-#include <nlohmann/json.hpp>
-
-using namespace std;
-using json = nlohmann::json;
 
 
 class GameState;

@@ -1,6 +1,10 @@
+#pragma once
 #include "../gamestate/gamestate.h"
-#include "chrono"
-#include "vector"
+#include <iostream>
+#include <algorithm>
+#include <functional>
+#include <chrono>
+#include <vector>
 
 
 class Timer {
@@ -49,13 +53,8 @@ class Progress {
         };
 };
 
-class Iteration {
-    protected:
-        Progress progress;
-        bool verbose;
-        
-        vector<GameState> gameStates;
-        vector<GameState> newGameStates;
+class Stats {
+    private:
         Timer timer;
         Timer branchTimer;
         Timer checkTimer;
@@ -65,6 +64,36 @@ class Iteration {
         double checkTime = 0;
         double tickTime = 0;
         double purgeTime = 0;
+    public:
+        void resetGlobalTimer() {timer.reset();};
+        void resetBranchTimer() {branchTimer.silentReset();};
+        void resetCheckTimer() {checkTimer.silentReset();};
+        void resetTickTimer() {tickTimer.silentReset();};
+        void resetPurgeTimer() {purgeTimer.silentReset();};
+        void updateBranchTime() {branchTime += branchTimer.silentReset();}
+        void updateCheckTime() {checkTime += checkTimer.silentReset();}
+        void updateTickTime() {tickTime += tickTimer.silentReset();}
+        void updatePurgeTime() {purgeTime += purgeTimer.silentReset();}
+        void printStats(int maxStates) {
+            cout << endl;
+            cout << "Finished! Total time elapsed: ";
+            timer.reset();
+            cout << "Max States: " << maxStates << endl;
+            cout << "branch: " << branchTime << " ms" << endl;
+            cout << "check: " << checkTime << " ms" << endl;
+            cout << "tick: " << tickTime << " ms" << endl;
+            cout << "purge: " << purgeTime << " ms" << endl;
+        }
+};
+
+class Iteration {
+    protected:
+        Progress progress;
+        bool verbose;
+        
+        vector<GameState> gameStates;
+        vector<GameState> newGameStates;
+        Stats stats;
         bool isFinished = false;
         int ticks = 0;
         int statesAfterPurge = 1;

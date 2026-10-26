@@ -2,8 +2,8 @@
 #include <string>
 #include <format>
 #include <cmath>
+#include <stdexcept>
 #include "decimal.h"
-#include "../constants/constants.h"
 using namespace std;
 
 

@@ -1,7 +1,8 @@
 #pragma once
 #include <cstdint>
 #include "../interfaces/interfaces.h"
-#include <iostream>
+#include <iosfwd>
+#include <string>
 using namespace std;
 
 

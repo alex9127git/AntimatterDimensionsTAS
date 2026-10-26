@@ -3,8 +3,10 @@
 #include "../constants/constants.h"
 #include <cstdint>
 #include <vector>
-#include <list>
-#include <set>
+#include <numeric>
+#include <cmath>
+#include <string>
+#include <format>
 using namespace std;
 
 
@@ -101,21 +103,14 @@ void Iteration::appendNewStates() {
 }
 
 void Iteration::checkProgress() {
-    checkTimer.silentReset();
+    stats.resetCheckTimer();
     GameState* bestState = &gameStates[0];
     for (GameState& gst : gameStates) {
         gst.runNextInstructions();
         if (progress.isFinished(gst)) {
             if (verbose && !isFinished) {
                 renderProgressBar(1);
-                cout << endl;
-                cout << "Finished! Total time elapsed: ";
-                timer.reset();
-                cout << "Max States: " << maxStates << endl;
-                cout << "branch: " << branchTime << " ms" << endl;
-                cout << "check: " << checkTime << " ms" << endl;
-                cout << "tick: " << tickTime << " ms" << endl;
-                cout << "purge: " << purgeTime << " ms" << endl;
+                stats.printStats(maxStates);
             }
             isFinished = true;
         }
@@ -128,29 +123,29 @@ void Iteration::checkProgress() {
     if (!isFinished && ticks % 50 == 0 && verbose) {
         renderProgressBar(progress.calculate(*bestState));
     }
-    checkTime += checkTimer.silentReset();
+    stats.updateCheckTime();
 }
 
 void Iteration::tickAllStates() {
-    tickTimer.silentReset();
+    stats.resetTickTimer();
     // Tick and purchases
     for (GameState& gst : gameStates) {
         gst.tick(0.033);
         gst.runNextInstructions();
     }
-    tickTime += tickTimer.silentReset();
+    stats.updateTickTime();
 }
 
 void Iteration::purgeObsoleteStates() {
     if (adds >= 300 || states >= statesAfterPurge * 1.5) {
-        purgeTimer.silentReset();
+        stats.resetPurgeTimer();
         adds = 0;
         int beforeSize = gameStates.size();
         maxStates = max(maxStates, beforeSize);
         purge(gameStates, verbose);
         statesAfterPurge = gameStates.size();
         states = statesAfterPurge;
-        purgeTime += purgeTimer.silentReset();
+        stats.updatePurgeTime();
     }
 }
 
@@ -158,9 +153,9 @@ vector<GameState> Iteration::run() {
     while (true) {
         ticks++;
         // Branching
-        branchTimer.silentReset();
+        stats.resetBranchTimer();
         addBranches();
-        branchTime += branchTimer.silentReset();
+        stats.updateBranchTime();
         checkProgress();
         if (isFinished) break;
         tickAllStates();

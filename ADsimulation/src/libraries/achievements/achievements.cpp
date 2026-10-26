@@ -1,4 +1,3 @@
-#include <functional>
 #include "achievements.h"
 #include "../gamestate/gamestate.h"
 #include "../constants/constants.h"

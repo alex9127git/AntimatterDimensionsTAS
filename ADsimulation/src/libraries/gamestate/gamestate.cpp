@@ -1,14 +1,10 @@
 #include "gamestate.h"
 #include "../ioutils/ioutils.h"
 #include "../constants/constants.h"
-#include "../dimensions/dimensions.h"
-#include "../tickspeed/tickspeed.h"
-#include "../achievements/achievements.h"
 #include <fstream>
 #include <algorithm>
-#include <nlohmann/json.hpp>
-using namespace std;
-using json = nlohmann::json;
+#include <cmath>
+#include <string>
 
 
 GameState::GameState() {

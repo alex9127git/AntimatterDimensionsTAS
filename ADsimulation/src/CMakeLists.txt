@@ -72,6 +72,7 @@ target_sources(testing
 )
 target_link_libraries(testing
     PRIVATE
+        ioutils
         decimal
         constants
         dimensions
