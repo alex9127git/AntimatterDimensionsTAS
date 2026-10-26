@@ -56,16 +56,16 @@ class GameState : public ISerializable {
 
         // getters
 
-        Decimal antimatter();
-        Decimal totalAntimatter();
-        Decimal antimatterThisReset();
-        AntimatterDimensions& AD();
-        Decimal getPrevAD1();
-        Tickspeed& tickspeed();
-        Achievements& achievements();
-        bool canUseKonami();
-        int64_t realTimePlayed();
-        int32_t dimensionBoosts();
+        Decimal antimatter() const;
+        Decimal totalAntimatter() const;
+        Decimal antimatterThisReset() const;
+        const AntimatterDimensions& AD() const;
+        Decimal getPrevAD1() const;
+        const Tickspeed& tickspeed() const;
+        const Achievements& achievements() const;
+        bool canUseKonami() const;
+        int64_t realTimePlayed() const;
+        int32_t dimensionBoosts() const;
 
         void tick(double diff);
 
@@ -97,7 +97,7 @@ class GameState : public ISerializable {
         
         // brnaching methods
 
-        Decimal getAntimatterGoalForDimboost();
+        Decimal getAntimatterGoalForDimboost() const;
 
         bool canBranch();
         vector<uint16_t> getPurchaseBranches();
@@ -109,7 +109,7 @@ class GameState : public ISerializable {
 
         // reset methods
 
-        bool canBuyNextDimboost();
+        bool canBuyNextDimboost() const;
         bool requestDimboost();
         bool canSacrifice();
         Decimal nextSacrificeBoost();

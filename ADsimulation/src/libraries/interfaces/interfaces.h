@@ -7,10 +7,8 @@ using json = nlohmann::json;
 
 class ISerializable {
     public:
-        virtual json to_json() {
-            return NULL;
-        };
-        virtual void from_json(json& j) {};
+        virtual json to_json() = 0;
+        virtual void from_json(json& j) = 0;
 };
 
 template <typename T>

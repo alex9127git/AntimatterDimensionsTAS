@@ -29,19 +29,19 @@ void Tickspeed::update(GameState& st) {
     );
 }
 
-Decimal Tickspeed::perSecond() {
+Decimal Tickspeed::perSecond() const {
     return this->multiplier;
 }
 
-Decimal Tickspeed::getCost() {
+Decimal Tickspeed::getCost() const {
     return this->cost;
 }
 
-int32_t Tickspeed::getPurchases() {
+int32_t Tickspeed::getPurchases() const {
     return this->purchases;
 }
 
-bool Tickspeed::isUnlocked() {
+bool Tickspeed::isUnlocked() const {
     return this->unlocked;
 }
 

@@ -35,15 +35,15 @@ class Dimension : public ISerializable {
         Dimension();
         
         virtual void update(GameState& st);
-        Decimal productionPerSecond();
-        Decimal productionPerDiff(double diff);
-        Decimal getCost();
-        Decimal getInitialCost();
-        Decimal getScaling();
-        Decimal getAmount();
-        Decimal getMult();
-        int32_t getPurchases();
-        bool isUnlocked();
+        Decimal productionPerSecond() const;
+        Decimal productionPerDiff(double diff) const;
+        Decimal getCost() const;
+        Decimal getInitialCost() const;
+        Decimal getScaling() const;
+        Decimal getAmount() const;
+        Decimal getMult() const; 
+        int32_t getPurchases() const;
+        bool isUnlocked() const;
 
         void unlock();
         void lock();
@@ -80,6 +80,7 @@ class AntimatterDimensions : ISerializable {
         AntimatterDimensions();
         AntimatterDimensions(json& j);
 
+        const Dimension& operator[](int index) const;
         Dimension& operator[](int index);
 
         vector<AntimatterDimension>& getDims();

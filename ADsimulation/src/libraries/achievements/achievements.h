@@ -33,10 +33,11 @@ class Achievements : public ISerializable {
         Achievements();
         Achievements(json& j);
         
+        bool checkUnlockCondition(int id, GameState& st) const;
+        bool isUnlocked(int id) const;
+        
         void unlockAchievement(int id, int64_t time);
         void lockAchievement(int id);
-        bool checkUnlockCondition(int id, GameState& st);
-        bool isUnlocked(int id);
 
         static int idToIndex(int id);
         static int indexToId(int index);

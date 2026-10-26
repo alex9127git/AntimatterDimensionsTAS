@@ -191,11 +191,11 @@ void Achievements::lockAchievement(int id) {
     unlockTimes[idToIndex(id)] = -1;
 }
 
-bool Achievements::checkUnlockCondition(int id, GameState& st) {
+bool Achievements::checkUnlockCondition(int id, GameState& st) const {
     return AchConstants::unlockConditions[Achievements::idToIndex(id)](st);
 }
 
-bool Achievements::isUnlocked(int id) {
+bool Achievements::isUnlocked(int id) const {
     return (bitmasks[id / 10 - 1] & (1 << (id % 10 - 1))) != 0;
 }
 

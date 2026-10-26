@@ -27,22 +27,22 @@ class Timer {
 
 class Progress {
     private:
-        function<bool(GameState&)> stopCondition;
-        function<double(GameState&)> progressFunction;
+        function<bool(const GameState&)> stopCondition;
+        function<double(const GameState&)> progressFunction;
 
     public:
-        Progress(function<bool(GameState&)> stopFunc, function<double(GameState&)> progressFunc);
-        double calculate(GameState& st) {
+        Progress(function<bool(const GameState&)> stopFunc, function<double(const GameState&)> progressFunc);
+        double calculate(const GameState& st) const {
             return clamp(progressFunction(st), 0.0, 1.0);
         };
-        bool isFinished(GameState& st) {
+        bool isFinished(const GameState& st) const {
             return stopCondition(st);
         };
 
-        static Progress untilDimboost() {
+        static Progress untilDimboost()  {
             return Progress(
-                [](GameState& st) {return st.canBuyNextDimboost();}, 
-                [](GameState& st) {
+                [](const GameState& st) {return st.canBuyNextDimboost();}, 
+                [](const GameState& st) {
                     return st.antimatterThisReset().log10value() / st.getAntimatterGoalForDimboost().log10value();
                 }
             );
@@ -70,18 +70,18 @@ class Iteration {
         int statesAfterPurge = 1;
         int adds = 0;
         int maxStates = 0;
-        int states;
+        int states = 0;
 
     public:
         Iteration(Progress _progress, bool _verbose);
 
-        virtual void addBranches() {};
+        virtual void addBranches() = 0;
         void appendNewStates();
         void checkProgress();
         void tickAllStates();
         void purgeObsoleteStates();
 
-        virtual vector<GameState> run();
+        vector<GameState> run();
 };
 
 class PurchaseIteration : public Iteration {
@@ -95,7 +95,7 @@ class PurchaseIteration : public Iteration {
 
 class ApproxSacrificeIteration : public Iteration {
     private:
-        Decimal precision = DC::D1 + Decimal(1e-3);
+        inline static const Decimal precision = DC::D1 + Decimal(1e-3);
 
     public:
         ApproxSacrificeIteration(
@@ -107,8 +107,8 @@ class ApproxSacrificeIteration : public Iteration {
 
 class PreciseSacrificeIteration : public Iteration {
     private:
-        Decimal tolerance = DC::D1_01;
-        Decimal precision = DC::D1 + Decimal(1e-9);
+        inline static const Decimal tolerance = DC::D1_01;
+        inline static const Decimal precision = DC::D1 + Decimal(1e-9);
         vector<double> projectedSacrifices;
 
     public:

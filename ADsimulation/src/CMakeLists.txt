@@ -81,11 +81,9 @@ target_link_libraries(testing
         simulation
 )
 
-add_library(interfaces)
+add_library(interfaces INTERFACE)
 target_sources(interfaces
-    PRIVATE
-        libraries/interfaces/interfaces.cpp
-    PUBLIC
+    INTERFACE
         FILE_SET HEADERS
         BASE_DIRS
             libraries/interfaces
@@ -93,7 +91,7 @@ target_sources(interfaces
             libraries/interfaces/interfaces.h
 )
 target_link_libraries(interfaces
-    PUBLIC
+    INTERFACE
         nlohmann_json::nlohmann_json
 )
 
@@ -126,11 +124,9 @@ target_link_libraries(decimal
         nlohmann_json::nlohmann_json
 )
 
-add_library(constants)
+add_library(constants INTERFACE)
 target_sources(constants
-    PRIVATE
-        libraries/constants/constants.cpp
-    PUBLIC
+    INTERFACE
         FILE_SET HEADERS
         BASE_DIRS
             libraries/constants
@@ -138,7 +134,7 @@ target_sources(constants
             libraries/constants/constants.h
 )
 target_link_libraries(constants
-    PUBLIC
+    INTERFACE
         decimal
         interfaces
         nlohmann_json::nlohmann_json

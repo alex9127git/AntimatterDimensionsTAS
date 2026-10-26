@@ -34,39 +34,39 @@ void Dimension::update(GameState& st) {
     this->multiplier = DC::D1;
 }
 
-Decimal Dimension::productionPerSecond() {
+Decimal Dimension::productionPerSecond() const {
     return this->amount * this->multiplier;
 }
 
-Decimal Dimension::productionPerDiff(double diff) {
+Decimal Dimension::productionPerDiff(double diff) const {
     return this->productionPerSecond() * Decimal(diff);
 }
 
-Decimal Dimension::getCost() {
+Decimal Dimension::getCost() const {
     return this->cost;
 }
 
-Decimal Dimension::getInitialCost() {
+Decimal Dimension::getInitialCost() const {
     return this->initialCost;
 }
 
-Decimal Dimension::getScaling() {
+Decimal Dimension::getScaling() const {
     return this->scaling;
 }
 
-Decimal Dimension::getAmount() {
+Decimal Dimension::getAmount() const {
     return this->amount;
 }
 
-Decimal Dimension::getMult() {
+Decimal Dimension::getMult() const {
     return this->multiplier;
 }
 
-int32_t Dimension::getPurchases() {
+int32_t Dimension::getPurchases() const {
     return this->purchases;
 }
 
-bool Dimension::isUnlocked() {
+bool Dimension::isUnlocked() const {
     return this->unlocked;
 }
 
@@ -188,6 +188,10 @@ AntimatterDimensions::AntimatterDimensions(json& j) : AntimatterDimensions::Anti
 
 vector<AntimatterDimension>& AntimatterDimensions::getDims() {
     return this->dims;
+}
+
+const Dimension& AntimatterDimensions::operator[](int index) const {
+    return this->dims[index - 1];
 }
 
 Dimension& AntimatterDimensions::operator[](int index) {

@@ -82,7 +82,7 @@ GameState runUntil(
     return bestState;
 }
 
-Progress::Progress(function<bool(GameState&)> stopFunc, function<double(GameState&)> progressFunc)
+Progress::Progress(function<bool(const GameState&)> stopFunc, function<double(const GameState&)> progressFunc)
     :   stopCondition(stopFunc),
         progressFunction(progressFunc) 
     {};
@@ -169,7 +169,7 @@ vector<GameState> Iteration::run() {
     vector<GameState> finishedStates;
     for (GameState& gst : gameStates) {
         if (progress.isFinished(gst)) {
-            finishedStates.push_back(gst);
+            finishedStates.push_back(move(gst));
         }
     }
     return finishedStates;

@@ -25,10 +25,12 @@ class Tickspeed : public ISerializable {
         Decimal getDisplayMult(GameState& st);
 
         void update(GameState& st);
-        Decimal perSecond();
-        Decimal getCost();
-        int32_t getPurchases();
-        bool isUnlocked();
+
+        Decimal perSecond() const;
+        Decimal getCost() const;
+        int32_t getPurchases() const;
+        bool isUnlocked() const;
+
         void unlock();
         void lock();
         bool canPurchase(Decimal resource);

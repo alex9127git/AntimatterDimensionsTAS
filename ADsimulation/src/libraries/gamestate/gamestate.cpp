@@ -30,8 +30,8 @@ void GameState::prepare() {
     calcPurchases();
     recalcSacrificeBonus();
     recalcAchievementBonus();
-    this->tickspeed().update(*this);
-    this->AD().update(*this);
+    this->_tickspeed.update(*this);
+    this->_AD.update(*this);
 }
 
 void GameState::calcPurchases() {
@@ -76,7 +76,7 @@ void GameState::recalcAchievementBonus() {
     int rowCounter = 0;
     int cycle = 0;
     for (int id : AchConstants::achIdList) {
-        if (achievements().isUnlocked(id)) {
+        if (_achievements.isUnlocked(id)) {
             result *= DC::D1_03;
             rowCounter++;
         }
@@ -90,7 +90,7 @@ void GameState::recalcAchievementBonus() {
         }
     }
     this->achievementBonus = result;
-    this->AD().update(*this);
+    this->_AD.update(*this);
 }
 
 void GameState::recalcSacrificeBonus() {
@@ -112,50 +112,50 @@ Decimal GameState::getSacrificeExponent() {
 ostream& operator<<(ostream& os, GameState& st) {
     os << "You have " << st.antimatter() << " antimatter." << endl;
     os << "You have been playing for " << renderTime(st._realTimePlayed) << endl;
-    os << "Tickspeed bonus: x" << st.tickspeed().perSecond() << " (x" << st.tickspeed().getDisplayMult(st).toString(3) << " per upgrade)" << endl;
-    for (const AntimatterDimension& d : st.AD().getDims()) {
+    os << "Tickspeed bonus: x" << st._tickspeed.perSecond() << " (x" << st._tickspeed.getDisplayMult(st).toString(3) << " per upgrade)" << endl;
+    for (const AntimatterDimension& d : st._AD.getDims()) {
         os << d << endl;
     };
     return os;
 }
 
-Decimal GameState::antimatter() {
+Decimal GameState::antimatter() const {
     return this->_antimatter;
 }
 
-Decimal GameState::totalAntimatter() {
+Decimal GameState::totalAntimatter() const {
     return this->_totalAntimatter;
 }
 
-Decimal GameState::antimatterThisReset() {
+Decimal GameState::antimatterThisReset() const {
     return this->_antimatterThisReset;
 }
 
-AntimatterDimensions& GameState::AD() {
+const AntimatterDimensions& GameState::AD() const {
     return this->_AD;
 }
 
-Decimal GameState::getPrevAD1() {
+Decimal GameState::getPrevAD1() const {
     return prevAD1;
 }
 
-Tickspeed& GameState::tickspeed() {
+const Tickspeed& GameState::tickspeed() const {
     return this->_tickspeed;
 }
 
-Achievements& GameState::achievements() {
+const Achievements& GameState::achievements() const {
     return this->_achievements;
 }
 
-bool GameState::canUseKonami() {
+bool GameState::canUseKonami() const {
     return this->_canUseKonami;
 }
 
-int64_t GameState::realTimePlayed() {
+int64_t GameState::realTimePlayed() const {
     return this->_realTimePlayed;
 }
 
-int32_t GameState::dimensionBoosts() {
+int32_t GameState::dimensionBoosts() const {
     return this->_dimensionBoosts;
 }
 
@@ -229,9 +229,9 @@ bool GameState::handleKonamiCode() {
 }
 
 void GameState::unlockAchievement(int ach, bool force) {
-    if (this->achievements().isUnlocked(ach)) return;
-    if (force || this->achievements().checkUnlockCondition(ach, *this)) {
-        this->achievements().unlockAchievement(ach, this->realTimePlayed());
+    if (this->_achievements.isUnlocked(ach)) return;
+    if (force || this->_achievements.checkUnlockCondition(ach, *this)) {
+        this->_achievements.unlockAchievement(ach, this->realTimePlayed());
         this->recalcAchievementBonus();
     }
 }
@@ -289,7 +289,7 @@ bool GameState::runInstruction(double instruction) {
 
 bool GameState::runSacInstruction(double instruction) {
     if (this->sacrificeInstructions.empty()) return false;
-    if (this->AD()[1].getAmount() < this->nextSacrificeInstruction) return false;
+    if (this->_AD[1].getAmount() < this->nextSacrificeInstruction) return false;
     return sacrificeReset();
 }
 
@@ -334,8 +334,8 @@ int GameState::instructionsExecuted() {
     return this->completedInstructions.size();
 }
 
-Decimal GameState::getAntimatterGoalForDimboost() {
-    Dimension& dimNeeded = this->AD()[min(8, 4 + _dimensionBoosts)];
+Decimal GameState::getAntimatterGoalForDimboost() const {
+    const Dimension& dimNeeded = this->_AD[min(8, 4 + _dimensionBoosts)];
     int dimAmountRequied = 20 + 15 * max(0, _dimensionBoosts - 4);
     int scalingNeeded = ceil(dimAmountRequied / 10.0) - 1;
     int highPurchases = dimAmountRequied % 10 + (dimAmountRequied % 10 == 0 ? 10 : 0);
@@ -369,8 +369,8 @@ bool GameState::canSacBranch() {
     return this->_AD[1].getAmount() >= this->nextSacrificeBranch;
 }
 
-bool GameState::canBuyNextDimboost() {
-    return this->AD()[min(8, 4 + _dimensionBoosts)].getPurchases() >= 20 + 15 * max(0, _dimensionBoosts - 4);
+bool GameState::canBuyNextDimboost() const {
+    return this->_AD[min(8, 4 + _dimensionBoosts)].getPurchases() >= 20 + 15 * max(0, _dimensionBoosts - 4);
 }
 
 bool GameState::requestDimboost() {

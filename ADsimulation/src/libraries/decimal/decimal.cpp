@@ -31,7 +31,7 @@ Decimal::Decimal(json& j) {
     this->normalize();
 }
 
-Decimal Decimal::operator+(const Decimal& b) {
+Decimal Decimal::operator+(const Decimal& b) const {
     return Decimal::add(*this, b);
 }
 
@@ -58,7 +58,7 @@ Decimal& Decimal::operator+=(const Decimal& b) {
     return *this;
 }
 
-Decimal Decimal::operator-(const Decimal& b) {
+Decimal Decimal::operator-(const Decimal& b) const {
     return Decimal::add(*this, Decimal::unary_negate(b));
 }
 
@@ -66,7 +66,7 @@ Decimal& Decimal::operator-=(const Decimal& b) {
     return *this += Decimal::unary_negate(b);
 }
 
-Decimal Decimal::operator*(const Decimal& b) {
+Decimal Decimal::operator*(const Decimal& b) const {
     return Decimal::multiply(*this, b);
 }
 
@@ -77,7 +77,7 @@ Decimal& Decimal::operator*=(const Decimal& b) {
     return *this;
 }
 
-Decimal Decimal::operator/(const Decimal& b) {
+Decimal Decimal::operator/(const Decimal& b) const {
     return Decimal::multiply(*this, Decimal::invert(b));
 }
 

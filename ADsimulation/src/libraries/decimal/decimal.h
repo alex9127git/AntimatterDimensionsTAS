@@ -23,13 +23,13 @@ class Decimal {
         Decimal(double _val);
         Decimal(json& j);
 
-        Decimal operator+(const Decimal& b);
+        Decimal operator+(const Decimal& b) const;
         Decimal& operator+=(const Decimal& b);
-        Decimal operator-(const Decimal& b);
+        Decimal operator-(const Decimal& b) const;
         Decimal& operator-=(const Decimal& b);
-        Decimal operator*(const Decimal& b);
+        Decimal operator*(const Decimal& b) const;
         Decimal& operator*=(const Decimal& b);
-        Decimal operator/(const Decimal& b);
+        Decimal operator/(const Decimal& b) const;
         Decimal& operator/=(const Decimal& b);
         Decimal operator-();
         bool operator>=(const Decimal& b) const;
