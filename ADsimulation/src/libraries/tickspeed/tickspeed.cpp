@@ -11,19 +11,19 @@ Tickspeed::Tickspeed()
         unlocked(false)
     {};
 
-Tickspeed::Tickspeed(json& j) : Tickspeed::Tickspeed() {
+Tickspeed::Tickspeed(const json& j) : Tickspeed::Tickspeed() {
     this->from_json(j);
 }
 
-Decimal Tickspeed::getTickspeedMultiplier(GameState& st) {
+Decimal Tickspeed::getTickspeedMultiplier(const GameState& st) const {
     return Decimal(1 / 1.1245);
 }
 
-Decimal Tickspeed::getDisplayMult(GameState& st) {
+Decimal Tickspeed::getDisplayMult(const GameState& st) const {
     return Decimal::invert(this->getTickspeedMultiplier(st));
 }
 
-void Tickspeed::update(GameState& st) {
+void Tickspeed::update(const GameState& st) {
     this->multiplier = Decimal::invert(
         Decimal::pow(getTickspeedMultiplier(st), purchases)
     );
@@ -53,7 +53,7 @@ void Tickspeed::lock() {
     this->unlocked = false;
 }
 
-bool Tickspeed::canPurchase(Decimal resource) {
+bool Tickspeed::canPurchase(const Decimal& resource) const {
     return this->isUnlocked() && resource >= this->getCost();
 }
 
@@ -62,7 +62,7 @@ void Tickspeed::onPurchase() {
     this->cost *= this->scaling;
 }
 
-json Tickspeed::to_json() {
+json Tickspeed::to_json() const {
     json j;
     j["cost"] = this->cost.to_json();
     j["scaling"] = this->scaling.to_json();
@@ -71,9 +71,9 @@ json Tickspeed::to_json() {
     return j;
 }
 
-void Tickspeed::from_json(json& j) {
-    this->cost = Decimal(j["cost"]);
-    this->scaling = Decimal(j["scaling"]);
-    this->purchases = j["purchases"];
-    this->unlocked = j["unlocked"];
+void Tickspeed::from_json(const json& j) {
+    this->cost = Decimal(j.at("cost"));
+    this->scaling = Decimal(j.at("scaling"));
+    this->purchases = j.at("purchases");
+    this->unlocked = j.at("unlocked");
 }

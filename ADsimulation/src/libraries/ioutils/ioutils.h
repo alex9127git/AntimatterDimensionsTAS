@@ -5,12 +5,12 @@
 using namespace std;
 
 
-inline map<string, string> SHORTHANDS = {
+inline const map<string, string> SHORTHANDS = {
     {"-i", "--input-file"},
     {"-o", "--output-file"},
     {"-c", "--cmd-file"}
 };
-inline vector<string> DEFAULTARGS = {
+inline const vector<string> DEFAULTARGS = {
     "--input-file", "--output-file", "--cmd-file"
 };
 

@@ -21,7 +21,7 @@ class Decimal {
         Decimal(double _mant, int64_t _exp);
         Decimal(double _mant, double _exp);
         Decimal(double _val);
-        Decimal(json& j);
+        Decimal(const json& j);
 
         Decimal operator+(const Decimal& b) const;
         Decimal& operator+=(const Decimal& b);
@@ -31,7 +31,7 @@ class Decimal {
         Decimal& operator*=(const Decimal& b);
         Decimal operator/(const Decimal& b) const;
         Decimal& operator/=(const Decimal& b);
-        Decimal operator-();
+        Decimal operator-() const;
         bool operator>=(const Decimal& b) const;
         bool operator>(const Decimal& b) const;
         bool operator<=(const Decimal& b) const;
@@ -39,8 +39,8 @@ class Decimal {
         bool operator==(const Decimal& b) const;
         friend ostream& operator<<(ostream& os, const Decimal& d);
 
-        Decimal log10();
-        double log10value();
+        Decimal log10() const;
+        double log10value() const;
 
         static double toNumber(const Decimal& d);
 
@@ -60,11 +60,11 @@ class Decimal {
 
         void normalize();
 
-        void repr();
+        void repr() const;
 
         static string toString(const Decimal& d, int precision);
-        string toString(int precision);
+        string toString(int precision) const;
 
-        json to_json();
-        void from_json(json& j);
+        json to_json() const;
+        void from_json(const json& j);
 };

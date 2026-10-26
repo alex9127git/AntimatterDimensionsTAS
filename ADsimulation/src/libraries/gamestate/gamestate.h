@@ -46,13 +46,13 @@ class GameState : public ISerializable {
         void calcPurchases();
         void recalcAchievementBonus();
         void recalcSacrificeBonus();
-        Decimal getSacrificeExponent();
+        Decimal getSacrificeExponent() const;
 
     public:
         GameState();
-        GameState(json& j);
+        GameState(const json& j);
 
-        friend ostream& operator<<(ostream& os, GameState& st);
+        friend ostream& operator<<(ostream& os, const GameState& st);
 
         // getters
 
@@ -79,50 +79,50 @@ class GameState : public ISerializable {
 
         // getting cached data
 
-        Decimal getAchievementBonus();
-        Decimal getSacrificeBonus();
+        Decimal getAchievementBonus() const;
+        Decimal getSacrificeBonus() const;
 
         // instruction methods
 
         void clearAllInstructions();
-        void addInstructions(vector<double> instructions);
+        void addInstructions(const vector<double>& instructions);
         bool runInstruction(double instruction);
         bool runSacInstruction(double instruction);
         void runNextInstructions();
-        bool hasNextPurchaseInstruction();
-        bool hasNextSacrificeInstruction();
-        vector<double> getCompletedPurchases();
-        vector<double> getCompletedSacrifices();
-        int instructionsExecuted();
+        bool hasNextPurchaseInstruction() const;
+        bool hasNextSacrificeInstruction() const;
+        vector<double> getCompletedPurchases() const;
+        const vector<double>& getCompletedSacrifices() const;
+        int instructionsExecuted() const;
         
         // brnaching methods
 
         Decimal getAntimatterGoalForDimboost() const;
 
-        bool canBranch();
-        vector<uint16_t> getPurchaseBranches();
+        bool canBranch() const;
+        const vector<uint16_t>& getPurchaseBranches() const;
         
         void initializeSacBranching();
         void setNextSacBranching(Decimal sacValue);
-        Decimal getReqForSac(Decimal sacValue);
-        bool canSacBranch();
+        Decimal getReqForSac(const Decimal& sacValue) const;
+        bool canSacBranch() const;
 
         // reset methods
 
         bool canBuyNextDimboost() const;
         bool requestDimboost();
-        bool canSacrifice();
-        Decimal nextSacrificeBoost();
-        Decimal nextSacrificeBoost(Decimal AD1amount);
+        bool canSacrifice() const;
+        Decimal nextSacrificeBoost() const;
+        Decimal nextSacrificeBoost(const Decimal& AD1amount) const;
         bool sacrificeReset();
-        int getSacrificesDone();
+        int getSacrificesDone() const;
 
         // data & i/o manipulation
 
-        GameState copy();
+        GameState copy() const;
 
-        json to_json() override;
-        void from_json(json& j) override;
+        json to_json() const override;
+        void from_json(const json& j) override;
 
         void writeInstructions(ofstream& f);
 };

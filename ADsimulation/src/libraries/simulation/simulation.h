@@ -73,7 +73,7 @@ class Iteration {
         int states = 0;
 
     public:
-        Iteration(Progress _progress, bool _verbose);
+        Iteration(const Progress& _progress, bool _verbose);
 
         virtual void addBranches() = 0;
         void appendNewStates();
@@ -87,8 +87,8 @@ class Iteration {
 class PurchaseIteration : public Iteration {
     public:
         PurchaseIteration(
-            GameState st, Progress progress,
-            vector<vector<double>> sacrificeStrategies, bool verbose
+            GameState st, const Progress& progress,
+            const vector<vector<double>>& sacrificeStrategies, bool verbose
         );
         void addBranches() override;
 };
@@ -99,8 +99,8 @@ class ApproxSacrificeIteration : public Iteration {
 
     public:
         ApproxSacrificeIteration(
-            GameState st, Progress progress,
-            vector<vector<double>> purchaseStrategies, bool verbose
+            GameState st, const Progress& progress,
+            const vector<vector<double>>& purchaseStrategies, bool verbose
         );
         void addBranches() override;
 };
@@ -113,15 +113,15 @@ class PreciseSacrificeIteration : public Iteration {
 
     public:
         PreciseSacrificeIteration(
-            GameState st, Progress progress,
-            vector<vector<double>> purchaseStrategies, 
-            vector<vector<double>> sacrificeStrategies, bool verbose
+            GameState st, const Progress& progress,
+            const vector<vector<double>>& purchaseStrategies, 
+            const vector<vector<double>>& sacrificeStrategies, bool verbose
         );
         void addBranches() override;
 };
 
 GameState runDimboost(GameState st, bool useSacrifice, bool verbose=true);
-GameState runUntil(GameState st, Progress progress, bool useSacrifice, bool verbose);
+GameState runUntil(GameState st, const Progress& progress, bool useSacrifice, bool verbose);
 
 void computePurchaseBranches(GameState& gameState, vector<GameState>& branches);
 

@@ -34,7 +34,7 @@ class Dimension : public ISerializable {
         );
         Dimension();
         
-        virtual void update(GameState& st);
+        virtual void update(const GameState& st);
         Decimal productionPerSecond() const;
         Decimal productionPerDiff(double diff) const;
         Decimal getCost() const;
@@ -48,11 +48,11 @@ class Dimension : public ISerializable {
         void unlock();
         void lock();
         void resetAmount();
-        bool canPurchase(Decimal resource);
+        bool canPurchase(const Decimal& resource) const;
         virtual void onPurchase();
         
-        void produceCurrency(Decimal& currency, double diff);
-        void produceDimensions(Dimension& dimension, double diff);
+        void produceCurrency(Decimal& currency, double diff) const;
+        void produceDimensions(Dimension& dimension, double diff) const;
 };
 
 class AntimatterDimension : public Dimension {
@@ -65,11 +65,11 @@ class AntimatterDimension : public Dimension {
         );
 
         friend ostream& operator<<(ostream& os, const AntimatterDimension& d);
-        void update(GameState& st) override;
+        void update(const GameState& st) override;
         void onPurchase() override;
 
-        json to_json() override;
-        void from_json(json& j) override;
+        json to_json() const override;
+        void from_json(const json& j) override;
 };
 
 class AntimatterDimensions : ISerializable {
@@ -78,15 +78,15 @@ class AntimatterDimensions : ISerializable {
 
     public:
         AntimatterDimensions();
-        AntimatterDimensions(json& j);
+        AntimatterDimensions(const json& j);
 
         const Dimension& operator[](int index) const;
         Dimension& operator[](int index);
 
-        vector<AntimatterDimension>& getDims();
+        const vector<AntimatterDimension>& getDims() const;
 
-        void update(GameState& st);
+        void update(const GameState& st);
 
-        json to_json() override;
-        void from_json(json& j) override;
+        json to_json() const override;
+        void from_json(const json& j) override;
 };

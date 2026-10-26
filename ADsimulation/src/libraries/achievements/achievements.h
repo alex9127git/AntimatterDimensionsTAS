@@ -11,13 +11,13 @@ class GameState;
 
 
 struct AchConstants {
-    static function<Decimal(Decimal&)> NO_EFFECT;
-    static vector<function<Decimal(Decimal&)>> effectFormulae;
-    static function<bool(GameState&)> NOT_APPLICABLE;
-    static function<bool(GameState&)> ALWAYS_UNLOCKED;
-    static function<bool(GameState&)> NOT_IMPLEMENTED_YET;
-    static vector<function<bool(GameState&)>> unlockConditions;
-    static vector<int> achIdList;
+    static const function<Decimal(const Decimal&)> NO_EFFECT;
+    static const vector<function<Decimal(const Decimal&)>> effectFormulae;
+    static const function<bool(const GameState&)> NOT_APPLICABLE;
+    static const function<bool(const GameState&)> ALWAYS_UNLOCKED;
+    static const function<bool(const GameState&)> NOT_IMPLEMENTED_YET;
+    static const vector<function<bool(const GameState&)>> unlockConditions;
+    static const vector<int> achIdList;
 };
 
 class Achievements : public ISerializable {
@@ -31,9 +31,9 @@ class Achievements : public ISerializable {
         };
 
         Achievements();
-        Achievements(json& j);
+        Achievements(const json& j);
         
-        bool checkUnlockCondition(int id, GameState& st) const;
+        bool checkUnlockCondition(int id, const GameState& st) const;
         bool isUnlocked(int id) const;
         
         void unlockAchievement(int id, int64_t time);
@@ -41,8 +41,8 @@ class Achievements : public ISerializable {
 
         static int idToIndex(int id);
         static int indexToId(int index);
-        int achCount();
+        int achCount() const;
 
-        json to_json() override;
-        void from_json(json& j) override;
+        json to_json() const override;
+        void from_json(const json& j) override;
 };

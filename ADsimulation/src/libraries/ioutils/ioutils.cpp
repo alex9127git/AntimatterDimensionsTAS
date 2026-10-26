@@ -38,7 +38,7 @@ map<string, string> parseArgs(int argc, char* argv[]) {
             }
         } else if (arg.starts_with("-")) {
             if (SHORTHANDS.contains(arg)) {
-                argName = SHORTHANDS[arg];
+                argName = SHORTHANDS.at(arg);
             } else {
                 argName = arg;
             }
@@ -48,7 +48,7 @@ map<string, string> parseArgs(int argc, char* argv[]) {
                 argName = "";
             } else {
                 bool argSet = false;
-                for (string defArg : DEFAULTARGS) {
+                for (const string& defArg : DEFAULTARGS) {
                     if (!parsedArgs.contains(defArg)) {
                         parsedArgs.emplace(defArg, arg);
                         argSet = true;
@@ -62,7 +62,7 @@ map<string, string> parseArgs(int argc, char* argv[]) {
             }
         }
     }
-    for (string defArg : DEFAULTARGS) {
+    for (const string& defArg : DEFAULTARGS) {
         if (!parsedArgs.contains(defArg)) {
             parsedArgs.emplace(defArg, "");
         }

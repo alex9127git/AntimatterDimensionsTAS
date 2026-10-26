@@ -26,7 +26,7 @@ Decimal::Decimal(double _val) {
     this->normalize();
 }
 
-Decimal::Decimal(json& j) {
+Decimal::Decimal(const json& j) {
     this->from_json(j);
     this->normalize();
 }
@@ -85,7 +85,7 @@ Decimal& Decimal::operator/=(const Decimal& b) {
     return *this *= Decimal::invert(b);
 }
 
-Decimal Decimal::operator-() {
+Decimal Decimal::operator-() const {
     return Decimal::unary_negate(*this);
 }
 
@@ -114,11 +114,11 @@ ostream& operator<<(ostream& os, const Decimal& d) {
     return os;
 }
 
-Decimal Decimal::log10() {
+Decimal Decimal::log10() const {
     return Decimal(this->exponent + std::log10(this->mantissa));
 }
 
-double Decimal::log10value() {
+double Decimal::log10value() const {
     return this->exponent + std::log10(this->mantissa);
 }
 
@@ -218,7 +218,7 @@ void Decimal::normalize() {
     if (isNegative) this->mantissa = -this->mantissa;
 }
 
-void Decimal::repr() {
+void Decimal::repr() const {
     cout << "Decimal(" << this->mantissa << ", " << this->exponent << ")" << endl;
 }
 
@@ -236,18 +236,18 @@ string Decimal::toString(const Decimal& d, int precision) {
     return buffer;
 }
 
-string Decimal::toString(int precision) {
+string Decimal::toString(int precision) const {
     return Decimal::toString(*this, precision);
 }
 
-json Decimal::to_json() {
+json Decimal::to_json() const {
     json j;
     j["mantissa"] = this->mantissa;
     j["exponent"] = this->exponent;
     return j;
 }
 
-void Decimal::from_json(json& j) {
-    this->mantissa = j["mantissa"];
-    this->exponent = j["exponent"];
+void Decimal::from_json(const json& j) {
+    this->mantissa = j.at("mantissa");
+    this->exponent = j.at("exponent");
 }

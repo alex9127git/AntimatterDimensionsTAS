@@ -25,7 +25,7 @@ GameState runDimboost(GameState st, bool useSacrifice, bool verbose) {
 }
 
 GameState runUntil(
-    GameState st, Progress progress, bool useSacrifice, bool verbose
+    GameState st, const Progress& progress, bool useSacrifice, bool verbose
 ) {
     vector<GameState> gameStates;
     GameState bestState;
@@ -88,7 +88,7 @@ Progress::Progress(function<bool(const GameState&)> stopFunc, function<double(co
     {};
 
 Iteration::Iteration(
-    Progress _progress, bool _verbose
+    const Progress& _progress, bool _verbose
 )   :   progress(_progress),
         verbose(_verbose)
     {}
@@ -176,8 +176,8 @@ vector<GameState> Iteration::run() {
 }
 
 PurchaseIteration::PurchaseIteration(
-    GameState st, Progress progress,
-    vector<vector<double>> sacrificeStrategies, bool verbose
+    GameState st, const Progress& progress,
+    const vector<vector<double>>& sacrificeStrategies, bool verbose
 )   :   Iteration(progress, verbose)
 {
     // If Konami code exploit isn't used, assume this is the starting game state 
@@ -213,8 +213,8 @@ void PurchaseIteration::addBranches() {
 }
 
 ApproxSacrificeIteration::ApproxSacrificeIteration(
-    GameState st, Progress progress,
-    vector<vector<double>> purchaseStrategies, bool verbose
+    GameState st, const Progress& progress,
+    const vector<vector<double>>& purchaseStrategies, bool verbose
 )   :   Iteration(progress, verbose)
 {
     for (int i = 0; i < purchaseStrategies.size(); i++) {
@@ -243,9 +243,9 @@ void ApproxSacrificeIteration::addBranches() {
 }
 
 PreciseSacrificeIteration::PreciseSacrificeIteration(
-    GameState st, Progress progress,
-    vector<vector<double>> purchaseStrategies, 
-    vector<vector<double>> sacrificeStrategies, bool verbose
+    GameState st, const Progress& progress,
+    const vector<vector<double>>& purchaseStrategies, 
+    const vector<vector<double>>& sacrificeStrategies, bool verbose
 )   :   Iteration(progress, verbose)
 {
     projectedSacrifices = sacrificeStrategies[0];

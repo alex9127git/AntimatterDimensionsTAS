@@ -15,7 +15,7 @@ GameState::GameState() {
     this->prepare();
 };
 
-GameState::GameState(json& j) : GameState()
+GameState::GameState(const json& j) : GameState()
 {
     this->from_json(j);
 };
@@ -105,11 +105,11 @@ void GameState::recalcSacrificeBonus() {
     this->_AD[8].update(*this);
 }
 
-Decimal GameState::getSacrificeExponent() {
+Decimal GameState::getSacrificeExponent() const {
     return DC::D2;
 }
 
-ostream& operator<<(ostream& os, GameState& st) {
+ostream& operator<<(ostream& os, const GameState& st) {
     os << "You have " << st.antimatter() << " antimatter." << endl;
     os << "You have been playing for " << renderTime(st._realTimePlayed) << endl;
     os << "Tickspeed bonus: x" << st._tickspeed.perSecond() << " (x" << st._tickspeed.getDisplayMult(st).toString(3) << " per upgrade)" << endl;
@@ -236,11 +236,11 @@ void GameState::unlockAchievement(int ach, bool force) {
     }
 }
 
-Decimal GameState::getAchievementBonus() {
+Decimal GameState::getAchievementBonus() const {
     return this->achievementBonus;
 }
 
-Decimal GameState::getSacrificeBonus() {
+Decimal GameState::getSacrificeBonus() const {
     return this->sacrificeBonus;
 }
 
@@ -249,7 +249,7 @@ void GameState::clearAllInstructions() {
     this->sacrificeInstructions.clear();
 }
 
-void GameState::addInstructions(vector<double> instructions) {
+void GameState::addInstructions(const vector<double>& instructions) {
     bool isSacrifice = false;
     for (double instruction : instructions) {
         if (isSacrifice) {
@@ -308,15 +308,15 @@ void GameState::runNextInstructions() {
     }
 }
 
-bool GameState::hasNextPurchaseInstruction() {
+bool GameState::hasNextPurchaseInstruction() const {
     return !this->purchaseInstructions.empty();
 }
 
-bool GameState::hasNextSacrificeInstruction() {
+bool GameState::hasNextSacrificeInstruction() const {
     return !this->sacrificeInstructions.empty();
 }
 
-vector<double> GameState::getCompletedPurchases() {
+vector<double> GameState::getCompletedPurchases() const {
     vector<double> purchases;
     for (double instruction : this->completedInstructions) {
         if (instruction != 108) {
@@ -326,11 +326,11 @@ vector<double> GameState::getCompletedPurchases() {
     return purchases;
 }
 
-vector<double> GameState::getCompletedSacrifices() {
+const vector<double>& GameState::getCompletedSacrifices() const {
     return completedSacrifices;
 }
 
-int GameState::instructionsExecuted() {
+int GameState::instructionsExecuted() const {
     return this->completedInstructions.size();
 }
 
@@ -342,11 +342,11 @@ Decimal GameState::getAntimatterGoalForDimboost() const {
     return dimNeeded.getInitialCost() * Decimal::pow(dimNeeded.getScaling(), scalingNeeded) * Decimal(highPurchases);
 }
 
-bool GameState::canBranch() {
+bool GameState::canBranch() const {
     return this->_antimatter >= this->nextPurchaseCost;
 }
 
-vector<uint16_t> GameState::getPurchaseBranches() {
+const vector<uint16_t>& GameState::getPurchaseBranches() const {
     return this->allowedPurchases;
 }
 
@@ -358,14 +358,14 @@ void GameState::setNextSacBranching(Decimal sacValue) {
     this->nextSacrificeBranch = getReqForSac(sacValue);
 }
 
-Decimal GameState::getReqForSac(Decimal sacValue) {
+Decimal GameState::getReqForSac(const Decimal& sacValue) const {
     return Decimal::pow(
         10, 
         Decimal::pow(sacValue, DC::D1 / getSacrificeExponent()) * 10
     ) - _sacrificed;
 }
 
-bool GameState::canSacBranch() {
+bool GameState::canSacBranch() const {
     return this->_AD[1].getAmount() >= this->nextSacrificeBranch;
 }
 
@@ -390,18 +390,18 @@ bool GameState::requestDimboost() {
     return false;
 }
 
-bool GameState::canSacrifice() {
+bool GameState::canSacrifice() const {
     if (_dimensionBoosts < 5) return false;
     if (_AD[8].getAmount() == DC::D0) return false;
     if (_AD[1].getAmount() <= max(_sacrificed, DC::D1E10)) return false;
     return true;
 }
 
-Decimal GameState::nextSacrificeBoost() {
+Decimal GameState::nextSacrificeBoost() const {
     return nextSacrificeBoost(_AD[1].getAmount());
 }
 
-Decimal GameState::nextSacrificeBoost(Decimal AD1amount) {
+Decimal GameState::nextSacrificeBoost(const Decimal& AD1amount) const {
     Decimal a = (_sacrificed + AD1amount).log10() / DC::D10;
     Decimal b = Decimal::max(Decimal::max(_sacrificed, DC::D1).log10() / DC::D10, DC::D1);
     Decimal c = a / b;
@@ -420,15 +420,15 @@ bool GameState::sacrificeReset() {
     return true;
 }
 
-int GameState::getSacrificesDone() {
+int GameState::getSacrificesDone() const {
     return sacrificesDone;
 }
 
-GameState GameState::copy() {
+GameState GameState::copy() const {
     return *this;
 }
 
-json GameState::to_json() {
+json GameState::to_json() const {
     json j;
     j["antimatter"] = this->_antimatter.to_json();
     j["totalAntimatter"] = this->_totalAntimatter.to_json();
@@ -443,7 +443,7 @@ json GameState::to_json() {
     return j;
 }
 
-void GameState::from_json(json& j) {
+void GameState::from_json(const json& j) {
     readIfPresent(j, "antimatter", this->_antimatter);
     readIfPresent(j, "totalAntimatter", this->_totalAntimatter);
     readIfPresent(j, "antimatterThisReset", this->_antimatterThisReset);

@@ -19,12 +19,12 @@ class Tickspeed : public ISerializable {
     
     public:
         Tickspeed();
-        Tickspeed(json& j);
+        Tickspeed(const json& j);
 
-        Decimal getTickspeedMultiplier(GameState& st);
-        Decimal getDisplayMult(GameState& st);
+        Decimal getTickspeedMultiplier(const GameState& st) const;
+        Decimal getDisplayMult(const GameState& st) const;
 
-        void update(GameState& st);
+        void update(const GameState& st);
 
         Decimal perSecond() const;
         Decimal getCost() const;
@@ -33,9 +33,9 @@ class Tickspeed : public ISerializable {
 
         void unlock();
         void lock();
-        bool canPurchase(Decimal resource);
+        bool canPurchase(const Decimal& resource) const;
         void onPurchase();
 
-        json to_json() override;
-        void from_json(json& j) override;
+        json to_json() const override;
+        void from_json(const json& j) override;
 };
