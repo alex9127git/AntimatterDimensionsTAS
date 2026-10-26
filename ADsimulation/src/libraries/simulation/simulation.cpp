@@ -4,18 +4,10 @@
 #include <cstdint>
 #include <vector>
 #include <numeric>
-#include <cmath>
 #include <string>
 #include <format>
 using namespace std;
 
-
-void renderProgressBar(double percentage) {
-    cout << format("{:>7.3f}%", percentage * 100);
-    int completedWidth = floor(percentage * 50);
-    cout << " [" << string(completedWidth, '#') << string(50 - completedWidth, ' ') << "]";
-    cout << "\r" << flush;
-}
 
 GameState runDimboost(GameState st, bool useSacrifice, bool verbose) {
     GameState result = runUntil(
@@ -104,31 +96,34 @@ void Iteration::appendNewStates() {
 
 void Iteration::checkProgress() {
     stats.resetCheckTimer();
+    bool doRender = updateTimer.peek() > RENDER_INTERVAL_MS && verbose;
+    if (doRender) updateTimer.silentReset();
     GameState* bestState = &gameStates[0];
     for (GameState& gst : gameStates) {
         gst.runNextInstructions();
         if (progress.isFinished(gst)) {
             if (verbose && !isFinished) {
-                renderProgressBar(1);
+                progress.finish();
+                renderProgressDisplay();
                 stats.printStats(maxStates);
             }
             isFinished = true;
         }
-        if (ticks % 50 == 0 && verbose) {
+        if (doRender) {
             if (gst.antimatterThisReset() > bestState->antimatterThisReset()) {
                 bestState = &gst;
             }
         }
     }
-    if (!isFinished && ticks % 50 == 0 && verbose) {
-        renderProgressBar(progress.calculate(*bestState));
+    if (!isFinished && doRender) {
+        progress.update(*bestState);
+        renderProgressDisplay();
     }
     stats.updateCheckTime();
 }
 
 void Iteration::tickAllStates() {
     stats.resetTickTimer();
-    // Tick and purchases
     for (GameState& gst : gameStates) {
         gst.tick(0.033);
         gst.runNextInstructions();
@@ -140,13 +135,44 @@ void Iteration::purgeObsoleteStates() {
     if (adds >= 300 || states >= statesAfterPurge * 1.5) {
         stats.resetPurgeTimer();
         adds = 0;
-        int beforeSize = gameStates.size();
-        maxStates = max(maxStates, beforeSize);
-        purge(gameStates, verbose);
+        statesBeforePurge = gameStates.size();
+        maxStates = max(maxStates, statesBeforePurge);
+        purge(gameStates, [this](int purged, double progressFraction) {
+            if (!verbose || updateTimer.peek() < RENDER_INTERVAL_MS) return;
+            updateTimer.silentReset();
+            statusPurged = purged;
+            purgeProgress = progressFraction;
+            renderProgressDisplay(true);
+        });
         statesAfterPurge = gameStates.size();
         states = statesAfterPurge;
         stats.updatePurgeTime();
+        renderProgressDisplay();
     }
+}
+
+void Iteration::renderProgressDisplay(bool purgeOngoing) {
+    if (!(verbose && isTerminal(stderr))) return;
+    vector<string> lines = {
+        "Iteration progress:",
+        renderProgressBar(progress.getFraction()),
+        format("Running for {}; simulated {} game ticks", renderTime(stats.getTimeRunning()), ticks),
+        format("{} states currently alive; peak {} states", states, maxStates),
+    };
+    if (purgeOngoing) {
+        lines.push_back("Purge progress:");
+        lines.push_back(renderProgressBar(purgeProgress));
+        lines.push_back(format("Purged {} states out of {}", statusPurged, statesBeforePurge));
+    } else {
+        lines.push_back(format("Last purge: {} states -> {} states", statesBeforePurge, statesAfterPurge));
+        lines.push_back("");
+        lines.push_back("");
+    }
+    if (linesRendered > 0) cerr << "\033[" << linesRendered << "F";
+    cerr << "\033[J";
+    for (const string& line : lines) cerr << line << '\n';
+    linesRendered = lines.size();
+    cerr << flush;
 }
 
 vector<GameState> Iteration::run() {
@@ -304,9 +330,8 @@ bool compare(const double* st1, const double* st2, size_t width) {
     return strictlyBetter;
 }
 
-void purge(vector<GameState>& gamestates, bool verbose) {
+void purge(vector<GameState>& gamestates, const function<void(int, double)>& onProgress) {
     int size = gamestates.size();
-    Timer timer;
     vector<int> indices(size);
     iota(indices.begin(), indices.end(), 0);
     sort(indices.begin(), indices.end(), [&gamestates](int i, int j) {
@@ -331,16 +356,19 @@ void purge(vector<GameState>& gamestates, bool verbose) {
         }
     }
     vector<char> removedCopy(size);
+    int statesPurged = 0;
+    double iterationsTotal = (double) (size) * (size - 1) / 2.0;
     for (int i = 0; i < size; i++) {
-        removedCopy[i] = 0;
-    }
-    double createArrayTimer = timer.silentReset();
-    for (int i = 0; i < size; i++) {
+        if (onProgress) {
+            double iterationsDone = (double) i * size - (double) i * (i + 1) / 2;
+            onProgress(statesPurged, iterationsDone / iterationsTotal);
+        }
         if (removedCopy[i] == 1) continue;
         for (int j = i + 1; j < size; j++) {
             if (removedCopy[j] == 1) continue;
             if (compare(&values[i * width], &values[j * width], width)) {
                 removedCopy[j] = 1;
+                statesPurged++;
             }
         }
     }
@@ -348,7 +376,6 @@ void purge(vector<GameState>& gamestates, bool verbose) {
     for (int i = 0; i < size; i++) {
         removedOrig[indices[i]] = removedCopy[i];
     }
-    double compareTimer = timer.silentReset();
     vector<GameState> result;
     int i = 0;
     for (auto stIter = gamestates.begin(); stIter != gamestates.end(); stIter++) {
@@ -357,8 +384,5 @@ void purge(vector<GameState>& gamestates, bool verbose) {
         }
         i++;
     }
-    double recreateTimer = timer.silentReset();
-    vector<double>().swap(values);
-    //cout << createArrayTimer << " " << compareTimer << " " << recreateTimer << endl;
     gamestates.swap(result);
 }

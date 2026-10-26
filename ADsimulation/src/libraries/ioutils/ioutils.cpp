@@ -1,9 +1,21 @@
 #include "ioutils.h"
 #include <format>
+#include <cmath>
 #ifdef _WIN32
 #include <windows.h>
+#include <io.h>
+#else
+#include <unistd.h>
 #endif
+using namespace std;
 
+bool isTerminal(FILE* stream) {
+#ifdef _WIN32
+    return _isatty(_fileno(stream));
+#else
+    return isatty(fileno(stream));
+#endif
+}
 
 void enableAnsiEscapes() {
 #ifdef _WIN32
@@ -80,4 +92,11 @@ map<string, string> parseArgs(int argc, char* argv[]) {
         }
     }
     return parsedArgs;
+}
+
+string renderProgressBar(double fraction) {
+    string s = format("{:>7.3f}%", fraction * 100);
+    int completedWidth = floor(fraction * 50);
+    s +=  " [" + string(completedWidth, '#') + string(50 - completedWidth, ' ') + "]";
+    return s;
 }

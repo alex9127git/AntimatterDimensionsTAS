@@ -3,7 +3,6 @@
 #include "../interfaces/interfaces.h"
 #include <iosfwd>
 #include <string>
-using namespace std;
 
 
 class Decimal {

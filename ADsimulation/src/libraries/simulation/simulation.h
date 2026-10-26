@@ -5,6 +5,7 @@
 #include <functional>
 #include <chrono>
 #include <vector>
+using namespace std;
 
 
 class Timer {
@@ -15,16 +16,20 @@ class Timer {
         Timer() : start(chrono::steady_clock::now()) {}
 
         void reset() {
-            auto end = chrono::steady_clock::now();
-            chrono::duration<double, std::milli> elapsed = end - start;
-            start = end;
-            std::cout << elapsed.count() << " ms" << endl;
+            double result = peek();
+            start = chrono::steady_clock::now();
+            std::cout << result << " ms" << endl;
         }
 
         double silentReset() {
+            double result = peek();
+            start = chrono::steady_clock::now();
+            return result;
+        }
+
+        double peek() const {
             auto end = chrono::steady_clock::now();
             chrono::duration<double, std::milli> elapsed = end - start;
-            start = end;
             return elapsed.count();
         }
 };
@@ -33,24 +38,30 @@ class Progress {
     private:
         function<bool(const GameState&)> stopCondition;
         function<double(const GameState&)> progressFunction;
+        double progressFraction = 0.0;
 
     public:
         Progress(function<bool(const GameState&)> stopFunc, function<double(const GameState&)> progressFunc);
-        double calculate(const GameState& st) const {
-            return clamp(progressFunction(st), 0.0, 1.0);
-        };
+        void update(const GameState& st) {
+            progressFraction = clamp(progressFunction(st), 0.0, 1.0);
+        }
         bool isFinished(const GameState& st) const {
             return stopCondition(st);
-        };
+        }
 
-        static Progress untilDimboost()  {
+        static Progress untilDimboost() {
             return Progress(
                 [](const GameState& st) {return st.canBuyNextDimboost();}, 
                 [](const GameState& st) {
                     return st.antimatterThisReset().log10value() / st.getAntimatterGoalForDimboost().log10value();
                 }
             );
-        };
+        }
+
+        double getFraction() const {return progressFraction;}
+        void finish() {
+            progressFraction = 1.0;
+        }
 };
 
 class Stats {
@@ -64,16 +75,18 @@ class Stats {
         double checkTime = 0;
         double tickTime = 0;
         double purgeTime = 0;
+
     public:
-        void resetGlobalTimer() {timer.reset();};
-        void resetBranchTimer() {branchTimer.silentReset();};
-        void resetCheckTimer() {checkTimer.silentReset();};
-        void resetTickTimer() {tickTimer.silentReset();};
-        void resetPurgeTimer() {purgeTimer.silentReset();};
+        void resetGlobalTimer() {timer.reset();}
+        void resetBranchTimer() {branchTimer.silentReset();}
+        void resetCheckTimer() {checkTimer.silentReset();}
+        void resetTickTimer() {tickTimer.silentReset();}
+        void resetPurgeTimer() {purgeTimer.silentReset();}
         void updateBranchTime() {branchTime += branchTimer.silentReset();}
         void updateCheckTime() {checkTime += checkTimer.silentReset();}
         void updateTickTime() {tickTime += tickTimer.silentReset();}
         void updatePurgeTime() {purgeTime += purgeTimer.silentReset();}
+        double getTimeRunning() {return timer.peek();}
         void printStats(int maxStates) {
             cout << endl;
             cout << "Finished! Total time elapsed: ";
@@ -96,10 +109,17 @@ class Iteration {
         Stats stats;
         bool isFinished = false;
         int ticks = 0;
+        int statesBeforePurge = 1;
         int statesAfterPurge = 1;
         int adds = 0;
         int maxStates = 0;
         int states = 0;
+
+        Timer updateTimer;
+        int linesRendered = 0;
+        int statusPurged = 0;
+        double purgeProgress = 0.0;
+        static constexpr double RENDER_INTERVAL_MS = 100.0;
 
     public:
         Iteration(const Progress& _progress, bool _verbose);
@@ -111,6 +131,7 @@ class Iteration {
         void purgeObsoleteStates();
 
         vector<GameState> run();
+        void renderProgressDisplay(bool purgeOngoing=false);
 };
 
 class PurchaseIteration : public Iteration {
@@ -155,4 +176,4 @@ GameState runUntil(GameState st, const Progress& progress, bool useSacrifice, bo
 void computePurchaseBranches(GameState& gameState, vector<GameState>& branches);
 
 bool compare(const double* st1, const double* st2, size_t width);
-void purge(vector<GameState>& gamestates, bool verbose);
+void purge(vector<GameState>& gamestates, const function<void(int, double)>& onProgress={});
