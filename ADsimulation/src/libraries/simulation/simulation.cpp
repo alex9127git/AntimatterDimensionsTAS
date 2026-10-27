@@ -64,7 +64,7 @@ GameState runUntil(
                 }
                 break;
         }
-        GameState iterationBestState = gameStates[0];
+        const GameState& iterationBestState = gameStates[0];
         iterationTime = iterationBestState.realTimePlayed();
         if (iterationTime < currentIterationTime) bestState = iterationBestState;
         if (verbose) {
@@ -255,7 +255,7 @@ void ApproxSacrificeIteration::addBranches() {
             Decimal prevSac = newGst.getSacrificeBonus() * 
                 Decimal::max(newGst.nextSacrificeBoost(newGst.getPrevAD1()), DC::D1);
             Decimal target = (currSac + prevSac) / DC::D2;
-            newGst.addInstructions({108.0, target.log10value()});
+            newGst.addInstructions({Instruction::Sacrifice, target.log10value()});
             Decimal nextSac = currSac * precision;
             newGst.setNextSacBranching(DC::D1);
             gst.setNextSacBranching(nextSac);
@@ -288,14 +288,10 @@ void PreciseSacrificeIteration::addBranches() {
                 Decimal::max(gst.nextSacrificeBoost(gst.getPrevAD1()), DC::D1);
             Decimal target = (currSac + prevSac) / DC::D2;
             if (currSac > Decimal(1, projectedSacrifices[gst.getSacrificesDone()]) * tolerance) {
-                gst.addInstructions({108.0, target.log10value()});
-                gst.setNextSacBranching(
-                    Decimal(1, projectedSacrifices[gst.getSacrificesDone() + 1]) / tolerance);
+                scheduleSacrifice(gst, target);
             } else {
                 GameState newGst = gst;
-                newGst.addInstructions({108.0, target.log10value()});
-                newGst.setNextSacBranching(
-                    Decimal(1, projectedSacrifices[gst.getSacrificesDone() + 1]) / tolerance);
+                scheduleSacrifice(newGst, target);
                 Decimal nextSac = currSac * precision;
                 gst.setNextSacBranching(nextSac);
                 newGameStates.push_back(move(newGst));
@@ -303,6 +299,12 @@ void PreciseSacrificeIteration::addBranches() {
         }
     }
     appendNewStates();
+}
+
+void PreciseSacrificeIteration::scheduleSacrifice(GameState& st, const Decimal& target) const {
+    st.addInstructions({Instruction::Sacrifice, target.log10value()});
+    st.setNextSacBranching(
+        Decimal(1, projectedSacrifices[st.getSacrificesDone() + 1]) / tolerance);
 }
 
 void computePurchaseBranches(GameState& gameState, vector<GameState>& branches) {

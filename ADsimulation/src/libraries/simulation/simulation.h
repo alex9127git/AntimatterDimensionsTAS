@@ -121,38 +121,42 @@ class Iteration {
         double purgeProgress = 0.0;
         static constexpr double RENDER_INTERVAL_MS = 100.0;
 
-    public:
-        Iteration(const Progress& _progress, bool _verbose);
-
         virtual void addBranches() = 0;
         void appendNewStates();
         void checkProgress();
         void tickAllStates();
         void purgeObsoleteStates();
 
-        vector<GameState> run();
         void renderProgressDisplay(bool purgeOngoing=false);
+
+    public:
+        Iteration(const Progress& _progress, bool _verbose);
+
+        vector<GameState> run();
 };
 
 class PurchaseIteration : public Iteration {
+    private:
+        void addBranches() override;
+
     public:
         PurchaseIteration(
             GameState st, const Progress& progress,
             const vector<vector<double>>& sacrificeStrategies, bool verbose
         );
-        void addBranches() override;
 };
 
 class ApproxSacrificeIteration : public Iteration {
     private:
         inline static const Decimal precision = DC::D1 + Decimal(1e-3);
 
+        void addBranches() override;
+
     public:
         ApproxSacrificeIteration(
             GameState st, const Progress& progress,
             const vector<vector<double>>& purchaseStrategies, bool verbose
         );
-        void addBranches() override;
 };
 
 class PreciseSacrificeIteration : public Iteration {
@@ -161,13 +165,15 @@ class PreciseSacrificeIteration : public Iteration {
         inline static const Decimal precision = DC::D1 + Decimal(1e-9);
         vector<double> projectedSacrifices;
 
+        void addBranches() override;
+        void scheduleSacrifice(GameState& st, const Decimal& target) const;
+
     public:
         PreciseSacrificeIteration(
             GameState st, const Progress& progress,
             const vector<vector<double>>& purchaseStrategies, 
             const vector<vector<double>>& sacrificeStrategies, bool verbose
         );
-        void addBranches() override;
 };
 
 GameState runDimboost(GameState st, bool useSacrifice, bool verbose=true);

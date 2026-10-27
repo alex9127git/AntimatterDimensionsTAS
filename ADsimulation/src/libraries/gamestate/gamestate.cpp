@@ -9,12 +9,12 @@
 
 GameState::GameState() {
     this->prepare();
-};
+}
 
-GameState::GameState(const json& j) : GameState()
+GameState::GameState(const json& j)
 {
     this->from_json(j);
-};
+}
 
 void GameState::prepare() {
     for (int id : AchConstants::achIdList) {
@@ -134,15 +134,15 @@ ostream& operator<<(ostream& os, const GameState& st) {
 void GameState::tick(double diff) {
     prevAD1 = _AD[1].getAmount();
     _realTimePlayed += diff * 1000;
-    for (int i = 8; i >= 1; i--) {
-        if (i == 1) {
-            _AD[i].produceCurrency(_antimatter, diff);
-            _AD[i].produceCurrency(_totalAntimatter, diff);
-            _AD[i].produceCurrency(_antimatterThisReset, diff);
-        } else if (_AD[i].isUnlocked()) {
+    for (int i = 8; i >= 2; i--) {
+        if (_AD[i].isUnlocked()) {
             _AD[i].produceDimensions(_AD[i - 1], diff / 10);
-        };
+        }
     }
+    Decimal currencyProduction = _AD[1].productionPerDiff(diff);
+    _antimatter += currencyProduction;
+    _totalAntimatter += currencyProduction;
+    _antimatterThisReset += currencyProduction;
     for (int ach : Achievements::afterTickAchievements) {
         this->unlockAchievement(ach, false);
     }
