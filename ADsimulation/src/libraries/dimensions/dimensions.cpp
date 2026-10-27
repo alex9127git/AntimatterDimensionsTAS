@@ -77,10 +77,6 @@ void Dimension::unlock() {
     this->unlocked = true;
 }
 
-void Dimension::lock() {
-    this->unlocked = false;
-}
-
 void Dimension::resetAmount() {
     this->amount = DC::D0;
 }

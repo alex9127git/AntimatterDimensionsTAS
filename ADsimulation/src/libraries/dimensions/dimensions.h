@@ -43,7 +43,6 @@ class Dimension : public ISerializable {
         bool isUnlocked() const;
 
         void unlock();
-        void lock();
         void resetAmount();
         bool canPurchase(const Decimal& resource) const;
         virtual void onPurchase();

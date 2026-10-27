@@ -36,15 +36,10 @@ target_sources(main
 )
 target_link_libraries(main
     PRIVATE
-        interfaces
         ioutils
-        decimal
-        constants
-        dimensions
-        tickspeed
-        achievements
         gamestate
         simulation
+        instructions
 )
 
 add_executable(custom)
@@ -54,15 +49,10 @@ target_sources(custom
 )
 target_link_libraries(custom
     PRIVATE
-        interfaces
         ioutils
-        decimal
-        constants
-        dimensions
-        tickspeed
-        achievements
         gamestate
         simulation
+        instructions
 )
 
 add_executable(testing)
@@ -75,9 +65,6 @@ target_link_libraries(testing
         ioutils
         decimal
         constants
-        dimensions
-        tickspeed
-        achievements
         gamestate
         simulation
 )
@@ -94,6 +81,22 @@ target_sources(interfaces
 target_link_libraries(interfaces
     INTERFACE
         nlohmann_json::nlohmann_json
+)
+
+add_library(instructions)
+target_sources(instructions 
+    PRIVATE 
+        libraries/instructions/instructions.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/instructions
+        FILES
+            libraries/instructions/instructions.h
+)
+target_link_libraries(instructions
+    PRIVATE
+        decimal
 )
 
 add_library(ioutils)
@@ -122,7 +125,6 @@ target_sources(decimal
 target_link_libraries(decimal
     PUBLIC
         interfaces
-        nlohmann_json::nlohmann_json
 )
 
 add_library(constants INTERFACE)
@@ -137,8 +139,6 @@ target_sources(constants
 target_link_libraries(constants
     INTERFACE
         decimal
-        interfaces
-        nlohmann_json::nlohmann_json
 )
 
 add_library(dimensions)
@@ -154,9 +154,10 @@ target_sources(dimensions
 )
 target_link_libraries(dimensions
     PUBLIC
-        constants
+        decimal
         interfaces
-        nlohmann_json::nlohmann_json
+    PRIVATE
+        constants
 )
 
 add_library(tickspeed)
@@ -174,7 +175,6 @@ target_link_libraries(tickspeed
     PUBLIC
         constants
         interfaces
-        nlohmann_json::nlohmann_json
 )
 
 add_library(achievements)
@@ -190,8 +190,8 @@ target_sources(achievements
 )
 target_link_libraries(achievements
     PUBLIC
+        decimal
         interfaces
-        nlohmann_json::nlohmann_json
 )
 
 add_library(gamestate)
@@ -207,12 +207,14 @@ target_sources(gamestate
 )
 target_link_libraries(gamestate
     PUBLIC
-        ioutils
-        decimal
+        instructions
+        constants
         dimensions
         tickspeed
         achievements
-        nlohmann_json::nlohmann_json
+        interfaces
+    PRIVATE
+        ioutils
 )
 
 add_library(simulation)
@@ -227,7 +229,9 @@ target_sources(simulation
             libraries/simulation/simulation.h
 )
 target_link_libraries(simulation
-    PRIVATE
+    PUBLIC
         gamestate
+    PRIVATE
         ioutils
+        constants
 )

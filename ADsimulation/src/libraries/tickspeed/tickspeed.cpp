@@ -49,10 +49,6 @@ void Tickspeed::unlock() {
     this->unlocked = true;
 }
 
-void Tickspeed::lock() {
-    this->unlocked = false;
-}
-
 bool Tickspeed::canPurchase(const Decimal& resource) const {
     return this->isUnlocked() && resource >= this->getCost();
 }

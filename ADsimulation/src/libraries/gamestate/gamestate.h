@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <vector>
 #include <iosfwd>
+#include "../instructions/instructions.h"
 #include "../constants/constants.h"
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
@@ -28,10 +29,7 @@ class GameState : public ISerializable {
 
         Decimal _antimatterThisReset = DC::D10;
 
-        vector<uint16_t> purchaseInstructions;
-        vector<double> sacrificeInstructions;
-        vector<uint16_t> completedInstructions;
-        vector<double> completedSacrifices;
+        InstructionQueue instructionQueue;
 
         Decimal nextPurchaseCost = DC::D0;
         vector<uint16_t> allowedPurchases;
@@ -47,6 +45,9 @@ class GameState : public ISerializable {
         void recalcSacrificeBonus();
         Decimal getSacrificeExponent() const;
 
+        bool runInstruction(uint16_t instruction);
+        bool runSacInstruction();
+
     public:
         GameState();
         GameState(const json& j);
@@ -55,16 +56,17 @@ class GameState : public ISerializable {
 
         // getters
 
-        Decimal antimatter() const;
-        Decimal totalAntimatter() const;
-        Decimal antimatterThisReset() const;
-        const AntimatterDimensions& AD() const;
-        Decimal getPrevAD1() const;
-        const Tickspeed& tickspeed() const;
-        const Achievements& achievements() const;
-        bool canUseKonami() const;
-        int64_t realTimePlayed() const;
-        int32_t dimensionBoosts() const;
+        Decimal antimatter() const {return _antimatter;}
+        Decimal totalAntimatter() const {return _totalAntimatter;}
+        Decimal antimatterThisReset() const {return _antimatterThisReset;}
+        const AntimatterDimensions& AD() const {return _AD;}
+        const Tickspeed& tickspeed() const {return _tickspeed;}
+        const Achievements& achievements() const {return _achievements;}
+        const InstructionQueue& queue() const {return instructionQueue;}
+        int64_t realTimePlayed() const {return _realTimePlayed;}
+        int32_t dimensionBoosts() const {return _dimensionBoosts;}
+        bool canUseKonami() const {return _canUseKonami;}
+        Decimal getPrevAD1() const {return prevAD1;}
 
         void tick(double diff);
 
@@ -83,16 +85,9 @@ class GameState : public ISerializable {
 
         // instruction methods
 
-        void clearAllInstructions();
         void addInstructions(const vector<double>& instructions);
-        bool runInstruction(double instruction);
-        bool runSacInstruction(double instruction);
+        void clearAllInstructions();
         void runNextInstructions();
-        bool hasNextPurchaseInstruction() const;
-        bool hasNextSacrificeInstruction() const;
-        vector<double> getCompletedPurchases() const;
-        const vector<double>& getCompletedSacrifices() const;
-        int instructionsExecuted() const;
         
         // brnaching methods
 
@@ -117,8 +112,6 @@ class GameState : public ISerializable {
         int getSacrificesDone() const;
 
         // data & i/o manipulation
-
-        GameState copy() const;
 
         json to_json() const override;
         void from_json(const json& j) override;

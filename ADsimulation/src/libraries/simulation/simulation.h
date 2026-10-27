@@ -117,7 +117,7 @@ class Iteration {
 
         Timer updateTimer;
         int linesRendered = 0;
-        int statusPurged = 0;
+        int statesPurged = 0;
         double purgeProgress = 0.0;
         static constexpr double RENDER_INTERVAL_MS = 100.0;
 

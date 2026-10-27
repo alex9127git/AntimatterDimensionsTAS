@@ -168,17 +168,17 @@ int main() {
         gameState.runNextInstructions();
     }
     vector<double> instructions;
-    instructions = gameState.getCompletedPurchases();
+    instructions = gameState.queue().getCompletedPurchases();
     for (double instruction : instructions) {
         cout << instruction << " ";
     }
     cout << endl;
-    instructions = gameState.getCompletedSacrifices();
+    instructions = gameState.queue().getCompletedSacrifices();
     for (double instruction : instructions) {
         cout << instruction << " ";
     }
     cout << endl;
-    assert(gameState.getCompletedSacrifices().size() == 2);
+    assert(gameState.queue().getCompletedSacrifices().size() == 2);
     assert(gameState.realTimePlayed() == 6547035);
     cout << "Fixed order check 2 done; time taken is optimal" << endl << endl;
     
@@ -214,7 +214,7 @@ int main() {
     cout << "Starting test simulation" << endl;
     gameState = GameState();
     gameState = runDimboost(gameState, true, true);
-    instructions = gameState.getCompletedPurchases();
+    instructions = gameState.queue().getCompletedPurchases();
     for (double instruction : instructions) {
         cout << instruction << " ";
     }

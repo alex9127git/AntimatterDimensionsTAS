@@ -32,7 +32,6 @@ class Tickspeed : public ISerializable {
         bool isUnlocked() const;
 
         void unlock();
-        void lock();
         bool canPurchase(const Decimal& resource) const;
         void onPurchase();
 

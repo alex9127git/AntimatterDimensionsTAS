@@ -3,6 +3,7 @@
 #include "libraries/ioutils/ioutils.h"
 #include "libraries/gamestate/gamestate.h"
 #include "libraries/simulation/simulation.h"
+#include "libraries/instructions/instructions.h"
 
 using namespace std;
 
@@ -89,7 +90,7 @@ int main(int argc, char* argv[]) {
     if (saveCommands) {
         cout << "Dumping command sequence into " << cmdOutFile << endl;
         cmd_out = ofstream(cmdOutFile);
-        gameState.writeInstructions(cmd_out);
+        writeInstructions(cmd_out, gameState.queue());
     }
     return 0;
 };

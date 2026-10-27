@@ -20,9 +20,6 @@ void GameState::prepare() {
     for (int id : AchConstants::achIdList) {
         this->unlockAchievement(id, false);
     }
-    this->purchaseInstructions = {};
-    this->sacrificeInstructions = {};
-    this->completedInstructions = {};
     calcPurchases();
     recalcSacrificeBonus();
     recalcAchievementBonus();
@@ -105,6 +102,25 @@ Decimal GameState::getSacrificeExponent() const {
     return DC::D2;
 }
 
+bool GameState::runInstruction(uint16_t instruction) {
+    if (Instruction::isDimension(instruction)) {
+        return this->buyOneDimension(instruction);
+    } else if (instruction == Instruction::TickspeedSingle) {
+        return this->buyTickspeed();
+    } else if (instruction == Instruction::DimensionBoost) {
+        return this->requestDimboost();
+    } else if (instruction == Instruction::KonamiCode) {
+        return this->handleKonamiCode();
+    } else {
+        return false;
+    }
+}
+
+bool GameState::runSacInstruction() {
+    if (this->_AD[1].getAmount() < this->nextSacrificeInstruction) return false;
+    return sacrificeReset();
+}
+
 ostream& operator<<(ostream& os, const GameState& st) {
     os << "You have " << st.antimatter() << " antimatter." << endl;
     os << "You have been playing for " << renderTime(st._realTimePlayed) << endl;
@@ -113,46 +129,6 @@ ostream& operator<<(ostream& os, const GameState& st) {
         os << d << endl;
     };
     return os;
-}
-
-Decimal GameState::antimatter() const {
-    return this->_antimatter;
-}
-
-Decimal GameState::totalAntimatter() const {
-    return this->_totalAntimatter;
-}
-
-Decimal GameState::antimatterThisReset() const {
-    return this->_antimatterThisReset;
-}
-
-const AntimatterDimensions& GameState::AD() const {
-    return this->_AD;
-}
-
-Decimal GameState::getPrevAD1() const {
-    return prevAD1;
-}
-
-const Tickspeed& GameState::tickspeed() const {
-    return this->_tickspeed;
-}
-
-const Achievements& GameState::achievements() const {
-    return this->_achievements;
-}
-
-bool GameState::canUseKonami() const {
-    return this->_canUseKonami;
-}
-
-int64_t GameState::realTimePlayed() const {
-    return this->_realTimePlayed;
-}
-
-int32_t GameState::dimensionBoosts() const {
-    return this->_dimensionBoosts;
 }
 
 void GameState::tick(double diff) {
@@ -198,9 +174,9 @@ bool GameState::buyOneDimension(int tier) {
 
 bool GameState::buyDimUntil10(int tier) {
     do {
-        buyOneDimension(tier);
-    } while (_AD[tier].getPurchases() % 10 == 0 && _AD[tier].canPurchase(_antimatter));
-    return _AD[tier].getPurchases() % 10 == 0;
+        if (!buyOneDimension(tier)) return false;
+    } while (_AD[tier].getPurchases() % 10 != 0);
+    return true;
 }
 
 bool GameState::buyTickspeed() {
@@ -240,94 +216,27 @@ Decimal GameState::getSacrificeBonus() const {
     return this->sacrificeBonus;
 }
 
-void GameState::clearAllInstructions() {
-    this->purchaseInstructions.clear();
-    this->sacrificeInstructions.clear();
-}
-
 void GameState::addInstructions(const vector<double>& instructions) {
-    bool isSacrifice = false;
-    for (double instruction : instructions) {
-        if (isSacrifice) {
-            if (this->sacrificeInstructions.empty()) {
-                this->nextSacrificeInstruction = getReqForSac(Decimal(1, instruction));
-            }
-            this->sacrificeInstructions.push_back(instruction);
-            isSacrifice = false;
-        } else if (10 <= instruction && instruction <= 99) {
-            int type = instruction / 10;
-            int times = (int) instruction % 10 + 10;
-            if (times > 10) times -= 10;
-            for (int i = 0; i < times; i++) {
-                this->purchaseInstructions.push_back(type);
-            }
-        } else if (instruction == 108) {
-            isSacrifice = true;
-        } else {
-            this->purchaseInstructions.push_back(instruction);
-        }
+    instructionQueue.add(instructions);
+    if (queue().hasNextSacrifice()) {
+        this->nextSacrificeInstruction = getReqForSac(Decimal(1, queue().peekNextSacrifice()));
     }
 }
 
-bool GameState::runInstruction(double instruction) {
-    if (1 <= instruction && instruction <= 8 && floor(instruction) == instruction) {
-        return this->buyOneDimension(instruction);
-    } else if (instruction == 9) {
-        return this->buyTickspeed();
-    } else if (instruction == 100) {
-        return this->requestDimboost();
-    } else if (instruction == 130) {
-        return this->handleKonamiCode();
-    } else {
-        return false;
-    }
-}
-
-bool GameState::runSacInstruction(double instruction) {
-    if (this->sacrificeInstructions.empty()) return false;
-    if (this->_AD[1].getAmount() < this->nextSacrificeInstruction) return false;
-    return sacrificeReset();
+void GameState::clearAllInstructions() {
+    this->instructionQueue.clearAllInstructions();
 }
 
 void GameState::runNextInstructions() {
-    while (hasNextPurchaseInstruction() && this->runInstruction((this->purchaseInstructions.front()))) {
-        this->completedInstructions.push_back(this->purchaseInstructions.front());
-        this->purchaseInstructions.erase(this->purchaseInstructions.begin());
+    while (queue().hasNextPurchase() && this->runInstruction(queue().peekNextPurchase())) {
+        instructionQueue.completePurchase();
     }
-    while (hasNextSacrificeInstruction() && this->runSacInstruction((this->sacrificeInstructions.front()))) {
-        this->completedInstructions.push_back(108);
-        this->completedSacrifices.push_back(this->sacrificeInstructions.front());
-        this->sacrificeInstructions.erase(this->sacrificeInstructions.begin());
-        if (!this->sacrificeInstructions.empty()) {
-            this->nextSacrificeInstruction = getReqForSac(Decimal(1, this->sacrificeInstructions.front()));
+    while (queue().hasNextSacrifice() && this->runSacInstruction()) {
+        instructionQueue.completeSacrifice();
+        if (queue().hasNextSacrifice()) {
+            this->nextSacrificeInstruction = getReqForSac(Decimal(1, queue().peekNextSacrifice()));
         }
     }
-}
-
-bool GameState::hasNextPurchaseInstruction() const {
-    return !this->purchaseInstructions.empty();
-}
-
-bool GameState::hasNextSacrificeInstruction() const {
-    return !this->sacrificeInstructions.empty();
-}
-
-vector<double> GameState::getCompletedPurchases() const {
-    vector<double> purchases;
-    for (double instruction : this->completedInstructions) {
-        if (instruction != 108) {
-            purchases.push_back(instruction);
-        }
-    }
-    return purchases;
-}
-
-const vector<double>& GameState::getCompletedSacrifices() const {
-    return completedSacrifices;
-}
-
-int GameState::instructionsExecuted() const {
-    return this->completedInstructions.size();
 }
 
 Decimal GameState::getAntimatterGoalForDimboost() const {
@@ -420,10 +329,6 @@ int GameState::getSacrificesDone() const {
     return sacrificesDone;
 }
 
-GameState GameState::copy() const {
-    return *this;
-}
-
 json GameState::to_json() const {
     json j;
     j["antimatter"] = this->_antimatter.to_json();
@@ -451,45 +356,4 @@ void GameState::from_json(const json& j) {
     readIfPresent(j, "realTimePlayed", this->_realTimePlayed);
     readIfPresent(j, "canUseKonami", this->_canUseKonami);
     this->prepare();
-}
-
-void GameState::writeInstructions(ofstream& f) {
-    f << "[\n";
-    int dim_tier = 0;
-    int dim_bulk = 0;
-    bool isNextSacrifice = 0;
-    Decimal sacTarget = DC::D1;
-    int sacrificeIndex = 0;
-    this->completedInstructions.push_back(0);
-    vector<string> lines;
-    for (double instruction : completedInstructions) {
-        if (1 <= instruction && instruction <= 8) {
-            if (dim_tier != 0 && dim_tier != instruction && dim_bulk > 0) {
-                lines.push_back("[\"buyDimension\",[" + to_string(dim_tier) + "," + to_string(dim_bulk) + "]]");
-                dim_bulk = 0;
-            }
-            dim_tier = instruction;
-            dim_bulk++;
-        } else {
-            if (dim_bulk > 0) {
-                lines.push_back("[\"buyDimension\",[" + to_string(dim_tier) + "," + to_string(dim_bulk) + "]]");
-                dim_bulk = 0;
-            }
-            if (instruction == 9) {
-                lines.push_back("[\"buyTickSpeed\",[0]]");
-            }
-            if (instruction == 100) {
-                lines.push_back("[\"buyDimensionBoost\",[0]]");
-            }
-            if (instruction == 108) {
-                sacTarget = Decimal(1, this->completedSacrifices[sacrificeIndex++]);
-                lines.push_back("[\"trySacrificeReset\",[\"" + sacTarget.toString(10) + "\"]]");
-            }
-        }
-    }
-    for (int i = 0; i < lines.size(); i++) {
-        f << lines[i];
-        if (i != lines.size() - 1) f << ",\n";
-    }
-    f << "\n]\n";
 }
