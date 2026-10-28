@@ -132,7 +132,7 @@ void AntimatterDimension::update(const GameState& st) {
     mult *= Decimal::pow(DC::D2, max(0, st.dimensionBoosts() - tier + 1));
     mult *= st.tickspeed().perSecond();
     if (this->tier == 8) {
-        mult *= st.getSacrificeBonus();
+        mult *= st.sacrifice().getSacrificeBonus();
     }
     this->multiplier = mult;
 }

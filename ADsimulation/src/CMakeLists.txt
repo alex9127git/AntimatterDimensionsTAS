@@ -177,6 +177,24 @@ target_link_libraries(tickspeed
         interfaces
 )
 
+add_library(sacrifice)
+target_sources(sacrifice
+    PRIVATE
+        libraries/sacrifice/sacrifice.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/sacrifice
+        FILES
+            libraries/sacrifice/sacrifice.h
+)
+target_link_libraries(sacrifice
+    PUBLIC
+        decimal
+        constants
+        interfaces
+)
+
 add_library(achievements)
 target_sources(achievements
     PRIVATE
@@ -212,6 +230,7 @@ target_link_libraries(gamestate
         dimensions
         tickspeed
         achievements
+        sacrifice
         interfaces
     PRIVATE
         ioutils

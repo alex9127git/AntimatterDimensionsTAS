@@ -50,7 +50,7 @@ GameState runUntil(
                     purchaseStrategies.push_back(gst.queue().getCompletedPurchases());
                     vector<double> sacStrat = gst.queue().getCompletedSacrifices();
                     sacStrat.push_back(
-                        (gst.getSacrificeBonus() * gst.nextSacrificeBoost() * DC::D2).log10value()
+                        (gst.sacrifice().getSacrificeBonus() * gst.nextSacrificeBoost() * DC::D2).log10value()
                     );
                     sacrificeStrategies.push_back(sacStrat);
                 }
@@ -251,9 +251,9 @@ void ApproxSacrificeIteration::addBranches() {
     for (GameState& gst : gameStates) {
         if (gst.canSacrifice() && gst.canSacBranch()) {
             GameState newGst = gst;
-            Decimal currSac = newGst.getSacrificeBonus() * newGst.nextSacrificeBoost();
-            Decimal prevSac = newGst.getSacrificeBonus() * 
-                Decimal::max(newGst.nextSacrificeBoost(newGst.getPrevAD1()), DC::D1);
+            Decimal currSac = newGst.sacrifice().getSacrificeBonus() * newGst.nextSacrificeBoost();
+            Decimal prevSac = newGst.sacrifice().getSacrificeBonus() * 
+                Decimal::max(newGst.sacrifice().nextSacrificeBoost(newGst.getPrevAD1()), DC::D1);
             Decimal target = (currSac + prevSac) / DC::D2;
             newGst.addInstructions({Instruction::Sacrifice, target.log10value()});
             Decimal nextSac = currSac * precision;
@@ -283,11 +283,11 @@ PreciseSacrificeIteration::PreciseSacrificeIteration(
 void PreciseSacrificeIteration::addBranches() {
     for (GameState& gst : gameStates) {
         if (gst.canSacrifice() && gst.canSacBranch()) {
-            Decimal currSac = gst.getSacrificeBonus() * gst.nextSacrificeBoost();
-            Decimal prevSac = gst.getSacrificeBonus() * 
-                Decimal::max(gst.nextSacrificeBoost(gst.getPrevAD1()), DC::D1);
+            Decimal currSac = gst.sacrifice().getSacrificeBonus() * gst.nextSacrificeBoost();
+            Decimal prevSac = gst.sacrifice().getSacrificeBonus() * 
+                Decimal::max(gst.sacrifice().nextSacrificeBoost(gst.getPrevAD1()), DC::D1);
             Decimal target = (currSac + prevSac) / DC::D2;
-            if (currSac > Decimal(1, projectedSacrifices[gst.getSacrificesDone()]) * tolerance) {
+            if (currSac > Decimal(1, projectedSacrifices[gst.sacrifice().getSacrificesDone()]) * tolerance) {
                 scheduleSacrifice(gst, target);
             } else {
                 GameState newGst = gst;
@@ -304,7 +304,7 @@ void PreciseSacrificeIteration::addBranches() {
 void PreciseSacrificeIteration::scheduleSacrifice(GameState& st, const Decimal& target) const {
     st.addInstructions({Instruction::Sacrifice, target.log10value()});
     st.setNextSacBranching(
-        Decimal(1, projectedSacrifices[st.getSacrificesDone() + 1]) / tolerance);
+        Decimal(1, projectedSacrifices[st.sacrifice().getSacrificesDone() + 1]) / tolerance);
 }
 
 void computePurchaseBranches(GameState& gameState, vector<GameState>& branches) {
@@ -350,7 +350,7 @@ void purge(vector<GameState>& gamestates, const function<void(int, double)>& onP
             values.push_back(gst.AD()[d].getAmount().log10value());
             values.push_back(gst.AD()[d].getPurchases());
         }
-        values.push_back(gst.getSacrificeBonus().log10value());
+        values.push_back(gst.sacrifice().getSacrificeBonus().log10value());
         values.push_back(gst.tickspeed().getPurchases());
         values.push_back(gst.tickspeed().perSecond().log10value());
         values.push_back(gst.getAchievementBonus().log10value());

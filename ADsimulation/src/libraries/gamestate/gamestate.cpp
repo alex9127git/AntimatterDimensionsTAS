@@ -21,7 +21,6 @@ void GameState::prepare() {
         this->unlockAchievement(id, false);
     }
     calcPurchases();
-    recalcSacrificeBonus();
     recalcAchievementBonus();
     this->_tickspeed.update(*this);
     this->_AD.update(*this);
@@ -86,22 +85,6 @@ void GameState::recalcAchievementBonus() {
     this->_AD.update(*this);
 }
 
-void GameState::recalcSacrificeBonus() {
-    if (_sacrificed == DC::D0) {
-        this->sacrificeBonus = DC::D1;
-    } else {
-        this->sacrificeBonus = max(Decimal::pow(
-            Decimal(_sacrificed.log10()) / DC::D10,
-            this->getSacrificeExponent()
-        ), DC::D1);
-    }
-    this->_AD[8].update(*this);
-}
-
-Decimal GameState::getSacrificeExponent() const {
-    return DC::D2;
-}
-
 bool GameState::runInstruction(uint16_t instruction) {
     if (Instruction::isDimension(instruction)) {
         return this->buyOneDimension(instruction);
@@ -164,9 +147,6 @@ bool GameState::buyOneDimension(int tier) {
         if (tier < 8 && _dimensionBoosts >= tier - 3) {
             _AD[tier + 1].unlock();
         }
-        if (tier == 8 && _AD[8].getPurchases() == 1) {
-            initializeSacBranching();
-        }
         return true;
     }
     return false;
@@ -212,14 +192,10 @@ Decimal GameState::getAchievementBonus() const {
     return this->achievementBonus;
 }
 
-Decimal GameState::getSacrificeBonus() const {
-    return this->sacrificeBonus;
-}
-
 void GameState::addInstructions(const vector<double>& instructions) {
     instructionQueue.add(instructions);
     if (queue().hasNextSacrifice()) {
-        this->nextSacrificeInstruction = getReqForSac(Decimal(1, queue().peekNextSacrifice()));
+        this->nextSacrificeInstruction = _sacrifice.getReqForSac(Decimal(1, queue().peekNextSacrifice()));
     }
 }
 
@@ -234,7 +210,7 @@ void GameState::runNextInstructions() {
     while (queue().hasNextSacrifice() && this->runSacInstruction()) {
         instructionQueue.completeSacrifice();
         if (queue().hasNextSacrifice()) {
-            this->nextSacrificeInstruction = getReqForSac(Decimal(1, queue().peekNextSacrifice()));
+            this->nextSacrificeInstruction = _sacrifice.getReqForSac(Decimal(1, queue().peekNextSacrifice()));
         }
     }
 }
@@ -255,19 +231,8 @@ const vector<uint16_t>& GameState::getPurchaseBranches() const {
     return this->allowedPurchases;
 }
 
-void GameState::initializeSacBranching() {
-    this->nextSacrificeBranch = this->_AD[1].getAmount();
-}
-
 void GameState::setNextSacBranching(Decimal sacValue) {
-    this->nextSacrificeBranch = getReqForSac(sacValue);
-}
-
-Decimal GameState::getReqForSac(const Decimal& sacValue) const {
-    return Decimal::pow(
-        10, 
-        Decimal::pow(sacValue, DC::D1 / getSacrificeExponent()) * 10
-    ) - _sacrificed;
+    this->nextSacrificeBranch = _sacrifice.getReqForSac(sacValue);
 }
 
 bool GameState::canSacBranch() const {
@@ -281,14 +246,12 @@ bool GameState::canBuyNextDimboost() const {
 bool GameState::requestDimboost() {
     if (canBuyNextDimboost()) {
         _dimensionBoosts += 1;
-        sacrificesDone = 0;
         _AD = AntimatterDimensions();
         _tickspeed = Tickspeed();
+        _sacrifice = Sacrifice();
         _antimatter = DC::D10;
         _antimatterThisReset = DC::D10;
         _tickspeed.update(*this);
-        _sacrificed = DC::D0;
-        recalcSacrificeBonus();
         _AD.update(*this);
         return true;
     }
@@ -298,35 +261,22 @@ bool GameState::requestDimboost() {
 bool GameState::canSacrifice() const {
     if (_dimensionBoosts < 5) return false;
     if (_AD[8].getAmount() == DC::D0) return false;
-    if (_AD[1].getAmount() <= max(_sacrificed, DC::D1E10)) return false;
+    if (_AD[1].getAmount() <= max(_sacrifice.getSacrificedAmount(), DC::D1E10)) return false;
     return true;
 }
 
 Decimal GameState::nextSacrificeBoost() const {
-    return nextSacrificeBoost(_AD[1].getAmount());
-}
-
-Decimal GameState::nextSacrificeBoost(const Decimal& AD1amount) const {
-    Decimal a = (_sacrificed + AD1amount).log10() / DC::D10;
-    Decimal b = Decimal::max(Decimal::max(_sacrificed, DC::D1).log10() / DC::D10, DC::D1);
-    Decimal c = a / b;
-    Decimal e = getSacrificeExponent();
-    return Decimal::pow(c, e);
+    return _sacrifice.nextSacrificeBoost(_AD[1].getAmount());
 }
 
 bool GameState::sacrificeReset() {
     if (!canSacrifice()) return false;
-    _sacrificed += _AD[1].getAmount();
-    sacrificesDone++;
-    this->recalcSacrificeBonus();
+    _sacrifice.increaseSacrifice(_AD[1].getAmount());
     for (int i = 1; i <= 7; i++) {
         _AD[i].resetAmount();
     }
+    _AD[8].update(*this);
     return true;
-}
-
-int GameState::getSacrificesDone() const {
-    return sacrificesDone;
 }
 
 json GameState::to_json() const {
@@ -337,7 +287,7 @@ json GameState::to_json() const {
     j["antimatterDimensionState"] = this->_AD.to_json();
     j["tickspeedState"] = this->_tickspeed.to_json();
     j["achievementState"] = this->_achievements.to_json();
-    j["sacrificed"] = this->_sacrificed.to_json();
+    j["sacrificed"] = this->_sacrifice.to_json();
     j["dimensionBoosts"] = this->_dimensionBoosts;
     j["realTimePlayed"] = this->_realTimePlayed;
     j["canUseKonami"] = this->_canUseKonami;
@@ -351,7 +301,7 @@ void GameState::from_json(const json& j) {
     readIfPresent(j, "antimatterDimensionState", this->_AD);
     readIfPresent(j, "tickspeedState", this->_tickspeed);
     readIfPresent(j, "achievementState", this->_achievements);
-    readIfPresent(j, "sacrificed", this->_sacrificed);
+    readIfPresent(j, "sacrificed", this->_sacrifice);
     readIfPresent(j, "dimensionBoosts", this->_dimensionBoosts);
     readIfPresent(j, "realTimePlayed", this->_realTimePlayed);
     readIfPresent(j, "canUseKonami", this->_canUseKonami);
