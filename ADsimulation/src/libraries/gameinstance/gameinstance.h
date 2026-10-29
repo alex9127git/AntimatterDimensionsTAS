@@ -22,6 +22,7 @@ class GameInstance {
 
     public:
         GameInstance() = default;
+        GameInstance(const GameState& st);
         GameInstance(const json& j);
 
         const GameState& game() const {return gameState;}

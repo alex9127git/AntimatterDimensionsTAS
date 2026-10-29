@@ -214,8 +214,7 @@ int main() {
     cout << instance.game() << endl;
 
     cout << "Starting test simulation" << endl;
-    instance = GameInstance();
-    instance = runDimboost(instance, true, true);
+    instance = runDimboost(GameState(), true, true);
     instructions = instance.queue().getCompletedPurchases();
     for (double instruction : instructions) {
         cout << instruction << " ";

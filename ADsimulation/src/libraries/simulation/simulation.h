@@ -178,8 +178,8 @@ class PreciseSacrificeIteration : public Iteration {
         );
 };
 
-GameInstance runDimboost(GameInstance st, bool useSacrifice, bool verbose=true);
-GameInstance runUntil(GameInstance st, const Progress& progress, bool useSacrifice, bool verbose);
+GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose=true);
+GameInstance runUntil(GameState st, const Progress& progress, bool useSacrifice, bool verbose);
 
 void computePurchaseBranches(GameInstance& node, std::vector<GameInstance>& branches);
 

@@ -7,6 +7,10 @@ GameInstance::GameInstance(const json& j)
     :   gameState(j)
     {}
 
+GameInstance::GameInstance(const GameState& st)
+    :   gameState(st)
+    {}
+
 void GameInstance::addInstructions(const vector<double>& instructions) {
     _queue.add(instructions);
     if (queue().hasNextSacrifice()) {

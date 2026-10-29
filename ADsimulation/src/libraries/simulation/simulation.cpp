@@ -8,7 +8,7 @@
 using namespace std;
 
 
-GameInstance runDimboost(GameInstance st, bool useSacrifice, bool verbose) {
+GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose) {
     GameInstance result = runUntil(
         st, Progress::untilDimboost(), useSacrifice, verbose
     );
@@ -18,13 +18,13 @@ GameInstance runDimboost(GameInstance st, bool useSacrifice, bool verbose) {
 }
 
 GameInstance runUntil(
-    GameInstance st, const Progress& progress, bool useSacrifice, bool verbose
+    GameState st, const Progress& progress, bool useSacrifice, bool verbose
 ) {
     vector<GameInstance> gameInstances;
     GameInstance best;
     int64_t currentIterationTime = INT64_MAX;
     int64_t iterationTime = INT64_MAX;
-    int64_t startTime = st.game().realTimePlayed();
+    int64_t startTime = st.realTimePlayed();
     vector<vector<double>> purchaseStrategies = {{}};
     vector<vector<double>> sacrificeStrategies = {{}};
     int iterationCounter = 0;
@@ -35,14 +35,14 @@ GameInstance runUntil(
         cout << "Running iteration " << iterationCounter << endl;
         switch (iterationCounter % 2) {
             case 1:
-                gameInstances = PurchaseIteration(st, progress, sacrificeStrategies, verbose).run();
+                gameInstances = PurchaseIteration(GameInstance(st), progress, sacrificeStrategies, verbose).run();
                 purchaseStrategies.clear();
                 for (GameInstance& node : gameInstances) {
                     purchaseStrategies.push_back(node.queue().getCompletedPurchases());
                 }
                 break;
             case 0:
-                gameInstances = ApproxSacrificeIteration(st, progress, purchaseStrategies, verbose).run();
+                gameInstances = ApproxSacrificeIteration(GameInstance(st), progress, purchaseStrategies, verbose).run();
                 purchaseStrategies.clear();
                 sacrificeStrategies.clear();
                 for (GameInstance& node : gameInstances) {
@@ -57,7 +57,7 @@ GameInstance runUntil(
                 cout << "============================================================" << endl;
                 cout << "Optimizing sacrifices" << endl;
                 gameInstances = PreciseSacrificeIteration(
-                    st, progress, purchaseStrategies, sacrificeStrategies, verbose).run();
+                    GameInstance(st), progress, purchaseStrategies, sacrificeStrategies, verbose).run();
                 sacrificeStrategies.clear();
                 for (GameInstance& node : gameInstances) {
                     sacrificeStrategies.push_back(node.queue().getCompletedSacrifices());
@@ -73,7 +73,7 @@ GameInstance runUntil(
             cout << "Cumulative time: " << renderTime(iterationTime) << endl;
             cout << "Winning strategies left: " << purchaseStrategies.size() << endl;
         }
-    } while (st.game().dimensionBoosts() >= 5 && useSacrifice && iterationTime < currentIterationTime);
+    } while (st.dimensionBoosts() >= 5 && useSacrifice && iterationTime < currentIterationTime);
     best.clearAllInstructions();
     return best;
 }
@@ -92,7 +92,7 @@ Iteration::Iteration(
 void Iteration::appendNewStates() {
     if (!newGameInstances.empty()) adds++;
     states += newGameInstances.size();
-    for (GameInstance& gst : newGameInstances) gameInstances.push_back(move(gst));
+    for (GameInstance& node : newGameInstances) gameInstances.push_back(move(node));
     newGameInstances.clear();
 }
 
@@ -239,12 +239,12 @@ void PurchaseIteration::addBranches() {
 }
 
 ApproxSacrificeIteration::ApproxSacrificeIteration(
-    GameInstance st, const Progress& progress,
+    GameInstance node, const Progress& progress,
     const vector<vector<double>>& purchaseStrategies, bool verbose
 )   :   Iteration(progress, verbose)
 {
     for (int i = 0; i < purchaseStrategies.size(); i++) {
-        gameInstances.push_back(st);
+        gameInstances.push_back(node);
         gameInstances[i].addInstructions(purchaseStrategies[i]);
     }
     states = gameInstances.size();
@@ -269,14 +269,14 @@ void ApproxSacrificeIteration::addBranches() {
 }
 
 PreciseSacrificeIteration::PreciseSacrificeIteration(
-    GameInstance st, const Progress& progress,
+    GameInstance node, const Progress& progress,
     const vector<vector<double>>& purchaseStrategies, 
     const vector<vector<double>>& sacrificeStrategies, bool verbose
 )   :   Iteration(progress, verbose)
 {
     projectedSacrifices = sacrificeStrategies[0];
     for (int i = 0; i < purchaseStrategies.size(); i++) {
-        gameInstances.push_back(st);
+        gameInstances.push_back(node);
         gameInstances[i].addInstructions(purchaseStrategies[i]);
         gameInstances[i].game().setNextSacBranching(Decimal(1, projectedSacrifices[0]) / tolerance);
     }
@@ -304,10 +304,10 @@ void PreciseSacrificeIteration::addBranches() {
     appendNewStates();
 }
 
-void PreciseSacrificeIteration::scheduleSacrifice(GameInstance& st, const Decimal& target) const {
-    st.addInstructions({Instruction::Sacrifice, target.log10value()});
-    st.game().setNextSacBranching(
-        Decimal(1, projectedSacrifices[st.game().sacrifice().getSacrificesDone() + 1]) / tolerance);
+void PreciseSacrificeIteration::scheduleSacrifice(GameInstance& node, const Decimal& target) const {
+    node.addInstructions({Instruction::Sacrifice, target.log10value()});
+    node.game().setNextSacBranching(
+        Decimal(1, projectedSacrifices[node.game().sacrifice().getSacrificesDone() + 1]) / tolerance);
 }
 
 void computePurchaseBranches(GameInstance& node, vector<GameInstance>& branches) {

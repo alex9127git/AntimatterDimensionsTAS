@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
     string cmdOutFile;
     bool saveCommands = true;
 
-    GameInstance instance;
+    GameState gameState;
     json j;
     ifstream in;
     ofstream save_out;
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
     if (!inputFile.empty()) {
         in = ifstream(inputFile);
         in >> j;
-        instance = GameInstance(j);
+        gameState = GameState(j);
     } else {
         cout << "Input filename not specified, will use starting game state instead." << endl;
     }
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
         saveCommands = false;
     }
     bool useSacrifice = false;
-    if (instance.game().dimensionBoosts() >= 5) {
+    if (gameState.dimensionBoosts() >= 5) {
         cout << "Input game state has 5 dimension boosts or more. Do you want to use sacrifice? [Y/n] ";
         char confirmation = getchar();
         switch (confirmation) {
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
     }
     
     vector<double> instructions;
-    instance = runDimboost(instance, useSacrifice);
+    GameInstance instance = runDimboost(gameState, useSacrifice);
     cout << "Finished simulation; dumping result game state into " << outputFile << endl;
     save_out = ofstream(outputFile);
     save_out << instance.game().to_json();
