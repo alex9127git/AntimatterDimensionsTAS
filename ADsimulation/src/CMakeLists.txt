@@ -155,6 +155,7 @@ target_sources(dimensions
 target_link_libraries(dimensions
     PUBLIC
         decimal
+        tickspeed
         interfaces
     PRIVATE
         constants
@@ -173,8 +174,10 @@ target_sources(tickspeed
 )
 target_link_libraries(tickspeed
     PUBLIC
-        constants
+        decimal
         interfaces
+    PRIVATE
+        constants
 )
 
 add_library(sacrifice)
@@ -210,18 +213,22 @@ target_link_libraries(achievements
     PUBLIC
         decimal
         interfaces
+    PRIVATE
+        constants
 )
 
 add_library(gamestate)
 target_sources(gamestate
     PRIVATE
         libraries/gamestate/gamestate.cpp
+        libraries/gamestate/formulae.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS
             libraries/gamestate
         FILES
             libraries/gamestate/gamestate.h
+            libraries/gamestate/formulae.h
 )
 target_link_libraries(gamestate
     PUBLIC

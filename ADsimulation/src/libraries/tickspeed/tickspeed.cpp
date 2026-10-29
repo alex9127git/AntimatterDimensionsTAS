@@ -1,13 +1,13 @@
 #include "tickspeed.h"
 #include "../constants/constants.h"
-#include "../gamestate/gamestate.h"
 
 
 Tickspeed::Tickspeed() 
     :   cost(DC::D1E3),
         scaling(DC::D10),
         purchases(0),
-        multiplier(DC::D1),
+        value(DC::D1E3),
+        valuePerSecond(DC::D1),
         unlocked(false)
     {};
 
@@ -15,22 +15,13 @@ Tickspeed::Tickspeed(const json& j) : Tickspeed::Tickspeed() {
     this->from_json(j);
 }
 
-Decimal Tickspeed::getTickspeedMultiplier(const GameState& st) const {
-    return Decimal(1 / 1.1245);
-}
-
-Decimal Tickspeed::getDisplayMult(const GameState& st) const {
-    return Decimal::invert(this->getTickspeedMultiplier(st));
-}
-
-void Tickspeed::update(const GameState& st) {
-    this->multiplier = Decimal::invert(
-        Decimal::pow(getTickspeedMultiplier(st), purchases)
-    );
+void Tickspeed::update(const Decimal& newVal) {
+    this->value = newVal;
+    this->valuePerSecond = DC::D1E3 / this->value;
 }
 
 Decimal Tickspeed::perSecond() const {
-    return this->multiplier;
+    return this->valuePerSecond;
 }
 
 Decimal Tickspeed::getCost() const {

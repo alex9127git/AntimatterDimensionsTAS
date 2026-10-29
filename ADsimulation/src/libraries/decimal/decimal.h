@@ -37,7 +37,7 @@ class Decimal {
         bool operator<=(const Decimal& b) const;
         bool operator<(const Decimal& b) const;
         bool operator==(const Decimal& b) const;
-        friend ostream& operator<<(ostream& os, const Decimal& d);
+        friend std::ostream& operator<<(std::ostream& os, const Decimal& d);
 
         Decimal log10() const;
         double log10value() const;
@@ -62,8 +62,8 @@ class Decimal {
 
         void repr() const;
 
-        static string toString(const Decimal& d, int precision);
-        string toString(int precision) const;
+        static std::string toString(const Decimal& d, int precision);
+        std::string toString(int precision) const;
 
         json to_json() const;
         void from_json(const json& j);

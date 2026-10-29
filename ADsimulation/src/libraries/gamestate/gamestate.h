@@ -32,7 +32,7 @@ class GameState : public ISerializable {
         InstructionQueue instructionQueue;
 
         Decimal nextPurchaseCost = DC::D0;
-        vector<uint16_t> allowedPurchases;
+        std::vector<uint16_t> allowedPurchases;
 
         Decimal prevAD1 = DC::D1;
         Decimal nextSacrificeBranch = DC::D1;
@@ -40,7 +40,19 @@ class GameState : public ISerializable {
 
         void prepare();
         void calcPurchases();
+
+        // recalculation methods
+
+        void recalcAD();
+        void recalcAD(int tier);
+        void recalcTickspeed();
         void recalcAchievementBonus();
+
+        // checks
+
+        bool checkUnlockCondition(int id) const;
+
+        // runner methods
 
         bool runInstruction(uint16_t instruction);
         bool runSacInstruction();
@@ -49,7 +61,7 @@ class GameState : public ISerializable {
         GameState();
         GameState(const json& j);
 
-        friend ostream& operator<<(ostream& os, const GameState& st);
+        friend std::ostream& operator<<(std::ostream& os, const GameState& st);
 
         // getters
 
@@ -82,7 +94,7 @@ class GameState : public ISerializable {
 
         // instruction methods
 
-        void addInstructions(const vector<double>& instructions);
+        void addInstructions(const std::vector<double>& instructions);
         void clearAllInstructions();
         void runNextInstructions();
         
@@ -91,7 +103,7 @@ class GameState : public ISerializable {
         Decimal getAntimatterGoalForDimboost() const;
 
         bool canBranch() const;
-        const vector<uint16_t>& getPurchaseBranches() const;
+        const std::vector<uint16_t>& getPurchaseBranches() const;
         
         void setNextSacBranching(Decimal sacValue);
         bool canSacBranch() const;
@@ -108,6 +120,4 @@ class GameState : public ISerializable {
 
         json to_json() const override;
         void from_json(const json& j) override;
-
-        void writeInstructions(ofstream& f);
 };

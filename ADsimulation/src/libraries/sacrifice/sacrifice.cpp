@@ -1,4 +1,5 @@
 #include "sacrifice.h"
+using namespace std;
 
 
 Sacrifice::Sacrifice() {

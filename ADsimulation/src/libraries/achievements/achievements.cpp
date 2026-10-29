@@ -1,173 +1,78 @@
 #include "achievements.h"
-#include "../gamestate/gamestate.h"
 #include "../constants/constants.h"
-
-const function<Decimal(const Decimal&)> AchConstants::NO_EFFECT = 
-        [](const Decimal& _) {return DC::D1;};
-
-const vector<function<Decimal(const Decimal&)>> AchConstants::effectFormulae = {
-    NO_EFFECT,
-    NO_EFFECT,
-    NO_EFFECT,
-    NO_EFFECT,
-    NO_EFFECT,
-    NO_EFFECT,
-    NO_EFFECT,
-    NO_EFFECT,
-
-    [](const Decimal& _) {return DC::D100;},
-    NO_EFFECT,
-    [](const Decimal& _) {return DC::D1_1;},
-    NO_EFFECT,
-    NO_EFFECT,
-    NO_EFFECT,
-    NO_EFFECT,
-    [](const Decimal& _) {return DC::D1_1;},
-
-    [](const Decimal& _) {return DC::D1_05;},
-    [](const Decimal& _) {return DC::D1_1;},
-    NO_EFFECT,
-    [](const Decimal& _) {return DC::D1_02;},
-    NO_EFFECT,
-    [](const Decimal& _) {return DC::D1_02;},
-    [](const Decimal& _) {return DC::D5E3;},
-    NO_EFFECT,
-
-    NO_EFFECT,
-    NO_EFFECT,
-    [](const Decimal& tier) {return DC::D1_01 * tier;},
-    NO_EFFECT,
-    [](const Decimal& _) {return DC::D1_02;},
-    NO_EFFECT,
-    NO_EFFECT,
-    [](const Decimal& _) {return DC::D1_1;},
-
-    NO_EFFECT,
-    NO_EFFECT,
-    NO_EFFECT,
-    [](const Decimal& _) {return DC::D5E5;},
-    [](const Decimal& _) {return DC::D5E10;},
-    [](Decimal minutes) {return Decimal::max(DC::D6 / (minutes + DC::D3), DC::D1);},
-    [](const Decimal& _) {return DC::D1_1;},
-    [](const Decimal& _) {return DC::D1_01;},
-
-    NO_EFFECT,
-    NO_EFFECT,
-    NO_EFFECT,
-    [](const Decimal& _) {return DC::D1_25;},
-    [](Decimal minutes) {return Decimal::max(DC::D4 / (minutes + DC::D1), DC::D1);},
-    [](const Decimal& _) {return DC::D1_02;},
-    NO_EFFECT,
-    [](const Decimal& _) {return DC::D1_5;},
-
-    [](const Decimal& _) {return DC::D3;},
-    [](const Decimal& _) {return DC::D1_1;},
-    [](Decimal antimatter) {return Decimal::pow(antimatter, 0.00002) + DC::D1;},
-    [](const Decimal& _) {return DC::D1_4;},
-    NO_EFFECT,
-    [](Decimal days) {return Decimal::max(Decimal::pow(days / DC::D2, 0.05), DC::D1);},
-    NO_EFFECT,
-    [](const Decimal& _) {return DC::D5E25;},
-};
-
-const function<bool(const GameState&)> AchConstants::NOT_APPLICABLE = 
-        [](const GameState& st) {return false;};
-const function<bool(const GameState&)> AchConstants::ALWAYS_UNLOCKED = 
-        [](const GameState& st) {return true;};
-const function<bool(const GameState&)> AchConstants::NOT_IMPLEMENTED_YET = 
-        [](const GameState& st) {return false;};
-
-const vector<function<bool(const GameState&)>> AchConstants::unlockConditions = {
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
-
-    NOT_APPLICABLE,
-    ALWAYS_UNLOCKED,
-    NOT_APPLICABLE,
-    [](const GameState& st) {return st.antimatter() >= DC::D1E80;},
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
-
-    [](const GameState& st) {
-        for (int i = 1; i <= 8; i++) {
-            if (st.AD()[i].getMult() >= DC::D1E31) {
-                return true;
-            }
-        }
-        return false;
-    },
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
-    ALWAYS_UNLOCKED,
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
-
-    NOT_APPLICABLE,
-    [](const GameState& st) {
-        return st.antimatter() >= DC::D1E63 && 
-            st.AD()[1].productionPerSecond() > st.antimatter();
-    },
-    [](const GameState& st) {
-        for (int i = 1; i <= 7; i++) {
-            if (st.AD()[i].getMult() >= st.AD()[i+1].getMult()) return false;
-        }
-        return true;
-    },
-    ALWAYS_UNLOCKED,
-    [](const GameState& st) {return st.tickspeed().perSecond() >= DC::D1E26;},
-    [](const GameState& st) {return st.AD()[7].getAmount() >= DC::D1E12;},
-    NOT_APPLICABLE,
-    NOT_APPLICABLE,
+#include <functional>
+using namespace std;
 
 
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
+namespace {
+    const function<Decimal(const Decimal&)> NO_EFFECT = 
+            [](const Decimal& _) {return DC::D1;};
 
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET,
-    ALWAYS_UNLOCKED,
-    NOT_IMPLEMENTED_YET,
-    NOT_IMPLEMENTED_YET
-};
+    const vector<function<Decimal(const Decimal&)>> effectFormulae = {
+        NO_EFFECT,
+        NO_EFFECT,
+        NO_EFFECT,
+        NO_EFFECT,
+        NO_EFFECT,
+        NO_EFFECT,
+        NO_EFFECT,
+        NO_EFFECT,
 
-const vector<int> AchConstants::achIdList = {
-    11, 12, 13, 14, 15, 16, 17, 18,
-    21, 22, 23, 24, 25, 26, 27, 28,
-    31, 32, 33, 34, 35, 36, 37, 38,
-    41, 42, 43, 44, 45, 46, 47, 48,
-    51, 52, 53, 54, 55, 56, 57, 58,
-    61, 62, 63, 64, 65, 66, 67, 68,
-    71, 72, 73, 74, 75, 76, 77, 78
-};
+        [](const Decimal& _) {return DC::D100;},
+        NO_EFFECT,
+        [](const Decimal& _) {return DC::D1_1;},
+        NO_EFFECT,
+        NO_EFFECT,
+        NO_EFFECT,
+        NO_EFFECT,
+        [](const Decimal& _) {return DC::D1_1;},
 
+        [](const Decimal& _) {return DC::D1_05;},
+        [](const Decimal& _) {return DC::D1_1;},
+        NO_EFFECT,
+        [](const Decimal& _) {return DC::D1_02;},
+        NO_EFFECT,
+        [](const Decimal& _) {return DC::D1_02;},
+        [](const Decimal& _) {return DC::D5E3;},
+        NO_EFFECT,
+
+        NO_EFFECT,
+        NO_EFFECT,
+        [](const Decimal& tier) {return DC::D1_01 * tier;},
+        NO_EFFECT,
+        [](const Decimal& _) {return DC::D1_02;},
+        NO_EFFECT,
+        NO_EFFECT,
+        [](const Decimal& _) {return DC::D1_1;},
+
+        NO_EFFECT,
+        NO_EFFECT,
+        NO_EFFECT,
+        [](const Decimal& _) {return DC::D5E5;},
+        [](const Decimal& _) {return DC::D5E10;},
+        [](Decimal minutes) {return Decimal::max(DC::D6 / (minutes + DC::D3), DC::D1);},
+        [](const Decimal& _) {return DC::D1_1;},
+        [](const Decimal& _) {return DC::D1_01;},
+
+        NO_EFFECT,
+        NO_EFFECT,
+        NO_EFFECT,
+        [](const Decimal& _) {return DC::D1_25;},
+        [](Decimal minutes) {return Decimal::max(DC::D4 / (minutes + DC::D1), DC::D1);},
+        [](const Decimal& _) {return DC::D1_02;},
+        NO_EFFECT,
+        [](const Decimal& _) {return DC::D1_5;},
+
+        [](const Decimal& _) {return DC::D3;},
+        [](const Decimal& _) {return DC::D1_1;},
+        [](Decimal antimatter) {return Decimal::pow(antimatter, 0.00002) + DC::D1;},
+        [](const Decimal& _) {return DC::D1_4;},
+        NO_EFFECT,
+        [](Decimal days) {return Decimal::max(Decimal::pow(days / DC::D2, 0.05), DC::D1);},
+        NO_EFFECT,
+        [](const Decimal& _) {return DC::D5E25;},
+    };
+}
 
 Achievements::Achievements() {
     bitmasks = {0, 0, 0, 0, 0, 0, 0};
@@ -190,10 +95,6 @@ void Achievements::lockAchievement(int id) {
     unlockTimes[idToIndex(id)] = -1;
 }
 
-bool Achievements::checkUnlockCondition(int id, const GameState& st) const {
-    return AchConstants::unlockConditions[Achievements::idToIndex(id)](st);
-}
-
 bool Achievements::isUnlocked(int id) const {
     return (bitmasks[id / 10 - 1] & (1 << (id % 10 - 1))) != 0;
 }
@@ -210,10 +111,33 @@ int Achievements::achCount() const {
     return unlockTimes.size();
 }
 
+Decimal Achievements::calcBonus() const {
+    int fullRows = 0;
+    int achievements = 0;
+    int rowCounter = 0;
+    int cycle = 0;
+    for (int i = 0; i < achCount(); i++) {
+        int id = indexToId(i);
+        if (isUnlocked(id)) {
+            achievements++;
+            rowCounter++;
+        }
+        cycle++;
+        if (cycle >= 8) {
+            cycle = 0;
+            if (rowCounter == 8) {
+                fullRows++;;
+            }
+            rowCounter = 0;
+        }
+    }
+    return Decimal::pow(DC::D1_25, fullRows) * Decimal::pow(DC::D1_03, achievements);
+}
+
 json Achievements::to_json() const {
     json j;
     vector<int> ids;
-    for (int i = 0; i < unlockTimes.size(); i++) {
+    for (int i = 0; i < achCount(); i++) {
         int id = indexToId(i);
         if (isUnlocked(id)) ids.push_back(id);
     }

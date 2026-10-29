@@ -4,7 +4,7 @@
 #include <string>
 #include "dimensions.h"
 #include "../constants/constants.h"
-#include "../gamestate/gamestate.h"
+using namespace std;
 
 
 Dimension::Dimension(
@@ -33,8 +33,8 @@ Dimension::Dimension() :
         unlocked(true) 
     {}
 
-void Dimension::update(const GameState& st) {
-    this->multiplier = DC::D1;
+void Dimension::update(const Decimal& newMult) {
+    this->multiplier = newMult;
 }
 
 Decimal Dimension::productionPerSecond() const {
@@ -105,6 +105,22 @@ AntimatterDimension::AntimatterDimension(
 )   :   Dimension(_tier, _cost, _scaling, _unlocked)
     {}
 
+Decimal AntimatterDimension::productionPerSecond(const Tickspeed& t) const {
+    return this->amount * this->multiplier * t.perSecond();
+}
+
+Decimal AntimatterDimension::productionPerDiff(const Tickspeed& t, double diff) const {
+    return this->productionPerSecond(t) * Decimal(diff);
+}
+
+void AntimatterDimension::produceCurrency(Decimal& currency, const Tickspeed& t, double diff) const {
+    currency += this->productionPerDiff(t, diff);
+}
+
+void AntimatterDimension::produceDimensions(AntimatterDimension& dimension, const Tickspeed& t, double diff) const {
+    dimension.amount += this->productionPerDiff(t, diff);
+}
+
 ostream& operator<<(ostream& os, const AntimatterDimension& d) {
     string suffix;
     switch (d.tier) {
@@ -123,18 +139,6 @@ ostream& operator<<(ostream& os, const AntimatterDimension& d) {
     os << d.tier << suffix << " Antimatter Dimension (x" << d.multiplier << ") " << d.amount << endl;
     os << "Purchases: " << d.purchases << ", Cost: " << d.cost;
     return os;
-}
-
-void AntimatterDimension::update(const GameState& st) {
-    Decimal mult = DC::D1;
-    mult *= Decimal::pow(DC::D2, floor(purchases / 10));
-    mult *= st.getAchievementBonus();
-    mult *= Decimal::pow(DC::D2, max(0, st.dimensionBoosts() - tier + 1));
-    mult *= st.tickspeed().perSecond();
-    if (this->tier == 8) {
-        mult *= st.sacrifice().getSacrificeBonus();
-    }
-    this->multiplier = mult;
 }
 
 void AntimatterDimension::onPurchase() {
@@ -185,22 +189,16 @@ AntimatterDimensions::AntimatterDimensions(const json& j) : AntimatterDimensions
     this->from_json(j);
 }
 
+const AntimatterDimension& AntimatterDimensions::operator[](int index) const {
+    return this->dims[index - 1];
+}
+
+AntimatterDimension& AntimatterDimensions::operator[](int index) {
+    return this->dims[index - 1];
+}
+
 const vector<AntimatterDimension>& AntimatterDimensions::getDims() const {
     return this->dims;
-}
-
-const Dimension& AntimatterDimensions::operator[](int index) const {
-    return this->dims[index - 1];
-}
-
-Dimension& AntimatterDimensions::operator[](int index) {
-    return this->dims[index - 1];
-}
-
-void AntimatterDimensions::update(const GameState& st) {
-    for (int i = 8; i >= 1; i--) {
-        (*this)[i].update(st);
-    }
 }
 
 json AntimatterDimensions::to_json() const {

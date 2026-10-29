@@ -1,10 +1,13 @@
 #include "gamestate.h"
+#include "formulae.h"
 #include "../ioutils/ioutils.h"
 #include "../constants/constants.h"
 #include <fstream>
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <format>
+using namespace std;
 
 
 GameState::GameState() {
@@ -17,13 +20,14 @@ GameState::GameState(const json& j)
 }
 
 void GameState::prepare() {
-    for (int id : AchConstants::achIdList) {
+    for (int i = 0; i < achievements().achCount(); i++) {
+        int id = Achievements::indexToId(i);
         this->unlockAchievement(id, false);
     }
     calcPurchases();
     recalcAchievementBonus();
-    this->_tickspeed.update(*this);
-    this->_AD.update(*this);
+    recalcTickspeed();
+    recalcAD();
 }
 
 void GameState::calcPurchases() {
@@ -63,26 +67,25 @@ void GameState::calcPurchases() {
     nextPurchaseCost = minPurchase == 9 ? _tickspeed.getCost() : _AD[minPurchase].getCost();
 }
 
+void GameState::recalcAD() {
+    for (int i = 8; i >= 1; i--) recalcAD(i);
+}
+
+void GameState::recalcAD(int tier) {
+    _AD[tier].update(getADmult(*this, tier));
+}
+
+void GameState::recalcTickspeed() {
+    _tickspeed.update(getTotalTickspeed(*this));
+}
+
 void GameState::recalcAchievementBonus() {
-    Decimal result = DC::D1;
-    int rowCounter = 0;
-    int cycle = 0;
-    for (int id : AchConstants::achIdList) {
-        if (_achievements.isUnlocked(id)) {
-            result *= DC::D1_03;
-            rowCounter++;
-        }
-        cycle++;
-        if (cycle >= 8) {
-            cycle = 0;
-            if (rowCounter == 8) {
-                result *= DC::D1_25;
-            }
-            rowCounter = 0;
-        }
-    }
-    this->achievementBonus = result;
-    this->_AD.update(*this);
+    achievementBonus = _achievements.calcBonus();
+    recalcAD();
+}
+
+bool GameState::checkUnlockCondition(int id) const {
+    return AchConstants::unlockConditions[Achievements::idToIndex(id)](*this);
 }
 
 bool GameState::runInstruction(uint16_t instruction) {
@@ -107,7 +110,9 @@ bool GameState::runSacInstruction() {
 ostream& operator<<(ostream& os, const GameState& st) {
     os << "You have " << st.antimatter() << " antimatter." << endl;
     os << "You have been playing for " << renderTime(st._realTimePlayed) << endl;
-    os << "Tickspeed bonus: x" << st._tickspeed.perSecond() << " (x" << st._tickspeed.getDisplayMult(st).toString(3) << " per upgrade)" << endl;
+    os << format("Tickspeed bonus: x{} (x{} per upgrade)",
+            st._tickspeed.perSecond().toString(3),
+            Decimal::invert(getTickspeedMultPerPurchase(st)).toString(3)) << endl;
     for (const AntimatterDimension& d : st._AD.getDims()) {
         os << d << endl;
     };
@@ -119,10 +124,10 @@ void GameState::tick(double diff) {
     _realTimePlayed += diff * 1000;
     for (int i = 8; i >= 2; i--) {
         if (_AD[i].isUnlocked()) {
-            _AD[i].produceDimensions(_AD[i - 1], diff / 10);
+            _AD[i].produceDimensions(_AD[i - 1], _tickspeed, diff / 10);
         }
     }
-    Decimal currencyProduction = _AD[1].productionPerDiff(diff);
+    Decimal currencyProduction = _AD[1].productionPerDiff(_tickspeed, diff);
     _antimatter += currencyProduction;
     _totalAntimatter += currencyProduction;
     _antimatterThisReset += currencyProduction;
@@ -137,7 +142,7 @@ bool GameState::buyOneDimension(int tier) {
         _antimatter -= _AD[tier].getCost();
         _AD[tier].onPurchase();
         if (_AD[tier].getPurchases() % 10 == 0) {
-            _AD[tier].update(*this);
+            recalcAD(tier);
         }
         unlockAchievement(10 + tier, true);
         calcPurchases();
@@ -163,8 +168,7 @@ bool GameState::buyTickspeed() {
     if (_tickspeed.canPurchase(_antimatter)) {
         _antimatter -= _tickspeed.getCost();
         _tickspeed.onPurchase();
-        _tickspeed.update(*this);
-        _AD.update(*this);
+        recalcTickspeed();
         calcPurchases();
         return true;
     }
@@ -182,7 +186,7 @@ bool GameState::handleKonamiCode() {
 
 void GameState::unlockAchievement(int ach, bool force) {
     if (this->_achievements.isUnlocked(ach)) return;
-    if (force || this->_achievements.checkUnlockCondition(ach, *this)) {
+    if (force || this->checkUnlockCondition(ach)) {
         this->_achievements.unlockAchievement(ach, this->realTimePlayed());
         this->recalcAchievementBonus();
     }
@@ -251,8 +255,8 @@ bool GameState::requestDimboost() {
         _sacrifice = Sacrifice();
         _antimatter = DC::D10;
         _antimatterThisReset = DC::D10;
-        _tickspeed.update(*this);
-        _AD.update(*this);
+        recalcTickspeed();
+        recalcAD();
         return true;
     }
     return false;
@@ -275,7 +279,7 @@ bool GameState::sacrificeReset() {
     for (int i = 1; i <= 7; i++) {
         _AD[i].resetAmount();
     }
-    _AD[8].update(*this);
+    recalcAD(8);
     return true;
 }
 

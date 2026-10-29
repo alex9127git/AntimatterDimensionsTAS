@@ -4,9 +4,6 @@
 #include "../decimal/decimal.h"
 
 
-class GameState;
-
-
 class Tickspeed : public ISerializable {
     private:
         Decimal cost;
@@ -15,16 +12,15 @@ class Tickspeed : public ISerializable {
         bool unlocked;
 
         // volatile, shouldn't be serialized
-        Decimal multiplier;
+
+        Decimal value;
+        Decimal valuePerSecond;
     
     public:
         Tickspeed();
         Tickspeed(const json& j);
 
-        Decimal getTickspeedMultiplier(const GameState& st) const;
-        Decimal getDisplayMult(const GameState& st) const;
-
-        void update(const GameState& st);
+        void update(const Decimal& newVal);
 
         Decimal perSecond() const;
         Decimal getCost() const;

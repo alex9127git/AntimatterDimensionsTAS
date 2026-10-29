@@ -3,10 +3,8 @@
 #include <iosfwd>
 #include <vector>
 #include "../decimal/decimal.h"
+#include "../tickspeed/tickspeed.h"
 #include "../interfaces/interfaces.h"
-
-
-class GameState;
 
 
 class Dimension : public ISerializable {
@@ -31,7 +29,7 @@ class Dimension : public ISerializable {
         );
         Dimension();
         
-        virtual void update(const GameState& st);
+        void update(const Decimal& newMult);
         Decimal productionPerSecond() const;
         Decimal productionPerDiff(double diff) const;
         Decimal getCost() const;
@@ -59,9 +57,17 @@ class AntimatterDimension : public Dimension {
             Decimal _scaling,
             bool _unlocked
         );
+        
+        Decimal productionPerSecond() const = delete;
+        Decimal productionPerSecond(const Tickspeed& t) const;
+        Decimal productionPerDiff(double diff) const = delete;
+        Decimal productionPerDiff(const Tickspeed& t, double diff) const;
+        void produceCurrency(Decimal& currency, double diff) const = delete;
+        void produceCurrency(Decimal& currency, const Tickspeed& t, double diff) const;
+        void produceDimensions(Dimension& dimension, double diff) const = delete;
+        void produceDimensions(AntimatterDimension& dimension, const Tickspeed& t, double diff) const;
 
-        friend ostream& operator<<(ostream& os, const AntimatterDimension& d);
-        void update(const GameState& st) override;
+        friend std::ostream& operator<<(std::ostream& os, const AntimatterDimension& d);
         void onPurchase() override;
 
         json to_json() const override;
@@ -70,18 +76,16 @@ class AntimatterDimension : public Dimension {
 
 class AntimatterDimensions : ISerializable {
     private:
-        vector<AntimatterDimension> dims;
+        std::vector<AntimatterDimension> dims;
 
     public:
         AntimatterDimensions();
         AntimatterDimensions(const json& j);
 
-        const Dimension& operator[](int index) const;
-        Dimension& operator[](int index);
+        const AntimatterDimension& operator[](int index) const;
+        AntimatterDimension& operator[](int index);
 
-        const vector<AntimatterDimension>& getDims() const;
-
-        void update(const GameState& st);
+        const std::vector<AntimatterDimension>& getDims() const;
 
         json to_json() const override;
         void from_json(const json& j) override;
