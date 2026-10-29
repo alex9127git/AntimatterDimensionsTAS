@@ -1,12 +1,28 @@
-#include "search.h"
-#include "../gamestate/gamestate.h"
-#include "../constants/constants.h"
+#include "searchnode.h"
 #include <algorithm>
 using namespace std;
 
 
-vector<uint16_t> computeAllowedPurchases(const GameState& st) {
-    vector<uint16_t> allowedPurchases;
+SearchNode::SearchNode(const GameState& st) 
+    :   instance(st)
+    {}
+
+bool SearchNode::canBranch() {
+    if (!validated) {
+        computeAllowedPurchases();
+        nextPurchaseCost = game().costOf(allowedPurchases.front());
+        validated = true;
+    }
+    return game().antimatter() >= nextPurchaseCost;
+}
+
+const vector<uint16_t>& SearchNode::getPurchaseBranches() const {
+    return this->allowedPurchases;
+}
+
+void SearchNode::computeAllowedPurchases() {
+    const GameState& st = game();
+    allowedPurchases.clear();
     int frontier = 1;
     while (st.AD()[frontier].getPurchases() >= 10 && frontier < min(st.dimensionBoosts() + 4, 8)) {
         frontier++;
@@ -14,7 +30,7 @@ vector<uint16_t> computeAllowedPurchases(const GameState& st) {
     for (int i = 1; i <= frontier; i++) {
         if (st.AD()[i].getPurchases() > 10 && st.AD()[i].getPurchases() % 10 != 0) {
             allowedPurchases.push_back(i);
-            return allowedPurchases;
+            return;
         }
     }
     Decimal minPrice = st.tickspeed().getCost();
@@ -38,5 +54,12 @@ vector<uint16_t> computeAllowedPurchases(const GameState& st) {
             return a_cost < b_cost;
         }
     );
-    return allowedPurchases;
+}
+
+bool SearchNode::canSacBranch() const {
+    return game().AD()[1].getAmount() >= this->nextSacrificeBranch;
+}
+
+void SearchNode::setNextSacBranching(Decimal sacValue) {
+    this->nextSacrificeBranch = game().sacrifice().getReqForSac(sacValue);
 }

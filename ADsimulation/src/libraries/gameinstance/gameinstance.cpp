@@ -1,11 +1,6 @@
 #include "gameinstance.h"
-#include "search.h"
 using namespace std;
 
-
-GameInstance::GameInstance(const json& j)
-    :   gameState(j)
-    {}
 
 GameInstance::GameInstance(const GameState& st)
     :   gameState(st)
@@ -24,20 +19,22 @@ void GameInstance::clearAllInstructions() {
     _queue.clearAllInstructions();
 }
 
-void GameInstance::runNextInstructions() {
+bool GameInstance::runNextInstructions() {
+    bool ranInstruction = false;
     while (queue().hasNextPurchase() && this->runInstruction(queue().peekNextPurchase())) {
         _queue.completePurchase();
-        validated = false;
+        ranInstruction = true;
     }
     while (queue().hasNextSacrifice() && this->runSacInstruction()) {
         _queue.completeSacrifice();
-        validated = false;
+        ranInstruction = true;
         if (queue().hasNextSacrifice()) {
             this->nextSacrificeInstruction = gameState.sacrifice().getReqForSac(
                 Decimal(1, queue().peekNextSacrifice())
             );
         }
     }
+    return ranInstruction;
 }
 
 bool GameInstance::runInstruction(uint16_t instruction) {
@@ -57,17 +54,4 @@ bool GameInstance::runInstruction(uint16_t instruction) {
 bool GameInstance::runSacInstruction() {
     if (gameState.AD()[1].getAmount() < this->nextSacrificeInstruction) return false;
     return gameState.sacrificeReset();
-}
-
-bool GameInstance::canBranch() {
-    if (!validated) {
-        allowedPurchases = computeAllowedPurchases(gameState);
-        nextPurchaseCost = gameState.costOf(allowedPurchases.front());
-        validated = true;
-    }
-    return gameState.antimatter() >= nextPurchaseCost;
-}
-
-const vector<uint16_t>& GameInstance::getPurchaseBranches() const {
-    return this->allowedPurchases;
 }

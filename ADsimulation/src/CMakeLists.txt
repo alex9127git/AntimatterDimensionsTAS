@@ -247,14 +247,12 @@ add_library(gameinstance)
 target_sources(gameinstance
     PRIVATE
         libraries/gameinstance/gameinstance.cpp
-        libraries/gameinstance/search.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS
             libraries/gameinstance
         FILES
             libraries/gameinstance/gameinstance.h
-            libraries/gameinstance/search.h
 )
 target_link_libraries(gameinstance
     PUBLIC
@@ -266,12 +264,14 @@ add_library(simulation)
 target_sources(simulation
     PRIVATE
         libraries/simulation/simulation.cpp
+        libraries/simulation/searchnode.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS
             libraries/simulation
         FILES
             libraries/simulation/simulation.h
+            libraries/simulation/searchnode.h
 )
 target_link_libraries(simulation
     PUBLIC

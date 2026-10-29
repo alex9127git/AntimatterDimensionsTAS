@@ -1,10 +1,10 @@
-#include <iostream>
-#include <fstream>
-#include "omp.h"
 #include "libraries/ioutils/ioutils.h"
 #include "libraries/simulation/simulation.h"
 #include "libraries/gameinstance/gameinstance.h"
-
+#include <omp.h>
+#include <iostream>
+#include <fstream>
+#include <algorithm>
 using namespace std;
 
 

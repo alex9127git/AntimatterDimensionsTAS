@@ -1,7 +1,6 @@
 #include "gamestate.h"
 #include "formulae.h"
 #include "../ioutils/ioutils.h"
-#include <fstream>
 #include <algorithm>
 #include <cmath>
 #include <string>
@@ -62,7 +61,6 @@ ostream& operator<<(ostream& os, const GameState& st) {
 }
 
 void GameState::tick(double diff) {
-    prevAD1 = _AD[1].getAmount();
     _realTimePlayed += diff * 1000;
     for (int i = 8; i >= 2; i--) {
         if (_AD[i].isUnlocked()) {
@@ -142,14 +140,6 @@ Decimal GameState::getAntimatterGoalForDimboost() const {
     int scalingNeeded = ceil(dimAmountRequied / 10.0) - 1;
     int highPurchases = dimAmountRequied % 10 + (dimAmountRequied % 10 == 0 ? 10 : 0);
     return dimNeeded.getInitialCost() * Decimal::pow(dimNeeded.getScaling(), scalingNeeded) * Decimal(highPurchases);
-}
-
-void GameState::setNextSacBranching(Decimal sacValue) {
-    this->nextSacrificeBranch = _sacrifice.getReqForSac(sacValue);
-}
-
-bool GameState::canSacBranch() const {
-    return this->_AD[1].getAmount() >= this->nextSacrificeBranch;
 }
 
 bool GameState::canBuyNextDimboost() const {

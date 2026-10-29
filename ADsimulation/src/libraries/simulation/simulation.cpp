@@ -1,6 +1,8 @@
 #include "simulation.h"
 #include "../ioutils/ioutils.h"
 #include "../constants/constants.h"
+#include "../instructions/instructions.h"
+#include <algorithm>
 #include <cstdint>
 #include <numeric>
 #include <string>
@@ -20,7 +22,7 @@ GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose) {
 GameInstance runUntil(
     GameState st, const Progress& progress, bool useSacrifice, bool verbose
 ) {
-    vector<GameInstance> gameInstances;
+    vector<SearchNode> resultNodes;
     GameInstance best;
     int64_t currentIterationTime = INT64_MAX;
     int64_t iterationTime = INT64_MAX;
@@ -35,17 +37,17 @@ GameInstance runUntil(
         cout << "Running iteration " << iterationCounter << endl;
         switch (iterationCounter % 2) {
             case 1:
-                gameInstances = PurchaseIteration(GameInstance(st), progress, sacrificeStrategies, verbose).run();
+                resultNodes = PurchaseIteration(st, progress, sacrificeStrategies, verbose).run();
                 purchaseStrategies.clear();
-                for (GameInstance& node : gameInstances) {
+                for (SearchNode& node : resultNodes) {
                     purchaseStrategies.push_back(node.queue().getCompletedPurchases());
                 }
                 break;
             case 0:
-                gameInstances = ApproxSacrificeIteration(GameInstance(st), progress, purchaseStrategies, verbose).run();
+                resultNodes = ApproxSacrificeIteration(st, progress, purchaseStrategies, verbose).run();
                 purchaseStrategies.clear();
                 sacrificeStrategies.clear();
-                for (GameInstance& node : gameInstances) {
+                for (SearchNode& node : resultNodes) {
                     purchaseStrategies.push_back(node.queue().getCompletedPurchases());
                     vector<double> sacStrat = node.queue().getCompletedSacrifices();
                     sacStrat.push_back(
@@ -56,15 +58,15 @@ GameInstance runUntil(
                 }
                 cout << "============================================================" << endl;
                 cout << "Optimizing sacrifices" << endl;
-                gameInstances = PreciseSacrificeIteration(
-                    GameInstance(st), progress, purchaseStrategies, sacrificeStrategies, verbose).run();
+                resultNodes = PreciseSacrificeIteration(
+                    st, progress, purchaseStrategies, sacrificeStrategies, verbose).run();
                 sacrificeStrategies.clear();
-                for (GameInstance& node : gameInstances) {
+                for (SearchNode& node : resultNodes) {
                     sacrificeStrategies.push_back(node.queue().getCompletedSacrifices());
                 }
                 break;
         }
-        const GameInstance& iterationBest = gameInstances[0];
+        const GameInstance& iterationBest = resultNodes[0].gameInstance();
         iterationTime = iterationBest.game().realTimePlayed();
         if (iterationTime < currentIterationTime) best = iterationBest;
         if (verbose) {
@@ -90,10 +92,10 @@ Iteration::Iteration(
     {}
 
 void Iteration::appendNewStates() {
-    if (!newGameInstances.empty()) adds++;
-    states += newGameInstances.size();
-    for (GameInstance& node : newGameInstances) gameInstances.push_back(move(node));
-    newGameInstances.clear();
+    if (!newNodes.empty()) adds++;
+    states += newNodes.size();
+    for (SearchNode& node : newNodes) nodes.push_back(move(node));
+    newNodes.clear();
 }
 
 void Iteration::checkProgress() {
@@ -101,8 +103,8 @@ void Iteration::checkProgress() {
     bool doRender = updateTimer.peek() > RENDER_INTERVAL_MS && verbose;
     if (doRender) updateTimer.silentReset();
     bool anyFinished = false;
-    #pragma omp parallel for if(gameInstances.size() > PARALLEL_THRESHOLD) reduction(||:anyFinished)
-    for (GameInstance& node : gameInstances) {
+    #pragma omp parallel for if(nodes.size() > PARALLEL_THRESHOLD) reduction(||:anyFinished)
+    for (SearchNode& node : nodes) {
         node.runNextInstructions();
         anyFinished = anyFinished || progress.isFinished(node.game());
     }
@@ -115,8 +117,8 @@ void Iteration::checkProgress() {
         isFinished = true;
     }
     if (!isFinished && doRender) {
-        GameInstance* best = &gameInstances[0];
-        for (GameInstance& node : gameInstances) {
+        SearchNode* best = &nodes[0];
+        for (SearchNode& node : nodes) {
             if (node.game().antimatterThisReset() > best->game().antimatterThisReset()) {
                 best = &node;
             }
@@ -129,8 +131,8 @@ void Iteration::checkProgress() {
 
 void Iteration::tickAllStates() {
     stats.resetTickTimer();
-    #pragma omp parallel for if(gameInstances.size() > PARALLEL_THRESHOLD) 
-    for (GameInstance& node : gameInstances) {
+    #pragma omp parallel for if(nodes.size() > PARALLEL_THRESHOLD) 
+    for (SearchNode& node : nodes) {
         node.tick(0.033);
         node.runNextInstructions();
     }
@@ -141,16 +143,16 @@ void Iteration::purgeObsoleteStates() {
     if (adds >= 300 || states >= statesAfterPurge * 1.5) {
         stats.resetPurgeTimer();
         adds = 0;
-        statesBeforePurge = gameInstances.size();
+        statesBeforePurge = nodes.size();
         maxStates = max(maxStates, statesBeforePurge);
-        purge(gameInstances, [this](int purged, double progressFraction) {
+        purge(nodes, [this](int purged, double progressFraction) {
             if (!verbose || updateTimer.peek() < RENDER_INTERVAL_MS) return;
             updateTimer.silentReset();
             statesPurged = purged;
             purgeProgress = progressFraction;
             renderProgressDisplay(true);
         });
-        statesAfterPurge = gameInstances.size();
+        statesAfterPurge = nodes.size();
         states = statesAfterPurge;
         stats.updatePurgeTime();
         renderProgressDisplay();
@@ -181,7 +183,7 @@ void Iteration::renderProgressDisplay(bool purgeOngoing) {
     cerr << flush;
 }
 
-vector<GameInstance> Iteration::run() {
+vector<SearchNode> Iteration::run() {
     while (true) {
         stats.resetBranchTimer();
         addBranches();
@@ -192,8 +194,8 @@ vector<GameInstance> Iteration::run() {
         purgeObsoleteStates();
         ticks++;
     }
-    vector<GameInstance> finishedStates;
-    for (GameInstance& node : gameInstances) {
+    vector<SearchNode> finishedStates;
+    for (SearchNode& node : nodes) {
         if (progress.isFinished(node.game())) {
             finishedStates.push_back(move(node));
         }
@@ -202,10 +204,11 @@ vector<GameInstance> Iteration::run() {
 }
 
 PurchaseIteration::PurchaseIteration(
-    GameInstance node, const Progress& progress,
+    GameState st, const Progress& progress,
     const vector<vector<double>>& sacrificeStrategies, bool verbose
 )   :   Iteration(progress, verbose)
 {
+    SearchNode node = SearchNode(st);
     // If Konami code exploit isn't used, assume this is the starting game state 
     // and add some default instructions.
     // Otherwise, buy the first dimension - this is likely an unavoidable purchase.
@@ -216,105 +219,107 @@ PurchaseIteration::PurchaseIteration(
     }
     node.runNextInstructions();
     for (int i = 0; i < sacrificeStrategies.size(); i++) {
-        gameInstances.push_back(node);
+        nodes.push_back(node);
         for (double instruction : sacrificeStrategies[i]) {
-            gameInstances[i].addInstructions({108, instruction});
+            nodes[i].addInstructions({108, instruction});
         }
     }
-    states = gameInstances.size();
+    states = nodes.size();
 }
 
 void PurchaseIteration::addBranches() {
     size_t begin = 0;
-    size_t end = gameInstances.size();
+    size_t end = nodes.size();
     while (begin < end) {
         for (size_t i = begin; i < end; i++) {
-            gameInstances[i].runNextInstructions();
-            computePurchaseBranches(gameInstances[i], newGameInstances);
+            nodes[i].runNextInstructions();
+            computePurchaseBranches(nodes[i], newNodes);
         }
         appendNewStates();
         begin = end;
-        end = gameInstances.size();
+        end = nodes.size();
     }
 }
 
 ApproxSacrificeIteration::ApproxSacrificeIteration(
-    GameInstance node, const Progress& progress,
+    GameState st, const Progress& progress,
     const vector<vector<double>>& purchaseStrategies, bool verbose
 )   :   Iteration(progress, verbose)
 {
+    SearchNode node = SearchNode(st);
     for (int i = 0; i < purchaseStrategies.size(); i++) {
-        gameInstances.push_back(node);
-        gameInstances[i].addInstructions(purchaseStrategies[i]);
+        nodes.push_back(node);
+        nodes[i].addInstructions(purchaseStrategies[i]);
     }
-    states = gameInstances.size();
+    states = nodes.size();
 }
 
 void ApproxSacrificeIteration::addBranches() {
-    for (GameInstance& node : gameInstances) {
-        if (node.game().canSacrifice() && node.game().canSacBranch()) {
-            GameInstance newNode = node;
+    for (SearchNode& node : nodes) {
+        if (node.game().canSacrifice() && node.canSacBranch()) {
+            SearchNode newNode = node;
             Decimal currSac = newNode.game().sacrifice().getSacrificeBonus() * newNode.game().nextSacrificeBoost();
             Decimal prevSac = newNode.game().sacrifice().getSacrificeBonus() * 
-                Decimal::max(newNode.game().sacrifice().nextSacrificeBoost(newNode.game().getPrevAD1()), DC::D1);
+                Decimal::max(newNode.game().sacrifice().nextSacrificeBoost(newNode.getPrevAD1()), DC::D1);
             Decimal target = (currSac + prevSac) / DC::D2;
             newNode.addInstructions({Instruction::Sacrifice, target.log10value()});
             Decimal nextSac = currSac * precision;
-            newNode.game().setNextSacBranching(DC::D1);
-            node.game().setNextSacBranching(nextSac);
-            newGameInstances.push_back(move(newNode));
+            newNode.setNextSacBranching(DC::D1);
+            node.setNextSacBranching(nextSac);
+            newNodes.push_back(move(newNode));
         }
     }
     appendNewStates();
 }
 
 PreciseSacrificeIteration::PreciseSacrificeIteration(
-    GameInstance node, const Progress& progress,
+    GameState st, const Progress& progress,
     const vector<vector<double>>& purchaseStrategies, 
     const vector<vector<double>>& sacrificeStrategies, bool verbose
 )   :   Iteration(progress, verbose)
 {
+    SearchNode node = SearchNode(st);
     projectedSacrifices = sacrificeStrategies[0];
     for (int i = 0; i < purchaseStrategies.size(); i++) {
-        gameInstances.push_back(node);
-        gameInstances[i].addInstructions(purchaseStrategies[i]);
-        gameInstances[i].game().setNextSacBranching(Decimal(1, projectedSacrifices[0]) / tolerance);
+        nodes.push_back(node);
+        nodes[i].addInstructions(purchaseStrategies[i]);
+        nodes[i].setNextSacBranching(Decimal(1, projectedSacrifices[0]) / tolerance);
     }
-    states = gameInstances.size();
+    states = nodes.size();
 }
 
 void PreciseSacrificeIteration::addBranches() {
-    for (GameInstance& node : gameInstances) {
-        if (node.game().canSacrifice() && node.game().canSacBranch()) {
+    for (SearchNode& node : nodes) {
+        if (node.game().canSacrifice() && node.canSacBranch()) {
             Decimal currSac = node.game().sacrifice().getSacrificeBonus() * node.game().nextSacrificeBoost();
             Decimal prevSac = node.game().sacrifice().getSacrificeBonus() * 
-                Decimal::max(node.game().sacrifice().nextSacrificeBoost(node.game().getPrevAD1()), DC::D1);
+                Decimal::max(node.game().sacrifice().nextSacrificeBoost(node.getPrevAD1()), DC::D1);
             Decimal target = (currSac + prevSac) / DC::D2;
             if (currSac > Decimal(1, projectedSacrifices[node.game().sacrifice().getSacrificesDone()]) * tolerance) {
                 scheduleSacrifice(node, target);
             } else {
-                GameInstance newNode = node;
+                SearchNode newNode = node;
                 scheduleSacrifice(newNode, target);
                 Decimal nextSac = currSac * precision;
-                node.game().setNextSacBranching(nextSac);
-                newGameInstances.push_back(move(newNode));
+                node.setNextSacBranching(nextSac);
+                newNodes.push_back(move(newNode));
             }
         }
     }
     appendNewStates();
 }
 
-void PreciseSacrificeIteration::scheduleSacrifice(GameInstance& node, const Decimal& target) const {
+void PreciseSacrificeIteration::scheduleSacrifice(SearchNode& node, const Decimal& target) const {
     node.addInstructions({Instruction::Sacrifice, target.log10value()});
-    node.game().setNextSacBranching(
+    node.setNextSacBranching(
         Decimal(1, projectedSacrifices[node.game().sacrifice().getSacrificesDone() + 1]) / tolerance);
 }
 
-void computePurchaseBranches(GameInstance& node, vector<GameInstance>& branches) {
+void computePurchaseBranches(SearchNode& node, vector<SearchNode>& branches) {
     while (node.canBranch() && !node.queue().hasNextPurchase()) {
         vector<uint16_t> variants = node.getPurchaseBranches();
         for (int i = 1; i < variants.size(); i++) {
-            GameInstance newNode = node;
+            SearchNode newNode = node;
             newNode.addInstructions({(double) variants[i]});
             newNode.runNextInstructions();
             branches.push_back(move(newNode));
@@ -337,7 +342,7 @@ bool compare(const double* st1, const double* st2, size_t width) {
     return strictlyBetter;
 }
 
-void purge(vector<GameInstance>& nodes, const function<void(int, double)>& onProgress) {
+void purge(vector<SearchNode>& nodes, const function<void(int, double)>& onProgress) {
     int size = nodes.size();
     vector<int> indices(size);
     iota(indices.begin(), indices.end(), 0);
@@ -347,7 +352,7 @@ void purge(vector<GameInstance>& nodes, const function<void(int, double)>& onPro
     vector<double> values;
     int width = 0;
     for (int i = 0; i < size; i++) {
-        GameState& gst = nodes[indices[i]].game();
+        const GameState& gst = nodes[indices[i]].game();
         values.push_back(gst.antimatter().log10value());
         for (int d = 1; d <= 8; d++) {
             values.push_back(gst.AD()[d].getAmount().log10value());
@@ -386,7 +391,7 @@ void purge(vector<GameInstance>& nodes, const function<void(int, double)>& onPro
     for (int i = 0; i < size; i++) {
         removedOrig[indices[i]] = removedCopy[i];
     }
-    vector<GameInstance> result;
+    vector<SearchNode> result;
     int i = 0;
     for (auto stIter = nodes.begin(); stIter != nodes.end(); stIter++) {
         if (removedOrig[i] == 0) {

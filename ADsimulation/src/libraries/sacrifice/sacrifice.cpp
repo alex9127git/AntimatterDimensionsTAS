@@ -1,4 +1,5 @@
 #include "sacrifice.h"
+#include <algorithm>
 using namespace std;
 
 

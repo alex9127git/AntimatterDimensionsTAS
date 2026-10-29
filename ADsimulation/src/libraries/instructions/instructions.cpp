@@ -1,6 +1,8 @@
 #include "instructions.h"
 #include "../decimal/decimal.h"
 #include <format>
+#include <ostream>
+#include <string>
 using namespace std;
 
 

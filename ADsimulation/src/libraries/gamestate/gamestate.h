@@ -1,13 +1,12 @@
 #pragma once
-#include <cstdint>
-#include <vector>
-#include <iosfwd>
 #include "../constants/constants.h"
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
 #include "../sacrifice/sacrifice.h"
 #include "../achievements/achievements.h"
 #include "../interfaces/interfaces.h"
+#include <cstdint>
+#include <iosfwd>
 
 
 class GameState : public ISerializable {
@@ -25,11 +24,7 @@ class GameState : public ISerializable {
         // volatile, shouldn't be serialized
         
         Decimal achievementBonus = DC::D1;
-
         Decimal _antimatterThisReset = DC::D10;
-
-        Decimal prevAD1 = DC::D1;
-        Decimal nextSacrificeBranch = DC::D1;
 
         void prepare();
 
@@ -62,7 +57,6 @@ class GameState : public ISerializable {
         int64_t realTimePlayed() const {return _realTimePlayed;}
         int32_t dimensionBoosts() const {return _dimensionBoosts;}
         bool canUseKonami() const {return _canUseKonami;}
-        Decimal getPrevAD1() const {return prevAD1;}
         Decimal costOf(int tier) const {return tier == 9 ? tickspeed().getCost() : AD()[tier].getCost();}
 
         void tick(double diff);
@@ -78,16 +72,10 @@ class GameState : public ISerializable {
         // getting cached data
 
         Decimal getAchievementBonus() const;
-        
-        // brnaching methods
+
+        // reset-adjacent methods
 
         Decimal getAntimatterGoalForDimboost() const;
-        
-        void setNextSacBranching(Decimal sacValue);
-        bool canSacBranch() const;
-
-        // reset methods
-
         bool canBuyNextDimboost() const;
         bool requestDimboost();
         bool canSacrifice() const;
