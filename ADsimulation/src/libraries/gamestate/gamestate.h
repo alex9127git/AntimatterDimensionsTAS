@@ -38,8 +38,9 @@ class GameState : public ISerializable {
         Decimal nextSacrificeBranch = DC::D1;
         Decimal nextSacrificeInstruction = DC::D1;
 
+        bool validated = false;
+
         void prepare();
-        void calcPurchases();
 
         // recalculation methods
 
@@ -77,6 +78,7 @@ class GameState : public ISerializable {
         int32_t dimensionBoosts() const {return _dimensionBoosts;}
         bool canUseKonami() const {return _canUseKonami;}
         Decimal getPrevAD1() const {return prevAD1;}
+        Decimal costOf(int tier) const {return tier == 9 ? tickspeed().getCost() : AD()[tier].getCost();}
 
         void tick(double diff);
 
@@ -102,7 +104,7 @@ class GameState : public ISerializable {
 
         Decimal getAntimatterGoalForDimboost() const;
 
-        bool canBranch() const;
+        bool canBranch();
         const std::vector<uint16_t>& getPurchaseBranches() const;
         
         void setNextSacBranching(Decimal sacValue);

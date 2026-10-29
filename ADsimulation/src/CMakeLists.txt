@@ -225,6 +225,7 @@ target_sources(gamestate
     PRIVATE
         libraries/gamestate/gamestate.cpp
         libraries/gamestate/formulae.cpp
+        libraries/gamestate/search.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS
@@ -232,6 +233,7 @@ target_sources(gamestate
         FILES
             libraries/gamestate/gamestate.h
             libraries/gamestate/formulae.h
+            libraries/gamestate/search.h
 )
 target_link_libraries(gamestate
     PUBLIC

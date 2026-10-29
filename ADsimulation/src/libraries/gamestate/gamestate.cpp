@@ -1,5 +1,6 @@
 #include "gamestate.h"
 #include "formulae.h"
+#include "search.h"
 #include "../ioutils/ioutils.h"
 #include "../constants/constants.h"
 #include <fstream>
@@ -24,47 +25,9 @@ void GameState::prepare() {
         int id = Achievements::indexToId(i);
         this->unlockAchievement(id, false);
     }
-    calcPurchases();
     recalcAchievementBonus();
     recalcTickspeed();
     recalcAD();
-}
-
-void GameState::calcPurchases() {
-    allowedPurchases.clear();
-    int frontier = 1;
-    while (_AD[frontier].getPurchases() >= 10 && frontier < min(_dimensionBoosts + 4, 8)) {
-        frontier++;
-    }
-    for (int i = 1; i <= frontier; i++) {
-        if (_AD[i].getPurchases() > 10 && _AD[i].getPurchases() % 10 != 0) {
-            allowedPurchases.push_back(i);
-            return;
-        }
-    }
-    Decimal minPrice = _tickspeed.getCost();
-    for (int i = 1; i < frontier; i++) {
-        minPrice = min(_AD[i].getCost() * DC::D10, minPrice);
-    }
-    Decimal frontierPrice = _AD[frontier].getCost() * DC::D10;
-    if (frontierPrice > DC::D0_2 * minPrice) {
-        if (_tickspeed.getCost() == minPrice) allowedPurchases.push_back(9);
-        for (int i = 1; i < frontier; i++) {
-            if (_AD[i].getCost() * DC::D10 == minPrice) allowedPurchases.push_back(i);
-        }
-    }
-    if (frontierPrice < DC::D20 * minPrice) {
-        allowedPurchases.push_back(frontier);
-    }
-    stable_sort(allowedPurchases.begin(), allowedPurchases.end(),
-        [&](uint16_t a, uint16_t b) {
-            Decimal a_cost = a == 9 ? _tickspeed.getCost() : _AD[a].getCost();
-            Decimal b_cost = b == 9 ? _tickspeed.getCost() : _AD[b].getCost();
-            return a_cost < b_cost;
-        }
-    );
-    int minPurchase = allowedPurchases.front();
-    nextPurchaseCost = minPurchase == 9 ? _tickspeed.getCost() : _AD[minPurchase].getCost();
 }
 
 void GameState::recalcAD() {
@@ -145,7 +108,6 @@ bool GameState::buyOneDimension(int tier) {
             recalcAD(tier);
         }
         unlockAchievement(10 + tier, true);
-        calcPurchases();
         if (tier == 2) {
             _tickspeed.unlock();
         }
@@ -169,7 +131,6 @@ bool GameState::buyTickspeed() {
         _antimatter -= _tickspeed.getCost();
         _tickspeed.onPurchase();
         recalcTickspeed();
-        calcPurchases();
         return true;
     }
     return false;
@@ -210,9 +171,11 @@ void GameState::clearAllInstructions() {
 void GameState::runNextInstructions() {
     while (queue().hasNextPurchase() && this->runInstruction(queue().peekNextPurchase())) {
         instructionQueue.completePurchase();
+        validated = false;
     }
     while (queue().hasNextSacrifice() && this->runSacInstruction()) {
         instructionQueue.completeSacrifice();
+        validated = false;
         if (queue().hasNextSacrifice()) {
             this->nextSacrificeInstruction = _sacrifice.getReqForSac(Decimal(1, queue().peekNextSacrifice()));
         }
@@ -227,7 +190,12 @@ Decimal GameState::getAntimatterGoalForDimboost() const {
     return dimNeeded.getInitialCost() * Decimal::pow(dimNeeded.getScaling(), scalingNeeded) * Decimal(highPurchases);
 }
 
-bool GameState::canBranch() const {
+bool GameState::canBranch() {
+    if (!validated) {
+        allowedPurchases = computeAllowedPurchases(*this);
+        nextPurchaseCost = costOf(allowedPurchases.front());
+        validated = true;
+    }
     return this->_antimatter >= this->nextPurchaseCost;
 }
 
