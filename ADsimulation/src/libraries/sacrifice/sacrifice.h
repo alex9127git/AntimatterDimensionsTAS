@@ -1,7 +1,7 @@
 #pragma once
-#include "../decimal/decimal.h"
-#include "../constants/constants.h"
-#include "../interfaces/interfaces.h"
+#include "interfaces.h"
+#include "constants.h"
+#include "decimal.h"
 
 
 class Sacrifice : public ISerializable {

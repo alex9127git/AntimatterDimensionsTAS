@@ -1,7 +1,7 @@
 #include "instructions.h"
-#include "../decimal/decimal.h"
-#include <format>
+#include "decimal.h"
 #include <ostream>
+#include <format>
 #include <string>
 using namespace std;
 

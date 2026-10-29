@@ -1,5 +1,5 @@
 #pragma once
-#include "../decimal/decimal.h"
+#include "decimal.h"
 #include <functional>
 #include <vector>
 

@@ -1,7 +1,7 @@
 #pragma once
+#include "interfaces.h"
+#include "decimal.h"
 #include <cstdint>
-#include "../decimal/decimal.h"
-#include "../interfaces/interfaces.h"
 #include <vector>
 
 

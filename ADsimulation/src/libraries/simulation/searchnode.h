@@ -1,8 +1,8 @@
 #pragma once
-#include "../gameinstance/gameinstance.h"
-#include "../constants/constants.h"
-#include <vector>
+#include "gameinstance.h"
+#include "constants.h"
 #include <cstdint>
+#include <vector>
 
 
 class SearchNode {

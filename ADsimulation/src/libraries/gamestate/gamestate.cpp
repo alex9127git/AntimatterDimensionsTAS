@@ -1,10 +1,10 @@
 #include "gamestate.h"
 #include "formulae.h"
-#include "../ioutils/ioutils.h"
+#include "ioutils.h"
 #include <algorithm>
-#include <cmath>
 #include <string>
 #include <format>
+#include <cmath>
 using namespace std;
 
 

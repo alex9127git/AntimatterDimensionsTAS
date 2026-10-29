@@ -1,9 +1,9 @@
+#include "decimal.h"
+#include <stdexcept>
 #include <iostream>
 #include <string>
 #include <format>
 #include <cmath>
-#include <stdexcept>
-#include "decimal.h"
 using namespace std;
 
 

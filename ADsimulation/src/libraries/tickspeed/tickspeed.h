@@ -1,7 +1,7 @@
 #pragma once
+#include "interfaces.h"
+#include "decimal.h"
 #include <cstdint>
-#include "../interfaces/interfaces.h"
-#include "../decimal/decimal.h"
 
 
 class Tickspeed : public ISerializable {

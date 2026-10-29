@@ -1,12 +1,12 @@
 #undef NDEBUG
-#include "../libraries/ioutils/ioutils.h"
-#include "../libraries/decimal/decimal.h"
-#include "../libraries/constants/constants.h"
-#include "../libraries/gameinstance/gameinstance.h"
-#include "../libraries/simulation/simulation.h"
-#include <cmath>
+#include "gameinstance.h"
+#include "simulation.h"
+#include "constants.h"
+#include "ioutils.h"
+#include "decimal.h"
 #include <iostream>
 #include <cassert>
+#include <cmath>
 #include <omp.h>
 using namespace std;
 

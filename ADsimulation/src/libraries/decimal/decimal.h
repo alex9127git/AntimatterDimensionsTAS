@@ -1,6 +1,6 @@
 #pragma once
+#include "interfaces.h"
 #include <cstdint>
-#include "../interfaces/interfaces.h"
 #include <iosfwd>
 #include <string>
 

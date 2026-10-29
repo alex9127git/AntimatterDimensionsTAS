@@ -1,6 +1,6 @@
 #pragma once
+#include "decimal.h"
 #include <cstdint>
-#include "../decimal/decimal.h"
 
 
 struct DC {

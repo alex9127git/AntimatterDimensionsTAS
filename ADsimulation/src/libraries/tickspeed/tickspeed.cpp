@@ -1,5 +1,5 @@
 #include "tickspeed.h"
-#include "../constants/constants.h"
+#include "constants.h"
 
 
 Tickspeed::Tickspeed() 

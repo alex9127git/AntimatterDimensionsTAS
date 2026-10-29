@@ -1,9 +1,10 @@
-#include <cmath>
+#include "dimensions.h"
+#include "tickspeed.h"
+#include "constants.h"
 #include <algorithm>
 #include <ostream>
 #include <string>
-#include "dimensions.h"
-#include "../constants/constants.h"
+#include <cmath>
 using namespace std;
 
 

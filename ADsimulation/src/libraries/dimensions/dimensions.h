@@ -2,9 +2,11 @@
 #include <cstdint>
 #include <iosfwd>
 #include <vector>
-#include "../decimal/decimal.h"
-#include "../tickspeed/tickspeed.h"
-#include "../interfaces/interfaces.h"
+#include "decimal.h"
+#include "interfaces.h"
+
+
+class Tickspeed;
 
 
 class Dimension : public ISerializable {

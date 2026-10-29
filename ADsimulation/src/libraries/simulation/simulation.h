@@ -1,7 +1,7 @@
 #pragma once
 #include "searchnode.h"
-#include <iostream>
 #include <functional>
+#include <iostream>
 #include <chrono>
 #include <vector>
 

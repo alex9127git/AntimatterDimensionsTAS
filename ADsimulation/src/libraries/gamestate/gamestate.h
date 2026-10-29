@@ -1,10 +1,10 @@
 #pragma once
-#include "../constants/constants.h"
-#include "../dimensions/dimensions.h"
-#include "../tickspeed/tickspeed.h"
-#include "../sacrifice/sacrifice.h"
-#include "../achievements/achievements.h"
-#include "../interfaces/interfaces.h"
+#include "achievements.h"
+#include "interfaces.h"
+#include "dimensions.h"
+#include "tickspeed.h"
+#include "sacrifice.h"
+#include "constants.h"
 #include <cstdint>
 #include <iosfwd>
 

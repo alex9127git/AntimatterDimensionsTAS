@@ -1,8 +1,8 @@
-#include "formulae.h"
 #include "gamestate.h"
-#include "../constants/constants.h"
-#include <cmath>
+#include "constants.h"
+#include "formulae.h"
 #include <algorithm>
+#include <cmath>
 using namespace std;
 
 

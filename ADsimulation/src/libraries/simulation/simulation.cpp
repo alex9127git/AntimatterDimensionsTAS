@@ -1,7 +1,7 @@
+#include "instructions.h"
 #include "simulation.h"
-#include "../ioutils/ioutils.h"
-#include "../constants/constants.h"
-#include "../instructions/instructions.h"
+#include "constants.h"
+#include "ioutils.h"
 #include <algorithm>
 #include <cstdint>
 #include <numeric>

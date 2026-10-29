@@ -1,7 +1,7 @@
 #pragma once
-#include "../gamestate/gamestate.h"
-#include "../constants/constants.h"
-#include "../instructions/instructions.h"
+#include "instructions.h"
+#include "gamestate.h"
+#include "constants.h"
 #include <vector>
 
 

@@ -29,47 +29,6 @@ FetchContent_MakeAvailable(nlohmann_json)
 
 find_package(OpenMP REQUIRED)
 
-add_executable(main)
-target_sources(main 
-    PRIVATE 
-        main.cpp
-)
-target_link_libraries(main
-    PRIVATE
-        ioutils
-        simulation
-        gameinstance
-        OpenMP::OpenMP_CXX
-)
-
-add_executable(custom)
-target_sources(custom 
-    PRIVATE 
-        customRun.cpp
-)
-target_link_libraries(custom
-    PRIVATE
-        ioutils
-        simulation
-        gameinstance
-        OpenMP::OpenMP_CXX
-)
-
-add_executable(testing)
-target_sources(testing 
-    PRIVATE 
-        tests/test.cpp
-)
-target_link_libraries(testing
-    PRIVATE
-        ioutils
-        decimal
-        constants
-        simulation
-        gameinstance
-        OpenMP::OpenMP_CXX
-)
-
 add_library(interfaces INTERFACE)
 target_sources(interfaces
     INTERFACE
@@ -82,22 +41,6 @@ target_sources(interfaces
 target_link_libraries(interfaces
     INTERFACE
         nlohmann_json::nlohmann_json
-)
-
-add_library(instructions)
-target_sources(instructions 
-    PRIVATE 
-        libraries/instructions/instructions.cpp
-    PUBLIC
-        FILE_SET HEADERS
-        BASE_DIRS
-            libraries/instructions
-        FILES
-            libraries/instructions/instructions.h
-)
-target_link_libraries(instructions
-    PRIVATE
-        decimal
 )
 
 add_library(ioutils)
@@ -128,6 +71,22 @@ target_link_libraries(decimal
         interfaces
 )
 
+add_library(instructions)
+target_sources(instructions 
+    PRIVATE 
+        libraries/instructions/instructions.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/instructions
+        FILES
+            libraries/instructions/instructions.h
+)
+target_link_libraries(instructions
+    PRIVATE
+        decimal
+)
+
 add_library(constants INTERFACE)
 target_sources(constants
     INTERFACE
@@ -140,26 +99,6 @@ target_sources(constants
 target_link_libraries(constants
     INTERFACE
         decimal
-)
-
-add_library(dimensions)
-target_sources(dimensions
-    PRIVATE
-        libraries/dimensions/dimensions.cpp
-    PUBLIC
-        FILE_SET HEADERS
-        BASE_DIRS
-            libraries/dimensions
-        FILES
-            libraries/dimensions/dimensions.h
-)
-target_link_libraries(dimensions
-    PUBLIC
-        decimal
-        tickspeed
-        interfaces
-    PRIVATE
-        constants
 )
 
 add_library(tickspeed)
@@ -175,9 +114,29 @@ target_sources(tickspeed
 )
 target_link_libraries(tickspeed
     PUBLIC
-        decimal
         interfaces
+        decimal
     PRIVATE
+        constants
+)
+
+add_library(dimensions)
+target_sources(dimensions
+    PRIVATE
+        libraries/dimensions/dimensions.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/dimensions
+        FILES
+            libraries/dimensions/dimensions.h
+)
+target_link_libraries(dimensions
+    PUBLIC
+        interfaces
+        decimal
+    PRIVATE
+        tickspeed
         constants
 )
 
@@ -194,9 +153,9 @@ target_sources(sacrifice
 )
 target_link_libraries(sacrifice
     PUBLIC
-        decimal
-        constants
         interfaces
+        constants
+        decimal
 )
 
 add_library(achievements)
@@ -212,8 +171,8 @@ target_sources(achievements
 )
 target_link_libraries(achievements
     PUBLIC
-        decimal
         interfaces
+        decimal
     PRIVATE
         constants
 )
@@ -233,12 +192,13 @@ target_sources(gamestate
 )
 target_link_libraries(gamestate
     PUBLIC
-        constants
-        dimensions
-        tickspeed
         achievements
-        sacrifice
+        dimensions
         interfaces
+        constants
+        tickspeed
+        sacrifice
+        decimal
     PRIVATE
         ioutils
 )
@@ -256,8 +216,9 @@ target_sources(gameinstance
 )
 target_link_libraries(gameinstance
     PUBLIC
-        gamestate
         instructions
+        gamestate
+        constants
 )
 
 add_library(simulation)
@@ -276,8 +237,50 @@ target_sources(simulation
 target_link_libraries(simulation
     PUBLIC
         gameinstance
-    PRIVATE
-        ioutils
         constants
+    PRIVATE
         OpenMP::OpenMP_CXX
+        instructions
+        ioutils
+)
+
+add_executable(main)
+target_sources(main 
+    PRIVATE 
+        main.cpp
+)
+target_link_libraries(main
+    PRIVATE
+        OpenMP::OpenMP_CXX
+        gameinstance
+        simulation
+        ioutils
+)
+
+add_executable(custom)
+target_sources(custom 
+    PRIVATE 
+        customRun.cpp
+)
+target_link_libraries(custom
+    PRIVATE
+        OpenMP::OpenMP_CXX
+        gameinstance
+        simulation
+        ioutils
+)
+
+add_executable(testing)
+target_sources(testing 
+    PRIVATE 
+        tests/test.cpp
+)
+target_link_libraries(testing
+    PRIVATE
+        OpenMP::OpenMP_CXX
+        gameinstance
+        simulation
+        constants
+        ioutils
+        decimal
 )
