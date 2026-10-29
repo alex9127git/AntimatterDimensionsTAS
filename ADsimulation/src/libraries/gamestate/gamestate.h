@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <vector>
 #include <iosfwd>
-#include "../instructions/instructions.h"
 #include "../constants/constants.h"
 #include "../dimensions/dimensions.h"
 #include "../tickspeed/tickspeed.h"
@@ -29,16 +28,8 @@ class GameState : public ISerializable {
 
         Decimal _antimatterThisReset = DC::D10;
 
-        InstructionQueue instructionQueue;
-
-        Decimal nextPurchaseCost = DC::D0;
-        std::vector<uint16_t> allowedPurchases;
-
         Decimal prevAD1 = DC::D1;
         Decimal nextSacrificeBranch = DC::D1;
-        Decimal nextSacrificeInstruction = DC::D1;
-
-        bool validated = false;
 
         void prepare();
 
@@ -52,11 +43,6 @@ class GameState : public ISerializable {
         // checks
 
         bool checkUnlockCondition(int id) const;
-
-        // runner methods
-
-        bool runInstruction(uint16_t instruction);
-        bool runSacInstruction();
 
     public:
         GameState();
@@ -73,7 +59,6 @@ class GameState : public ISerializable {
         const Tickspeed& tickspeed() const {return _tickspeed;}
         const Achievements& achievements() const {return _achievements;}
         const Sacrifice& sacrifice() const {return _sacrifice;}
-        const InstructionQueue& queue() const {return instructionQueue;}
         int64_t realTimePlayed() const {return _realTimePlayed;}
         int32_t dimensionBoosts() const {return _dimensionBoosts;}
         bool canUseKonami() const {return _canUseKonami;}
@@ -93,19 +78,10 @@ class GameState : public ISerializable {
         // getting cached data
 
         Decimal getAchievementBonus() const;
-
-        // instruction methods
-
-        void addInstructions(const std::vector<double>& instructions);
-        void clearAllInstructions();
-        void runNextInstructions();
         
         // brnaching methods
 
         Decimal getAntimatterGoalForDimboost() const;
-
-        bool canBranch();
-        const std::vector<uint16_t>& getPurchaseBranches() const;
         
         void setNextSacBranching(Decimal sacValue);
         bool canSacBranch() const;

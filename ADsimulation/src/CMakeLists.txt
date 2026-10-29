@@ -37,9 +37,8 @@ target_sources(main
 target_link_libraries(main
     PRIVATE
         ioutils
-        gamestate
         simulation
-        instructions
+        gameinstance
         OpenMP::OpenMP_CXX
 )
 
@@ -51,9 +50,8 @@ target_sources(custom
 target_link_libraries(custom
     PRIVATE
         ioutils
-        gamestate
         simulation
-        instructions
+        gameinstance
         OpenMP::OpenMP_CXX
 )
 
@@ -67,8 +65,8 @@ target_link_libraries(testing
         ioutils
         decimal
         constants
-        gamestate
         simulation
+        gameinstance
         OpenMP::OpenMP_CXX
 )
 
@@ -225,7 +223,6 @@ target_sources(gamestate
     PRIVATE
         libraries/gamestate/gamestate.cpp
         libraries/gamestate/formulae.cpp
-        libraries/gamestate/search.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS
@@ -233,11 +230,9 @@ target_sources(gamestate
         FILES
             libraries/gamestate/gamestate.h
             libraries/gamestate/formulae.h
-            libraries/gamestate/search.h
 )
 target_link_libraries(gamestate
     PUBLIC
-        instructions
         constants
         dimensions
         tickspeed
@@ -246,6 +241,25 @@ target_link_libraries(gamestate
         interfaces
     PRIVATE
         ioutils
+)
+
+add_library(gameinstance)
+target_sources(gameinstance
+    PRIVATE
+        libraries/gameinstance/gameinstance.cpp
+        libraries/gameinstance/search.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/gameinstance
+        FILES
+            libraries/gameinstance/gameinstance.h
+            libraries/gameinstance/search.h
+)
+target_link_libraries(gameinstance
+    PUBLIC
+        gamestate
+        instructions
 )
 
 add_library(simulation)
@@ -261,7 +275,7 @@ target_sources(simulation
 )
 target_link_libraries(simulation
     PUBLIC
-        gamestate
+        gameinstance
     PRIVATE
         ioutils
         constants

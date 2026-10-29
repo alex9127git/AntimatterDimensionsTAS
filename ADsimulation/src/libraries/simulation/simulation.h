@@ -1,5 +1,5 @@
 #pragma once
-#include "../gamestate/gamestate.h"
+#include "../gameinstance/gameinstance.h"
 #include <iostream>
 #include <algorithm>
 #include <functional>
@@ -106,8 +106,8 @@ class Iteration {
         Progress progress;
         bool verbose;
         
-        std::vector<GameState> gameStates;
-        std::vector<GameState> newGameStates;
+        std::vector<GameInstance> gameInstances;
+        std::vector<GameInstance> newGameInstances;
         Stats stats;
         bool isFinished = false;
         int ticks = 0;
@@ -134,7 +134,7 @@ class Iteration {
     public:
         Iteration(const Progress& _progress, bool _verbose);
 
-        std::vector<GameState> run();
+        std::vector<GameInstance> run();
 };
 
 class PurchaseIteration : public Iteration {
@@ -143,7 +143,7 @@ class PurchaseIteration : public Iteration {
 
     public:
         PurchaseIteration(
-            GameState st, const Progress& progress,
+            GameInstance st, const Progress& progress,
             const std::vector<std::vector<double>>& sacrificeStrategies, bool verbose
         );
 };
@@ -156,7 +156,7 @@ class ApproxSacrificeIteration : public Iteration {
 
     public:
         ApproxSacrificeIteration(
-            GameState st, const Progress& progress,
+            GameInstance st, const Progress& progress,
             const std::vector<std::vector<double>>& purchaseStrategies, bool verbose
         );
 };
@@ -168,20 +168,20 @@ class PreciseSacrificeIteration : public Iteration {
         std::vector<double> projectedSacrifices;
 
         void addBranches() override;
-        void scheduleSacrifice(GameState& st, const Decimal& target) const;
+        void scheduleSacrifice(GameInstance& st, const Decimal& target) const;
 
     public:
         PreciseSacrificeIteration(
-            GameState st, const Progress& progress,
+            GameInstance st, const Progress& progress,
             const std::vector<std::vector<double>>& purchaseStrategies, 
             const std::vector<std::vector<double>>& sacrificeStrategies, bool verbose
         );
 };
 
-GameState runDimboost(GameState st, bool useSacrifice, bool verbose=true);
-GameState runUntil(GameState st, const Progress& progress, bool useSacrifice, bool verbose);
+GameInstance runDimboost(GameInstance st, bool useSacrifice, bool verbose=true);
+GameInstance runUntil(GameInstance st, const Progress& progress, bool useSacrifice, bool verbose);
 
-void computePurchaseBranches(GameState& gameState, std::vector<GameState>& branches);
+void computePurchaseBranches(GameInstance& node, std::vector<GameInstance>& branches);
 
 bool compare(const double* st1, const double* st2, size_t width);
-void purge(std::vector<GameState>& gamestates, const std::function<void(int, double)>& onProgress={});
+void purge(std::vector<GameInstance>& nodes, const std::function<void(int, double)>& onProgress={});

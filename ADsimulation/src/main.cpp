@@ -2,9 +2,8 @@
 #include <fstream>
 #include "omp.h"
 #include "libraries/ioutils/ioutils.h"
-#include "libraries/gamestate/gamestate.h"
 #include "libraries/simulation/simulation.h"
-#include "libraries/instructions/instructions.h"
+#include "libraries/gameinstance/gameinstance.h"
 
 using namespace std;
 
@@ -20,7 +19,7 @@ int main(int argc, char* argv[]) {
     string cmdOutFile;
     bool saveCommands = true;
 
-    GameState gameState;
+    GameInstance instance;
     json j;
     ifstream in;
     ofstream save_out;
@@ -53,7 +52,7 @@ int main(int argc, char* argv[]) {
     if (!inputFile.empty()) {
         in = ifstream(inputFile);
         in >> j;
-        gameState = GameState(j);
+        instance = GameInstance(j);
     } else {
         cout << "Input filename not specified, will use starting game state instead." << endl;
     }
@@ -66,7 +65,7 @@ int main(int argc, char* argv[]) {
         saveCommands = false;
     }
     bool useSacrifice = false;
-    if (gameState.dimensionBoosts() >= 5) {
+    if (instance.game().dimensionBoosts() >= 5) {
         cout << "Input game state has 5 dimension boosts or more. Do you want to use sacrifice? [Y/n] ";
         char confirmation = getchar();
         switch (confirmation) {
@@ -87,14 +86,14 @@ int main(int argc, char* argv[]) {
     }
     
     vector<double> instructions;
-    gameState = runDimboost(gameState, useSacrifice);
+    instance = runDimboost(instance, useSacrifice);
     cout << "Finished simulation; dumping result game state into " << outputFile << endl;
     save_out = ofstream(outputFile);
-    save_out << gameState.to_json();
+    save_out << instance.game().to_json();
     if (saveCommands) {
         cout << "Dumping command sequence into " << cmdOutFile << endl;
         cmd_out = ofstream(cmdOutFile);
-        writeInstructions(cmd_out, gameState.queue());
+        writeInstructions(cmd_out, instance.queue());
     }
     return 0;
 };

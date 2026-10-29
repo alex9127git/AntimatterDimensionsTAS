@@ -1,8 +1,6 @@
 #include "gamestate.h"
 #include "formulae.h"
-#include "search.h"
 #include "../ioutils/ioutils.h"
-#include "../constants/constants.h"
 #include <fstream>
 #include <algorithm>
 #include <cmath>
@@ -49,25 +47,6 @@ void GameState::recalcAchievementBonus() {
 
 bool GameState::checkUnlockCondition(int id) const {
     return AchConstants::unlockConditions[Achievements::idToIndex(id)](*this);
-}
-
-bool GameState::runInstruction(uint16_t instruction) {
-    if (Instruction::isDimension(instruction)) {
-        return this->buyOneDimension(instruction);
-    } else if (instruction == Instruction::TickspeedSingle) {
-        return this->buyTickspeed();
-    } else if (instruction == Instruction::DimensionBoost) {
-        return this->requestDimboost();
-    } else if (instruction == Instruction::KonamiCode) {
-        return this->handleKonamiCode();
-    } else {
-        return false;
-    }
-}
-
-bool GameState::runSacInstruction() {
-    if (this->_AD[1].getAmount() < this->nextSacrificeInstruction) return false;
-    return sacrificeReset();
 }
 
 ostream& operator<<(ostream& os, const GameState& st) {
@@ -157,50 +136,12 @@ Decimal GameState::getAchievementBonus() const {
     return this->achievementBonus;
 }
 
-void GameState::addInstructions(const vector<double>& instructions) {
-    instructionQueue.add(instructions);
-    if (queue().hasNextSacrifice()) {
-        this->nextSacrificeInstruction = _sacrifice.getReqForSac(Decimal(1, queue().peekNextSacrifice()));
-    }
-}
-
-void GameState::clearAllInstructions() {
-    this->instructionQueue.clearAllInstructions();
-}
-
-void GameState::runNextInstructions() {
-    while (queue().hasNextPurchase() && this->runInstruction(queue().peekNextPurchase())) {
-        instructionQueue.completePurchase();
-        validated = false;
-    }
-    while (queue().hasNextSacrifice() && this->runSacInstruction()) {
-        instructionQueue.completeSacrifice();
-        validated = false;
-        if (queue().hasNextSacrifice()) {
-            this->nextSacrificeInstruction = _sacrifice.getReqForSac(Decimal(1, queue().peekNextSacrifice()));
-        }
-    }
-}
-
 Decimal GameState::getAntimatterGoalForDimboost() const {
     const Dimension& dimNeeded = this->_AD[min(8, 4 + _dimensionBoosts)];
     int dimAmountRequied = 20 + 15 * max(0, _dimensionBoosts - 4);
     int scalingNeeded = ceil(dimAmountRequied / 10.0) - 1;
     int highPurchases = dimAmountRequied % 10 + (dimAmountRequied % 10 == 0 ? 10 : 0);
     return dimNeeded.getInitialCost() * Decimal::pow(dimNeeded.getScaling(), scalingNeeded) * Decimal(highPurchases);
-}
-
-bool GameState::canBranch() {
-    if (!validated) {
-        allowedPurchases = computeAllowedPurchases(*this);
-        nextPurchaseCost = costOf(allowedPurchases.front());
-        validated = true;
-    }
-    return this->_antimatter >= this->nextPurchaseCost;
-}
-
-const vector<uint16_t>& GameState::getPurchaseBranches() const {
-    return this->allowedPurchases;
 }
 
 void GameState::setNextSacBranching(Decimal sacValue) {

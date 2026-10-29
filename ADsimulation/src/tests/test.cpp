@@ -4,9 +4,9 @@
 #include <cassert>
 #include "omp.h"
 #include "../libraries/ioutils/ioutils.h"
-#include "../libraries/constants/constants.h"
 #include "../libraries/decimal/decimal.h"
-#include "../libraries/gamestate/gamestate.h"
+#include "../libraries/constants/constants.h"
+#include "../libraries/gameinstance/gameinstance.h"
 #include "../libraries/simulation/simulation.h"
 #include <cmath>
 using namespace std;
@@ -114,27 +114,27 @@ int main() {
     cout << "All math tests passed" << endl << endl;
 
     cout << "Started game state tests" << endl;
-    GameState gameState = GameState();
+    GameInstance instance = GameInstance();
 
     cout << "Checking default state assertions" << endl;
-    gameState.buyDimUntil10(2);
-    gameState.buyTickspeed();
+    instance.game().buyDimUntil10(2);
+    instance.game().buyTickspeed();
 
-    assert(gameState.AD()[2].getPurchases() == 0);
-    assert(gameState.tickspeed().getPurchases() == 0);
-    assert(gameState.getAchievementBonus() == Decimal::pow(DC::D1_03, 4));
+    assert(instance.game().AD()[2].getPurchases() == 0);
+    assert(instance.game().tickspeed().getPurchases() == 0);
+    assert(instance.game().getAchievementBonus() == Decimal::pow(DC::D1_03, 4));
     cout << "Assertions checked; entering fixed order check" << endl;
 
-    gameState = GameState();
-    gameState.addInstructions({
+    instance = GameInstance();
+    instance.addInstructions({
         11, 130, 19, 20, 91, 32, 91, 38, 10, 91, 41, 91, 49, 91, 20, 91, 10, 91, 30, 91, 20, 10, 92, 40
     });
-    gameState.runNextInstructions();
-    while (!gameState.canBuyNextDimboost()) {
-        gameState.tick(0.033);
-        gameState.runNextInstructions();
+    instance.runNextInstructions();
+    while (!instance.game().canBuyNextDimboost()) {
+        instance.tick(0.033);
+        instance.runNextInstructions();
     }
-    assert(gameState.realTimePlayed() == 1080816);
+    assert(instance.game().realTimePlayed() == 1080816);
     cout << "Fixed order check done; time taken is optimal" << endl;
 
     json save = {
@@ -145,7 +145,7 @@ int main() {
         {"dimensionBoosts",5},
         {"realTimePlayed",5307522}
     };
-    gameState = GameState(save);
+    instance = GameInstance(save);
     // gameState.addInstructions({
     //     10, 20, 91, 31, 91, 39, 91, 10, 91, 40, 91, 20, 91, 10, 91, 50, 91, 30, 91, 20, 10, 92, 40,
     //     60, 91, 10, 91, 30, 20, 92, 10, 91, 70, 50, 91, 20, 40, 91, 30, 10, 92, 20, 91, 10, 91, 60,
@@ -155,7 +155,7 @@ int main() {
     //     10, 91, 60, 80, 91, 70, 40, 30, 20, 91, 10, 92, 50, 91, 20, 10, 91, 30, 91, 40, 91, 10,
     //     91, 20, 91, 60, 91, 30, 10, 50, 91, 40, 91, 20, 70, 91, 10, 85
     // });
-    gameState.addInstructions({
+    instance.addInstructions({
         10, 20, 91, 31, 91, 39, 10, 92, 40, 91, 20, 91, 10, 91, 50, 91, 30, 91, 20, 10, 92, 40,
         60, 91, 10, 91, 30, 20, 92, 10, 91, 70, 50, 91, 40, 20, 91, 30, 10, 92, 20, 91, 10, 91, 60,
         80, 108, log10(3.588), 91, 40, 30, 91, 50, 10, 91, 20, 92, 10, 91, 30, 91, 70, 40, 20, 91, 10,
@@ -164,24 +164,24 @@ int main() {
         10, 91, 60, 80, 91, 70, 40, 30, 20, 91, 10, 92, 50, 91, 20, 10, 91, 30, 91, 40, 91, 10,
         91, 20, 91, 60, 91, 30, 10, 50, 91, 40, 91, 20, 70, 91, 10, 85
     });
-    gameState.runNextInstructions();
-    while (!gameState.canBuyNextDimboost()) {
-        gameState.tick(0.033);
-        gameState.runNextInstructions();
+    instance.runNextInstructions();
+    while (!instance.game().canBuyNextDimboost()) {
+        instance.tick(0.033);
+        instance.runNextInstructions();
     }
     vector<double> instructions;
-    instructions = gameState.queue().getCompletedPurchases();
+    instructions = instance.queue().getCompletedPurchases();
     for (double instruction : instructions) {
         cout << instruction << " ";
     }
     cout << endl;
-    instructions = gameState.queue().getCompletedSacrifices();
+    instructions = instance.queue().getCompletedSacrifices();
     for (double instruction : instructions) {
         cout << instruction << " ";
     }
     cout << endl;
-    assert(gameState.queue().getCompletedSacrifices().size() == 2);
-    assert(gameState.realTimePlayed() == 6547035);
+    assert(instance.queue().getCompletedSacrifices().size() == 2);
+    assert(instance.game().realTimePlayed() == 6547035);
     cout << "Fixed order check 2 done; time taken is optimal" << endl << endl;
     
     save = {
@@ -192,8 +192,8 @@ int main() {
         {"dimensionBoosts",8},
         {"realTimePlayed",0}
     };
-    gameState = GameState(save);
-    gameState.addInstructions({
+    instance = GameInstance(save);
+    instance.addInstructions({
         10, 20, 91, 35, 91, 35, 91, 10, 91, 40, 91, 20, 10, 92, 50, 91, 30, 91, 20, 10, 92, 40, 60, 91, 10,
         91, 30, 20, 92, 10, 91, 70, 50, 91, 20, 40, 91, 30, 10, 93, 20, 10, 91, 80, 60, 91, 30, 40, 91, 50,
         10, 91, 20, 92, 10, 91, 30, 91, 70, 40, 20, 91, 10, 92, 60, 50, 91, 30, 20, 10, 92, 40, 91, 10, 91,
@@ -206,22 +206,22 @@ int main() {
         40, 91, 30, 10, 91, 20, 92, 10, 91, 60, 50, 80, 91, 70, 40, 30, 20, 91, 10, 93, 20, 10, 91, 30, 91,
         40, 91, 50, 10, 91, 20, 60, 92, 30, 10, 91, 40, 91, 20, 70, 91, 10, 91, 80
     });
-    gameState.runNextInstructions();
-    while (!gameState.canBuyNextDimboost()) {
-        gameState.tick(0.033);
-        gameState.runNextInstructions();
+    instance.runNextInstructions();
+    while (!instance.game().canBuyNextDimboost()) {
+        instance.tick(0.033);
+        instance.runNextInstructions();
     }
-    cout << gameState << endl;
+    cout << instance.game() << endl;
 
     cout << "Starting test simulation" << endl;
-    gameState = GameState();
-    gameState = runDimboost(gameState, true, true);
-    instructions = gameState.queue().getCompletedPurchases();
+    instance = GameInstance();
+    instance = runDimboost(instance, true, true);
+    instructions = instance.queue().getCompletedPurchases();
     for (double instruction : instructions) {
         cout << instruction << " ";
     }
     cout << endl;
-    assert(gameState.realTimePlayed() == 1080816);
+    assert(instance.game().realTimePlayed() == 1080816);
     cout << "Time taken is optimal" << endl;
     cout << "All game state tests passed" << endl << endl;
 
@@ -230,10 +230,10 @@ int main() {
     json j = a.to_json();
     b = Decimal(j);
     assert(a == b);
-    j = gameState.to_json();
-    GameState gsCopy = GameState(j);
-    assert(gsCopy.realTimePlayed() == gameState.realTimePlayed());
-    assert(gsCopy.getAchievementBonus() == gameState.getAchievementBonus());
+    j = instance.game().to_json();
+    GameInstance insCopy = GameInstance(j);
+    assert(insCopy.game().realTimePlayed() == instance.game().realTimePlayed());
+    assert(insCopy.game().getAchievementBonus() == instance.game().getAchievementBonus());
     cout << "All serialization tests passed" << endl << endl;
 
     cout << "All tests passed" << endl;
