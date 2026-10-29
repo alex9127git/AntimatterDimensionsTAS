@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <cassert>
+#include "omp.h"
 #include "../libraries/ioutils/ioutils.h"
 #include "../libraries/constants/constants.h"
 #include "../libraries/decimal/decimal.h"
@@ -12,6 +13,7 @@ using namespace std;
 
 
 int main() {
+    omp_set_num_threads(1);
     enableAnsiEscapes();
     Decimal a = DC::D0;
     Decimal b = DC::D0;

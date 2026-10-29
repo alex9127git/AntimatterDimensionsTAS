@@ -100,24 +100,27 @@ void Iteration::checkProgress() {
     stats.resetCheckTimer();
     bool doRender = updateTimer.peek() > RENDER_INTERVAL_MS && verbose;
     if (doRender) updateTimer.silentReset();
-    GameState* bestState = &gameStates[0];
+    bool anyFinished = false;
+    #pragma omp parallel for if(gameStates.size() > PARALLEL_THRESHOLD) reduction(||:anyFinished)
     for (GameState& gst : gameStates) {
         gst.runNextInstructions();
-        if (progress.isFinished(gst)) {
-            if (verbose && !isFinished) {
-                progress.finish();
-                renderProgressDisplay();
-                stats.printStats(maxStates);
-            }
-            isFinished = true;
+        anyFinished = anyFinished || progress.isFinished(gst);
+    }
+    if (anyFinished) {
+        if (verbose && !isFinished) {
+            progress.finish();
+            renderProgressDisplay();
+            stats.printStats(maxStates);
         }
-        if (doRender) {
+        isFinished = true;
+    }
+    if (!isFinished && doRender) {
+        GameState* bestState = &gameStates[0];
+        for (GameState& gst : gameStates) {
             if (gst.antimatterThisReset() > bestState->antimatterThisReset()) {
                 bestState = &gst;
             }
         }
-    }
-    if (!isFinished && doRender) {
         progress.update(*bestState);
         renderProgressDisplay();
     }
@@ -126,6 +129,7 @@ void Iteration::checkProgress() {
 
 void Iteration::tickAllStates() {
     stats.resetTickTimer();
+    #pragma omp parallel for if(gameStates.size() > PARALLEL_THRESHOLD) 
     for (GameState& gst : gameStates) {
         gst.tick(0.033);
         gst.runNextInstructions();
@@ -179,8 +183,6 @@ void Iteration::renderProgressDisplay(bool purgeOngoing) {
 
 vector<GameState> Iteration::run() {
     while (true) {
-        ticks++;
-        // Branching
         stats.resetBranchTimer();
         addBranches();
         stats.updateBranchTime();
@@ -188,6 +190,7 @@ vector<GameState> Iteration::run() {
         if (isFinished) break;
         tickAllStates();
         purgeObsoleteStates();
+        ticks++;
     }
     vector<GameState> finishedStates;
     for (GameState& gst : gameStates) {
@@ -362,12 +365,15 @@ void purge(vector<GameState>& gamestates, const function<void(int, double)>& onP
     vector<char> removedCopy(size);
     int statesPurged = 0;
     double iterationsTotal = (double) (size) * (size - 1) / 2.0;
+    #pragma omp parallel if(size > PARALLEL_THRESHOLD)
     for (int i = 0; i < size; i++) {
+        #pragma omp single
         if (onProgress) {
             double iterationsDone = (double) i * size - (double) i * (i + 1) / 2;
             onProgress(statesPurged, iterationsDone / iterationsTotal);
         }
         if (removedCopy[i] == 1) continue;
+        #pragma omp for reduction(+:statesPurged)
         for (int j = i + 1; j < size; j++) {
             if (removedCopy[j] == 1) continue;
             if (compare(&values[i * width], &values[j * width], width)) {

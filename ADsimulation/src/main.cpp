@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include "omp.h"
 #include "libraries/ioutils/ioutils.h"
 #include "libraries/gamestate/gamestate.h"
 #include "libraries/simulation/simulation.h"
@@ -9,6 +10,9 @@ using namespace std;
 
 
 int main(int argc, char* argv[]) {
+    if (!std::getenv("OMP_NUM_THREADS")) {
+        omp_set_num_threads(std::max(1, omp_get_num_procs() / 2));
+    }
     enableAnsiEscapes();
 
     string inputFile;

@@ -22,12 +22,12 @@ include(FetchContent)
 
 FetchContent_Declare(
     nlohmann_json
-    GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG        v3.12.0
-    GIT_PROGRESS   TRUE
+    URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
-
 FetchContent_MakeAvailable(nlohmann_json)
+
+find_package(OpenMP REQUIRED)
 
 add_executable(main)
 target_sources(main 
@@ -40,6 +40,7 @@ target_link_libraries(main
         gamestate
         simulation
         instructions
+        OpenMP::OpenMP_CXX
 )
 
 add_executable(custom)
@@ -53,6 +54,7 @@ target_link_libraries(custom
         gamestate
         simulation
         instructions
+        OpenMP::OpenMP_CXX
 )
 
 add_executable(testing)
@@ -67,6 +69,7 @@ target_link_libraries(testing
         constants
         gamestate
         simulation
+        OpenMP::OpenMP_CXX
 )
 
 add_library(interfaces INTERFACE)
@@ -260,4 +263,5 @@ target_link_libraries(simulation
     PRIVATE
         ioutils
         constants
+        OpenMP::OpenMP_CXX
 )

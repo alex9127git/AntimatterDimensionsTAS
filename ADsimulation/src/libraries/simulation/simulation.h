@@ -7,6 +7,9 @@
 #include <vector>
 
 
+inline constexpr size_t PARALLEL_THRESHOLD = 1000;
+
+
 class Timer {
     private:
         std::chrono::time_point<std::chrono::steady_clock> start;
