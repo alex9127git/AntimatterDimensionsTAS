@@ -108,7 +108,7 @@ void writeInstructions(ostream& f, const InstructionQueue& queue) {
         }
         i = groupEnd;
     }
-    for (int i = 0; i < lines.size(); i++) {
+    for (size_t i = 0; i < lines.size(); i++) {
         f << lines[i];
         if (i != lines.size() - 1) f << ",\n";
     }

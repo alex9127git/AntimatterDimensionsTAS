@@ -43,8 +43,6 @@ class GameState : public ISerializable {
         GameState();
         GameState(const json& j);
 
-        friend std::ostream& operator<<(std::ostream& os, const GameState& st);
-
         // getters
 
         Decimal antimatter() const {return _antimatter;}
@@ -57,7 +55,6 @@ class GameState : public ISerializable {
         int64_t realTimePlayed() const {return _realTimePlayed;}
         int32_t dimensionBoosts() const {return _dimensionBoosts;}
         bool canUseKonami() const {return _canUseKonami;}
-        Decimal costOf(int tier) const {return tier == 9 ? tickspeed().getCost() : AD()[tier].getCost();}
 
         void tick(double diff);
 
@@ -79,7 +76,10 @@ class GameState : public ISerializable {
         bool canBuyNextDimboost() const;
         bool requestDimboost();
         bool canSacrifice() const;
-        Decimal nextSacrificeBoost() const;
+    private:
+        Decimal sacrificeIncrease() const;
+    public:
+        Decimal getBoostAfterSacrifice() const;
         bool sacrificeReset();
 
         // data & i/o manipulation

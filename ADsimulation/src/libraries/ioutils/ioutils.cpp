@@ -82,7 +82,7 @@ map<string, string> parseArgs(int argc, char* argv[]) {
                     }
                 }
                 if (!argSet) {
-                    parsedArgs.emplace("--unknown-arg-" + unknownArgs, arg);
+                    parsedArgs.emplace("--unknown-arg-" + to_string(unknownArgs), arg);
                     unknownArgs++;
                 }
             }

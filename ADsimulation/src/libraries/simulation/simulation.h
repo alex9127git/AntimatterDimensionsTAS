@@ -1,39 +1,12 @@
 #pragma once
 #include "searchnode.h"
+#include "timer.h"
 #include <functional>
-#include <iostream>
-#include <chrono>
 #include <vector>
 
 
 inline constexpr size_t PARALLEL_THRESHOLD = 1000;
 
-
-class Timer {
-    private:
-        std::chrono::time_point<std::chrono::steady_clock> start;
-
-    public:
-        Timer() : start(std::chrono::steady_clock::now()) {}
-
-        void reset() {
-            double result = peek();
-            start = std::chrono::steady_clock::now();
-            std::cout << result << " ms" << std::endl;
-        }
-
-        double silentReset() {
-            double result = peek();
-            start = std::chrono::steady_clock::now();
-            return result;
-        }
-
-        double peek() const {
-            auto end = std::chrono::steady_clock::now();
-            std::chrono::duration<double, std::milli> elapsed = end - start;
-            return elapsed.count();
-        }
-};
 
 class Progress {
     private:
@@ -139,6 +112,7 @@ class Iteration {
 class PurchaseIteration : public Iteration {
     private:
         void addBranches() override;
+        void computePurchaseBranches(SearchNode& node, std::vector<SearchNode>& branches);
 
     public:
         PurchaseIteration(
@@ -179,8 +153,6 @@ class PreciseSacrificeIteration : public Iteration {
 
 GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose=true);
 GameInstance runUntil(GameState st, const Progress& progress, bool useSacrifice, bool verbose);
-
-void computePurchaseBranches(SearchNode& node, std::vector<SearchNode>& branches);
 
 bool compare(const double* st1, const double* st2, size_t width);
 void purge(std::vector<SearchNode>& nodes, const std::function<void(int, double)>& onProgress={});

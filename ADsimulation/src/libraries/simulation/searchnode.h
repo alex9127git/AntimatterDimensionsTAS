@@ -1,5 +1,6 @@
 #pragma once
 #include "gameinstance.h"
+#include "instructions.h"
 #include "constants.h"
 #include <cstdint>
 #include <vector>
@@ -23,6 +24,10 @@ class SearchNode {
         const GameState& game() const {return instance.game();}
         const InstructionQueue& queue() const {return instance.queue();}
         Decimal getPrevAD1() const {return prevAD1;}
+        Decimal costOf(uint16_t code) const {
+            return code == Instruction::TickspeedSingle ? 
+                        game().tickspeed().getCost() : game().AD()[code].getCost();
+        }
 
         // instruction methods
 

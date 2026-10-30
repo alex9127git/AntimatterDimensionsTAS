@@ -10,7 +10,7 @@ SearchNode::SearchNode(const GameState& st)
 bool SearchNode::canBranch() {
     if (!validated) {
         computeAllowedPurchases();
-        nextPurchaseCost = game().costOf(allowedPurchases.front());
+        nextPurchaseCost = costOf(allowedPurchases.front());
         validated = true;
     }
     return game().antimatter() >= nextPurchaseCost;
@@ -39,7 +39,7 @@ void SearchNode::computeAllowedPurchases() {
     }
     Decimal frontierPrice = st.AD()[frontier].getCost() * DC::D10;
     if (frontierPrice > DC::D0_2 * minPrice) {
-        if (st.tickspeed().getCost() == minPrice) allowedPurchases.push_back(9);
+        if (st.tickspeed().getCost() == minPrice) allowedPurchases.push_back(Instruction::TickspeedSingle);
         for (int i = 1; i < frontier; i++) {
             if (st.AD()[i].getCost() * DC::D10 == minPrice) allowedPurchases.push_back(i);
         }
@@ -49,8 +49,8 @@ void SearchNode::computeAllowedPurchases() {
     }
     stable_sort(allowedPurchases.begin(), allowedPurchases.end(),
         [&](uint16_t a, uint16_t b) {
-            Decimal a_cost = st.costOf(a);
-            Decimal b_cost = st.costOf(b);
+            Decimal a_cost = costOf(a);
+            Decimal b_cost = costOf(b);
             return a_cost < b_cost;
         }
     );

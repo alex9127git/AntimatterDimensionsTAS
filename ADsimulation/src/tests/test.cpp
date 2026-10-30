@@ -210,7 +210,6 @@ int main() {
         instance.tick(0.033);
         instance.runNextInstructions();
     }
-    cout << instance.game() << endl;
 
     cout << "Starting test simulation" << endl;
     instance = runDimboost(GameState(), true, true);

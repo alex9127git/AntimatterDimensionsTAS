@@ -24,7 +24,7 @@ class Sacrifice : public ISerializable {
         Decimal getSacrificedAmount() const {return _sacrificed;}
         int getSacrificesDone() const {return sacrificesDone;}
 
-        Decimal nextSacrificeBoost(const Decimal& AD1amount) const;
+        Decimal sacrificeIncrease(const Decimal& AD1amount) const;
         Decimal getReqForSac(const Decimal& sacValue) const;
 
         void increaseSacrifice(const Decimal& amount);

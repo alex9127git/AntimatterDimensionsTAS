@@ -85,7 +85,6 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    vector<double> instructions;
     GameInstance instance = runDimboost(gameState, useSacrifice);
     cout << "Finished simulation; dumping result game state into " << outputFile << endl;
     save_out = ofstream(outputFile);

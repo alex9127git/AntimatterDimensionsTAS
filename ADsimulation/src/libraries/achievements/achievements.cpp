@@ -6,7 +6,7 @@ using namespace std;
 
 namespace {
     const function<Decimal(const Decimal&)> NO_EFFECT = 
-            [](const Decimal& _) {return DC::D1;};
+            [](const Decimal&) {return DC::D1;};
 
     const vector<function<Decimal(const Decimal&)>> effectFormulae = {
         NO_EFFECT,
@@ -18,65 +18,65 @@ namespace {
         NO_EFFECT,
         NO_EFFECT,
 
-        [](const Decimal& _) {return DC::D100;},
+        [](const Decimal&) {return DC::D100;},
         NO_EFFECT,
-        [](const Decimal& _) {return DC::D1_1;},
-        NO_EFFECT,
-        NO_EFFECT,
+        [](const Decimal&) {return DC::D1_1;},
         NO_EFFECT,
         NO_EFFECT,
-        [](const Decimal& _) {return DC::D1_1;},
+        NO_EFFECT,
+        NO_EFFECT,
+        [](const Decimal&) {return DC::D1_1;},
 
-        [](const Decimal& _) {return DC::D1_05;},
-        [](const Decimal& _) {return DC::D1_1;},
+        [](const Decimal&) {return DC::D1_05;},
+        [](const Decimal&) {return DC::D1_1;},
         NO_EFFECT,
-        [](const Decimal& _) {return DC::D1_02;},
+        [](const Decimal&) {return DC::D1_02;},
         NO_EFFECT,
-        [](const Decimal& _) {return DC::D1_02;},
-        [](const Decimal& _) {return DC::D5E3;},
+        [](const Decimal&) {return DC::D1_02;},
+        [](const Decimal&) {return DC::D5E3;},
         NO_EFFECT,
 
         NO_EFFECT,
         NO_EFFECT,
         [](const Decimal& tier) {return DC::D1_01 * tier;},
         NO_EFFECT,
-        [](const Decimal& _) {return DC::D1_02;},
+        [](const Decimal&) {return DC::D1_02;},
         NO_EFFECT,
         NO_EFFECT,
-        [](const Decimal& _) {return DC::D1_1;},
+        [](const Decimal&) {return DC::D1_1;},
 
         NO_EFFECT,
         NO_EFFECT,
         NO_EFFECT,
-        [](const Decimal& _) {return DC::D5E5;},
-        [](const Decimal& _) {return DC::D5E10;},
+        [](const Decimal&) {return DC::D5E5;},
+        [](const Decimal&) {return DC::D5E10;},
         [](Decimal minutes) {return Decimal::max(DC::D6 / (minutes + DC::D3), DC::D1);},
-        [](const Decimal& _) {return DC::D1_1;},
-        [](const Decimal& _) {return DC::D1_01;},
+        [](const Decimal&) {return DC::D1_1;},
+        [](const Decimal&) {return DC::D1_01;},
 
         NO_EFFECT,
         NO_EFFECT,
         NO_EFFECT,
-        [](const Decimal& _) {return DC::D1_25;},
+        [](const Decimal&) {return DC::D1_25;},
         [](Decimal minutes) {return Decimal::max(DC::D4 / (minutes + DC::D1), DC::D1);},
-        [](const Decimal& _) {return DC::D1_02;},
+        [](const Decimal&) {return DC::D1_02;},
         NO_EFFECT,
-        [](const Decimal& _) {return DC::D1_5;},
+        [](const Decimal&) {return DC::D1_5;},
 
-        [](const Decimal& _) {return DC::D3;},
-        [](const Decimal& _) {return DC::D1_1;},
+        [](const Decimal&) {return DC::D3;},
+        [](const Decimal&) {return DC::D1_1;},
         [](Decimal antimatter) {return Decimal::pow(antimatter, 0.00002) + DC::D1;},
-        [](const Decimal& _) {return DC::D1_4;},
+        [](const Decimal&) {return DC::D1_4;},
         NO_EFFECT,
         [](Decimal days) {return Decimal::max(Decimal::pow(days / DC::D2, 0.05), DC::D1);},
         NO_EFFECT,
-        [](const Decimal& _) {return DC::D5E25;},
+        [](const Decimal&) {return DC::D5E25;},
     };
 }
 
 Achievements::Achievements() {
     bitmasks = {0, 0, 0, 0, 0, 0, 0};
-    for (int i = 0; i < bitmasks.size() * 8; i++) {
+    for (size_t i = 0; i < bitmasks.size() * 8; i++) {
         unlockTimes.push_back(-1LL);
     }
 }

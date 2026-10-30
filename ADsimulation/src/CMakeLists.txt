@@ -15,6 +15,10 @@ if(ipoSupported)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 endif()
 
+if(NOT MSVC)
+    add_compile_options(-Wall -Wextra)
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -199,8 +203,6 @@ target_link_libraries(gamestate
         tickspeed
         sacrifice
         decimal
-    PRIVATE
-        ioutils
 )
 
 add_library(gameinstance)
@@ -233,14 +235,15 @@ target_sources(simulation
         FILES
             libraries/simulation/simulation.h
             libraries/simulation/searchnode.h
+            libraries/simulation/timer.h
 )
 target_link_libraries(simulation
     PUBLIC
         gameinstance
+        instructions
         constants
     PRIVATE
         OpenMP::OpenMP_CXX
-        instructions
         ioutils
 )
 

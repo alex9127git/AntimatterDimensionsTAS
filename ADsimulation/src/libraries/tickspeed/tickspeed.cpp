@@ -6,9 +6,9 @@ Tickspeed::Tickspeed()
     :   cost(DC::D1E3),
         scaling(DC::D10),
         purchases(0),
+        unlocked(false),
         value(DC::D1E3),
-        valuePerSecond(DC::D1),
-        unlocked(false)
+        valuePerSecond(DC::D1)
     {};
 
 Tickspeed::Tickspeed(const json& j) : Tickspeed::Tickspeed() {

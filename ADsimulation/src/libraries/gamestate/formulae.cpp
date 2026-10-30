@@ -7,11 +7,11 @@ using namespace std;
 
 
 const function<bool(const GameState&)> AchConstants::NOT_APPLICABLE = 
-        [](const GameState& st) {return false;};
+        [](const GameState&) {return false;};
 const function<bool(const GameState&)> AchConstants::ALWAYS_UNLOCKED = 
-        [](const GameState& st) {return true;};
+        [](const GameState&) {return true;};
 const function<bool(const GameState&)> AchConstants::NOT_IMPLEMENTED_YET = 
-        [](const GameState& st) {return false;};
+        [](const GameState&) {return false;};
 
 const vector<function<bool(const GameState&)>> AchConstants::unlockConditions = {
     NOT_APPLICABLE,
@@ -105,10 +105,18 @@ Decimal getADmult(const GameState& st, int tier) {
     return mult;
 }
 
-Decimal getTickspeedMultPerPurchase(const GameState& st) {
+Decimal getTickspeedMultPerPurchase([[maybe_unused]] const GameState& st) {
     return Decimal(1 / 1.1245);
 }
 
 Decimal getTotalTickspeed(const GameState& st) {
     return DC::D1E3 * Decimal::pow(getTickspeedMultPerPurchase(st), st.tickspeed().getPurchases());
+}
+
+int getTierForDimboost(int32_t dimboostTarget) {
+    return min(8, 3 + dimboostTarget);
+}
+
+int32_t getAmountForDimboost(int32_t dimboostTarget) {
+    return 20 + 15 * max(0, dimboostTarget - 5);
 }

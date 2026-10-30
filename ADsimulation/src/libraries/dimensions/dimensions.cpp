@@ -2,8 +2,6 @@
 #include "tickspeed.h"
 #include "constants.h"
 #include <algorithm>
-#include <ostream>
-#include <string>
 #include <cmath>
 using namespace std;
 
@@ -15,23 +13,23 @@ Dimension::Dimension(
     bool _unlocked
 )   :   tier(_tier),
         initialCost(_cost),
-        cost(_cost),
         scaling(_scaling),
         amount(DC::D0),
         purchases(0),
-        multiplier(DC::D1),
-        unlocked(_unlocked) 
+        unlocked(_unlocked),
+        cost(_cost),
+        multiplier(DC::D1)
     {}
 
-Dimension::Dimension() :
-        tier(1),
+Dimension::Dimension()
+    :   tier(1),
         initialCost(DC::D10),
-        cost(DC::D10),
         scaling(DC::D1E3),
         amount(DC::D0),
         purchases(0),
-        multiplier(DC::D1),
-        unlocked(true) 
+        unlocked(true),
+        cost(DC::D10),
+        multiplier(DC::D1)
     {}
 
 void Dimension::update(const Decimal& newMult) {
@@ -122,26 +120,6 @@ void AntimatterDimension::produceDimensions(AntimatterDimension& dimension, cons
     dimension.amount += this->productionPerDiff(t, diff);
 }
 
-ostream& operator<<(ostream& os, const AntimatterDimension& d) {
-    string suffix;
-    switch (d.tier) {
-        case 1:
-            suffix = "st";
-            break;
-        case 2:
-            suffix = "nd";
-            break;
-        case 3:
-            suffix = "rd";
-            break;
-        default:
-            suffix = "th";
-    }
-    os << d.tier << suffix << " Antimatter Dimension (x" << d.multiplier << ") " << d.amount << endl;
-    os << "Purchases: " << d.purchases << ", Cost: " << d.cost;
-    return os;
-}
-
 void AntimatterDimension::onPurchase() {
     this->purchases++;
     this->amount += DC::D1;
@@ -198,10 +176,6 @@ AntimatterDimension& AntimatterDimensions::operator[](int index) {
     return this->dims[index - 1];
 }
 
-const vector<AntimatterDimension>& AntimatterDimensions::getDims() const {
-    return this->dims;
-}
-
 json AntimatterDimensions::to_json() const {
     json j;
     vector<json> jsons;
@@ -214,7 +188,7 @@ json AntimatterDimensions::to_json() const {
 
 void AntimatterDimensions::from_json(const json& j) {
     vector<json> jsons = j.at("dims");
-    for (int i = 0; i < min(jsons.size(), dims.size()); i++) {
+    for (size_t i = 0; i < min(jsons.size(), dims.size()); i++) {
         dims[i].from_json(jsons[i]);
     }
 }

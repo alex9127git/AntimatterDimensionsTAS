@@ -1,9 +1,8 @@
 #pragma once
-#include <cstdint>
-#include <iosfwd>
-#include <vector>
-#include "decimal.h"
 #include "interfaces.h"
+#include "decimal.h"
+#include <cstdint>
+#include <vector>
 
 
 class Tickspeed;
@@ -69,7 +68,6 @@ class AntimatterDimension : public Dimension {
         void produceDimensions(Dimension& dimension, double diff) const = delete;
         void produceDimensions(AntimatterDimension& dimension, const Tickspeed& t, double diff) const;
 
-        friend std::ostream& operator<<(std::ostream& os, const AntimatterDimension& d);
         void onPurchase() override;
 
         json to_json() const override;
@@ -86,8 +84,6 @@ class AntimatterDimensions : ISerializable {
 
         const AntimatterDimension& operator[](int index) const;
         AntimatterDimension& operator[](int index);
-
-        const std::vector<AntimatterDimension>& getDims() const;
 
         json to_json() const override;
         void from_json(const json& j) override;

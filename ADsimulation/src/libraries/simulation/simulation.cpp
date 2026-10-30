@@ -51,8 +51,7 @@ GameInstance runUntil(
                     purchaseStrategies.push_back(node.queue().getCompletedPurchases());
                     vector<double> sacStrat = node.queue().getCompletedSacrifices();
                     sacStrat.push_back(
-                        (node.game().sacrifice().getSacrificeBonus() * 
-                         node.game().nextSacrificeBoost() * DC::D2).log10value()
+                        (node.game().getBoostAfterSacrifice() * DC::D2).log10value()
                     );
                     sacrificeStrategies.push_back(sacStrat);
                 }
@@ -218,7 +217,7 @@ PurchaseIteration::PurchaseIteration(
         node.addInstructions({Instruction::bulk(1, 1)});
     }
     node.runNextInstructions();
-    for (int i = 0; i < sacrificeStrategies.size(); i++) {
+    for (size_t i = 0; i < sacrificeStrategies.size(); i++) {
         nodes.push_back(node);
         for (double instruction : sacrificeStrategies[i]) {
             nodes[i].addInstructions({108, instruction});
@@ -241,13 +240,27 @@ void PurchaseIteration::addBranches() {
     }
 }
 
+void PurchaseIteration::computePurchaseBranches(SearchNode& node, vector<SearchNode>& branches) {
+    while (node.canBranch() && !node.queue().hasNextPurchase()) {
+        vector<uint16_t> variants = node.getPurchaseBranches();
+        for (size_t i = 1; i < variants.size(); i++) {
+            SearchNode newNode = node;
+            newNode.addInstructions({(double) variants[i]});
+            newNode.runNextInstructions();
+            branches.push_back(move(newNode));
+        }
+        node.addInstructions({(double) variants[0]});
+        node.runNextInstructions();
+    }
+}
+
 ApproxSacrificeIteration::ApproxSacrificeIteration(
     GameState st, const Progress& progress,
     const vector<vector<double>>& purchaseStrategies, bool verbose
 )   :   Iteration(progress, verbose)
 {
     SearchNode node = SearchNode(st);
-    for (int i = 0; i < purchaseStrategies.size(); i++) {
+    for (size_t i = 0; i < purchaseStrategies.size(); i++) {
         nodes.push_back(node);
         nodes[i].addInstructions(purchaseStrategies[i]);
     }
@@ -258,9 +271,9 @@ void ApproxSacrificeIteration::addBranches() {
     for (SearchNode& node : nodes) {
         if (node.game().canSacrifice() && node.canSacBranch()) {
             SearchNode newNode = node;
-            Decimal currSac = newNode.game().sacrifice().getSacrificeBonus() * newNode.game().nextSacrificeBoost();
+            Decimal currSac = newNode.game().getBoostAfterSacrifice();
             Decimal prevSac = newNode.game().sacrifice().getSacrificeBonus() * 
-                Decimal::max(newNode.game().sacrifice().nextSacrificeBoost(newNode.getPrevAD1()), DC::D1);
+                Decimal::max(newNode.game().sacrifice().sacrificeIncrease(newNode.getPrevAD1()), DC::D1);
             Decimal target = (currSac + prevSac) / DC::D2;
             newNode.addInstructions({Instruction::Sacrifice, target.log10value()});
             Decimal nextSac = currSac * precision;
@@ -280,7 +293,7 @@ PreciseSacrificeIteration::PreciseSacrificeIteration(
 {
     SearchNode node = SearchNode(st);
     projectedSacrifices = sacrificeStrategies[0];
-    for (int i = 0; i < purchaseStrategies.size(); i++) {
+    for (size_t i = 0; i < purchaseStrategies.size(); i++) {
         nodes.push_back(node);
         nodes[i].addInstructions(purchaseStrategies[i]);
         nodes[i].setNextSacBranching(Decimal(1, projectedSacrifices[0]) / tolerance);
@@ -291,9 +304,9 @@ PreciseSacrificeIteration::PreciseSacrificeIteration(
 void PreciseSacrificeIteration::addBranches() {
     for (SearchNode& node : nodes) {
         if (node.game().canSacrifice() && node.canSacBranch()) {
-            Decimal currSac = node.game().sacrifice().getSacrificeBonus() * node.game().nextSacrificeBoost();
+            Decimal currSac = node.game().getBoostAfterSacrifice();
             Decimal prevSac = node.game().sacrifice().getSacrificeBonus() * 
-                Decimal::max(node.game().sacrifice().nextSacrificeBoost(node.getPrevAD1()), DC::D1);
+                Decimal::max(node.game().sacrifice().sacrificeIncrease(node.getPrevAD1()), DC::D1);
             Decimal target = (currSac + prevSac) / DC::D2;
             if (currSac > Decimal(1, projectedSacrifices[node.game().sacrifice().getSacrificesDone()]) * tolerance) {
                 scheduleSacrifice(node, target);
@@ -315,20 +328,6 @@ void PreciseSacrificeIteration::scheduleSacrifice(SearchNode& node, const Decima
         Decimal(1, projectedSacrifices[node.game().sacrifice().getSacrificesDone() + 1]) / tolerance);
 }
 
-void computePurchaseBranches(SearchNode& node, vector<SearchNode>& branches) {
-    while (node.canBranch() && !node.queue().hasNextPurchase()) {
-        vector<uint16_t> variants = node.getPurchaseBranches();
-        for (int i = 1; i < variants.size(); i++) {
-            SearchNode newNode = node;
-            newNode.addInstructions({(double) variants[i]});
-            newNode.runNextInstructions();
-            branches.push_back(move(newNode));
-        }
-        node.addInstructions({(double) variants[0]});
-        node.runNextInstructions();
-    }
-}
-
 bool compare(const double* st1, const double* st2, size_t width) {
     // Compare the two game states together.
     // Returns true if all st1's values are bigger or equal than that of st2,
@@ -343,7 +342,7 @@ bool compare(const double* st1, const double* st2, size_t width) {
 }
 
 void purge(vector<SearchNode>& nodes, const function<void(int, double)>& onProgress) {
-    int size = nodes.size();
+    size_t size = nodes.size();
     vector<int> indices(size);
     iota(indices.begin(), indices.end(), 0);
     sort(indices.begin(), indices.end(), [&nodes](int i, int j) {
@@ -351,7 +350,7 @@ void purge(vector<SearchNode>& nodes, const function<void(int, double)>& onProgr
     });
     vector<double> values;
     int width = 0;
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         const GameState& gst = nodes[indices[i]].game();
         values.push_back(gst.antimatter().log10value());
         for (int d = 1; d <= 8; d++) {
@@ -371,7 +370,7 @@ void purge(vector<SearchNode>& nodes, const function<void(int, double)>& onProgr
     int statesPurged = 0;
     double iterationsTotal = (double) (size) * (size - 1) / 2.0;
     #pragma omp parallel if(size > PARALLEL_THRESHOLD)
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         #pragma omp single
         if (onProgress) {
             double iterationsDone = (double) i * size - (double) i * (i + 1) / 2;
@@ -379,7 +378,7 @@ void purge(vector<SearchNode>& nodes, const function<void(int, double)>& onProgr
         }
         if (removedCopy[i] == 1) continue;
         #pragma omp for reduction(+:statesPurged)
-        for (int j = i + 1; j < size; j++) {
+        for (size_t j = i + 1; j < size; j++) {
             if (removedCopy[j] == 1) continue;
             if (compare(&values[i * width], &values[j * width], width)) {
                 removedCopy[j] = 1;
@@ -388,7 +387,7 @@ void purge(vector<SearchNode>& nodes, const function<void(int, double)>& onProgr
         }
     }
     vector<char> removedOrig(size);
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         removedOrig[indices[i]] = removedCopy[i];
     }
     vector<SearchNode> result;

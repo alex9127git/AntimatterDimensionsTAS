@@ -1,9 +1,6 @@
 #include "gamestate.h"
 #include "formulae.h"
-#include "ioutils.h"
 #include <algorithm>
-#include <string>
-#include <format>
 #include <cmath>
 using namespace std;
 
@@ -18,13 +15,13 @@ GameState::GameState(const json& j)
 }
 
 void GameState::prepare() {
+    recalcAchievementBonus();
+    recalcTickspeed();
+    recalcAD();
     for (int i = 0; i < achievements().achCount(); i++) {
         int id = Achievements::indexToId(i);
         this->unlockAchievement(id, false);
     }
-    recalcAchievementBonus();
-    recalcTickspeed();
-    recalcAD();
 }
 
 void GameState::recalcAD() {
@@ -46,18 +43,6 @@ void GameState::recalcAchievementBonus() {
 
 bool GameState::checkUnlockCondition(int id) const {
     return AchConstants::unlockConditions[Achievements::idToIndex(id)](*this);
-}
-
-ostream& operator<<(ostream& os, const GameState& st) {
-    os << "You have " << st.antimatter() << " antimatter." << endl;
-    os << "You have been playing for " << renderTime(st._realTimePlayed) << endl;
-    os << format("Tickspeed bonus: x{} (x{} per upgrade)",
-            st._tickspeed.perSecond().toString(3),
-            Decimal::invert(getTickspeedMultPerPurchase(st)).toString(3)) << endl;
-    for (const AntimatterDimension& d : st._AD.getDims()) {
-        os << d << endl;
-    };
-    return os;
 }
 
 void GameState::tick(double diff) {
@@ -135,15 +120,16 @@ Decimal GameState::getAchievementBonus() const {
 }
 
 Decimal GameState::getAntimatterGoalForDimboost() const {
-    const Dimension& dimNeeded = this->_AD[min(8, 4 + _dimensionBoosts)];
-    int dimAmountRequied = 20 + 15 * max(0, _dimensionBoosts - 4);
+    const Dimension& dimNeeded = this->_AD[getTierForDimboost(_dimensionBoosts + 1)];
+    int dimAmountRequied = getAmountForDimboost(_dimensionBoosts + 1);
     int scalingNeeded = ceil(dimAmountRequied / 10.0) - 1;
     int highPurchases = dimAmountRequied % 10 + (dimAmountRequied % 10 == 0 ? 10 : 0);
     return dimNeeded.getInitialCost() * Decimal::pow(dimNeeded.getScaling(), scalingNeeded) * Decimal(highPurchases);
 }
 
 bool GameState::canBuyNextDimboost() const {
-    return this->_AD[min(8, 4 + _dimensionBoosts)].getPurchases() >= 20 + 15 * max(0, _dimensionBoosts - 4);
+    return (this->_AD[getTierForDimboost(_dimensionBoosts + 1)].getPurchases() >= 
+            getAmountForDimboost(_dimensionBoosts + 1));
 }
 
 bool GameState::requestDimboost() {
@@ -168,8 +154,12 @@ bool GameState::canSacrifice() const {
     return true;
 }
 
-Decimal GameState::nextSacrificeBoost() const {
-    return _sacrifice.nextSacrificeBoost(_AD[1].getAmount());
+Decimal GameState::sacrificeIncrease() const {
+    return _sacrifice.sacrificeIncrease(_AD[1].getAmount());
+}
+
+Decimal GameState::getBoostAfterSacrifice() const {
+    return _sacrifice.getSacrificeBonus() * sacrificeIncrease();
 }
 
 bool GameState::sacrificeReset() {
