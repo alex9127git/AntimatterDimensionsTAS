@@ -105,6 +105,24 @@ target_link_libraries(constants
         decimal
 )
 
+add_library(costmath)
+target_sources(costmath
+    PRIVATE
+        libraries/costmath/costmath.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/costmath
+        FILES
+            libraries/costmath/costmath.h
+)
+target_link_libraries(costmath
+    PUBLIC
+        decimal
+    PRIVATE
+        constants
+)
+
 add_library(tickspeed)
 target_sources(tickspeed
     PRIVATE
@@ -119,6 +137,7 @@ target_sources(tickspeed
 target_link_libraries(tickspeed
     PUBLIC
         interfaces
+        costmath
         decimal
     PRIVATE
         constants
@@ -138,6 +157,7 @@ target_sources(dimensions
 target_link_libraries(dimensions
     PUBLIC
         interfaces
+        costmath
         decimal
     PRIVATE
         tickspeed
@@ -202,6 +222,7 @@ target_link_libraries(gamestate
         constants
         tickspeed
         sacrifice
+        costmath
         decimal
 )
 

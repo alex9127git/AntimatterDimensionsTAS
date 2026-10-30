@@ -113,10 +113,18 @@ Decimal getTotalTickspeed(const GameState& st) {
     return DC::D1E3 * Decimal::pow(getTickspeedMultPerPurchase(st), st.tickspeed().getPurchases());
 }
 
+Decimal getCostForDimPurchases(const ExponentialCostScaling& costRule, int32_t dimTarget) {
+    return costRule.getCost((dimTarget - 1) / 10) * Decimal(dimTarget % 10 == 0 ? 10 : dimTarget % 10);
+}
+
 int getTierForDimboost(int32_t dimboostTarget) {
     return min(8, 3 + dimboostTarget);
 }
 
 int32_t getAmountForDimboost(int32_t dimboostTarget) {
     return 20 + 15 * max(0, dimboostTarget - 5);
+}
+
+int32_t getAmountForGalaxy(int32_t galaxyTarget) {
+    return 80 + 60 * max(0, galaxyTarget - 1);
 }

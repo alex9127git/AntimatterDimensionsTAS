@@ -1,5 +1,6 @@
 #pragma once
 #include "interfaces.h"
+#include "costmath.h"
 #include "decimal.h"
 #include <cstdint>
 #include <vector>
@@ -11,8 +12,7 @@ class Tickspeed;
 class Dimension : public ISerializable {
     protected:
         int tier;
-        Decimal initialCost;
-        Decimal scaling;
+        ExponentialCostScaling costRule;
         Decimal amount;
         int32_t purchases;
         bool unlocked;
@@ -34,8 +34,7 @@ class Dimension : public ISerializable {
         Decimal productionPerSecond() const;
         Decimal productionPerDiff(double diff) const;
         Decimal getCost() const;
-        Decimal getInitialCost() const;
-        Decimal getScaling() const;
+        ExponentialCostScaling getCostRule() const;
         Decimal getAmount() const;
         Decimal getMult() const; 
         int32_t getPurchases() const;

@@ -12,8 +12,7 @@ Dimension::Dimension(
     Decimal _scaling,
     bool _unlocked
 )   :   tier(_tier),
-        initialCost(_cost),
-        scaling(_scaling),
+        costRule(_cost, _scaling, DC::D10, DC::INF),
         amount(DC::D0),
         purchases(0),
         unlocked(_unlocked),
@@ -23,8 +22,7 @@ Dimension::Dimension(
 
 Dimension::Dimension()
     :   tier(1),
-        initialCost(DC::D10),
-        scaling(DC::D1E3),
+        costRule(DC::D10, DC::D1E3, DC::D10, DC::INF),
         amount(DC::D0),
         purchases(0),
         unlocked(true),
@@ -48,12 +46,8 @@ Decimal Dimension::getCost() const {
     return this->cost;
 }
 
-Decimal Dimension::getInitialCost() const {
-    return this->initialCost;
-}
-
-Decimal Dimension::getScaling() const {
-    return this->scaling;
+ExponentialCostScaling Dimension::getCostRule() const {
+    return this->costRule;
 }
 
 Decimal Dimension::getAmount() const {
@@ -124,15 +118,12 @@ void AntimatterDimension::onPurchase() {
     this->purchases++;
     this->amount += DC::D1;
     if (this->purchases % 10 == 0) {
-        this->cost *= this->scaling;
+        this->cost = costRule.getCost(purchases / 10);
     };
 }
 
 json AntimatterDimension::to_json() const {
     json j;
-    j["tier"] = this->tier;
-    j["initialCost"] = this->initialCost.to_json();
-    j["scaling"] = this->scaling.to_json();
     j["amount"] = this->amount.to_json();
     j["purchases"] = this->purchases;
     j["unlocked"] = this->unlocked;
@@ -140,12 +131,10 @@ json AntimatterDimension::to_json() const {
 }
 
 void AntimatterDimension::from_json(const json& j) {
-    readIfPresent(j, "initialCost", this->initialCost);
-    readIfPresent(j, "scaling", this->scaling);
     readIfPresent(j, "amount", this->amount);
     readIfPresent(j, "purchases", this->purchases);
     readIfPresent(j, "unlocked", this->unlocked);
-    this->cost = this->initialCost * Decimal::pow(this->scaling, floor(purchases / 10));
+    this->cost = costRule.getCost(purchases / 10);
 }
 
 

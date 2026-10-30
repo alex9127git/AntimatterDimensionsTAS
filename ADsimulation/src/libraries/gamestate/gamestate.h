@@ -18,6 +18,7 @@ class GameState : public ISerializable {
         Achievements _achievements = Achievements();
         Sacrifice _sacrifice = Sacrifice();
         int32_t _dimensionBoosts = 0;
+        int32_t _antimatterGalaxies = 0;
         int64_t _realTimePlayed = 0;
         bool _canUseKonami = true;
 
@@ -54,6 +55,7 @@ class GameState : public ISerializable {
         const Sacrifice& sacrifice() const {return _sacrifice;}
         int64_t realTimePlayed() const {return _realTimePlayed;}
         int32_t dimensionBoosts() const {return _dimensionBoosts;}
+        int32_t antimatterGalaxies() const {return _antimatterGalaxies;}
         bool canUseKonami() const {return _canUseKonami;}
 
         void tick(double diff);
@@ -73,6 +75,7 @@ class GameState : public ISerializable {
         // reset-adjacent methods
 
         Decimal getAntimatterGoalForDimboost() const;
+        Decimal getAntimatterGoalForGalaxy() const;
         bool canBuyNextDimboost() const;
         bool requestDimboost();
         bool canSacrifice() const;

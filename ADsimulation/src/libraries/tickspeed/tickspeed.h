@@ -1,18 +1,19 @@
 #pragma once
 #include "interfaces.h"
+#include "costmath.h"
 #include "decimal.h"
 #include <cstdint>
 
 
 class Tickspeed : public ISerializable {
     private:
-        Decimal cost;
-        Decimal scaling;
+        ExponentialCostScaling costRule;
         int32_t purchases;
         bool unlocked;
 
         // volatile, shouldn't be serialized
 
+        Decimal cost;
         Decimal value;
         Decimal valuePerSecond;
     

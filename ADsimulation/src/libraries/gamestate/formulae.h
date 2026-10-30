@@ -1,4 +1,5 @@
 #pragma once
+#include "costmath.h"
 #include "decimal.h"
 #include <functional>
 #include <cstdint>
@@ -19,5 +20,9 @@ Decimal getADmult(const GameState& st, int tier);
 Decimal getTickspeedMultPerPurchase(const GameState& st);
 Decimal getTotalTickspeed(const GameState& st);
 
+Decimal getCostForDimPurchases(const ExponentialCostScaling& costRule, int32_t dimTarget);
+
 int getTierForDimboost(int32_t dimboostTarget);
 int32_t getAmountForDimboost(int32_t dimboostTarget);
+
+int32_t getAmountForGalaxy(int32_t galaxyTarget);

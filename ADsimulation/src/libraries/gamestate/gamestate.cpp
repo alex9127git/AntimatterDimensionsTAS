@@ -121,10 +121,14 @@ Decimal GameState::getAchievementBonus() const {
 
 Decimal GameState::getAntimatterGoalForDimboost() const {
     const Dimension& dimNeeded = this->_AD[getTierForDimboost(_dimensionBoosts + 1)];
-    int dimAmountRequied = getAmountForDimboost(_dimensionBoosts + 1);
-    int scalingNeeded = ceil(dimAmountRequied / 10.0) - 1;
-    int highPurchases = dimAmountRequied % 10 + (dimAmountRequied % 10 == 0 ? 10 : 0);
-    return dimNeeded.getInitialCost() * Decimal::pow(dimNeeded.getScaling(), scalingNeeded) * Decimal(highPurchases);
+    int32_t dimAmountRequied = getAmountForDimboost(_dimensionBoosts + 1);
+    return getCostForDimPurchases(dimNeeded.getCostRule(), dimAmountRequied);
+}
+
+Decimal GameState::getAntimatterGoalForGalaxy() const {
+    const Dimension& dimNeeded = this->_AD[8];
+    int32_t dimAmountRequied = getAmountForGalaxy(_antimatterGalaxies + 1);
+    return getCostForDimPurchases(dimNeeded.getCostRule(), dimAmountRequied);
 }
 
 bool GameState::canBuyNextDimboost() const {
@@ -182,6 +186,7 @@ json GameState::to_json() const {
     j["achievementState"] = this->_achievements.to_json();
     j["sacrificed"] = this->_sacrifice.to_json();
     j["dimensionBoosts"] = this->_dimensionBoosts;
+    j["antimatterGalaxies"] = this->_antimatterGalaxies;
     j["realTimePlayed"] = this->_realTimePlayed;
     j["canUseKonami"] = this->_canUseKonami;
     return j;
@@ -196,6 +201,7 @@ void GameState::from_json(const json& j) {
     readIfPresent(j, "achievementState", this->_achievements);
     readIfPresent(j, "sacrificed", this->_sacrifice);
     readIfPresent(j, "dimensionBoosts", this->_dimensionBoosts);
+    readIfPresent(j, "antimatterGalaxies", this->_antimatterGalaxies);
     readIfPresent(j, "realTimePlayed", this->_realTimePlayed);
     readIfPresent(j, "canUseKonami", this->_canUseKonami);
     this->prepare();

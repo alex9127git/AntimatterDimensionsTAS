@@ -3,10 +3,10 @@
 
 
 Tickspeed::Tickspeed() 
-    :   cost(DC::D1E3),
-        scaling(DC::D10),
+    :   costRule(DC::D1E3, DC::D10, DC::D10, DC::INF),
         purchases(0),
         unlocked(false),
+        cost(DC::D1E3),
         value(DC::D1E3),
         valuePerSecond(DC::D1)
     {};
@@ -46,21 +46,18 @@ bool Tickspeed::canPurchase(const Decimal& resource) const {
 
 void Tickspeed::onPurchase() {
     this->purchases++;
-    this->cost *= this->scaling;
+    this->cost = costRule.getCost(purchases);
 }
 
 json Tickspeed::to_json() const {
     json j;
-    j["cost"] = this->cost.to_json();
-    j["scaling"] = this->scaling.to_json();
     j["purchases"] = this->purchases;
     j["unlocked"] = this->unlocked;
     return j;
 }
 
 void Tickspeed::from_json(const json& j) {
-    this->cost = Decimal(j.at("cost"));
-    this->scaling = Decimal(j.at("scaling"));
-    this->purchases = j.at("purchases");
-    this->unlocked = j.at("unlocked");
+    readIfPresent(j, "purchases", purchases);
+    readIfPresent(j, "unlocked", unlocked);
+    this->cost = costRule.getCost(purchases);
 }
