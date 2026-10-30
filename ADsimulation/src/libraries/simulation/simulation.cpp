@@ -2,9 +2,9 @@
 #include "simulation.h"
 #include "constants.h"
 #include "ioutils.h"
+#include "purge.h"
 #include <algorithm>
 #include <cstdint>
-#include <numeric>
 #include <string>
 #include <format>
 using namespace std;
@@ -35,35 +35,32 @@ GameInstance runUntil(
         currentIterationTime = iterationTime;
         cout << "============================================================" << endl;
         cout << "Running iteration " << iterationCounter << endl;
-        switch (iterationCounter % 2) {
-            case 1:
-                resultNodes = PurchaseIteration(st, progress, sacrificeStrategies, verbose).run();
-                purchaseStrategies.clear();
-                for (SearchNode& node : resultNodes) {
-                    purchaseStrategies.push_back(node.queue().getCompletedPurchases());
-                }
-                break;
-            case 0:
-                resultNodes = ApproxSacrificeIteration(st, progress, purchaseStrategies, verbose).run();
-                purchaseStrategies.clear();
-                sacrificeStrategies.clear();
-                for (SearchNode& node : resultNodes) {
-                    purchaseStrategies.push_back(node.queue().getCompletedPurchases());
-                    vector<double> sacStrat = node.queue().getCompletedSacrifices();
-                    sacStrat.push_back(
-                        (node.game().getBoostAfterSacrifice() * DC::D2).log10value()
-                    );
-                    sacrificeStrategies.push_back(sacStrat);
-                }
-                cout << "============================================================" << endl;
-                cout << "Optimizing sacrifices" << endl;
-                resultNodes = PreciseSacrificeIteration(
-                    st, progress, purchaseStrategies, sacrificeStrategies, verbose).run();
-                sacrificeStrategies.clear();
-                for (SearchNode& node : resultNodes) {
-                    sacrificeStrategies.push_back(node.queue().getCompletedSacrifices());
-                }
-                break;
+        if (iterationCounter % 2 == 1) {
+            resultNodes = PurchaseIteration(st, progress, sacrificeStrategies, verbose).run();
+            purchaseStrategies.clear();
+            for (SearchNode& node : resultNodes) {
+                purchaseStrategies.push_back(node.queue().getCompletedPurchases());
+            }
+        } else {
+            resultNodes = ApproxSacrificeIteration(st, progress, purchaseStrategies, verbose).run();
+            purchaseStrategies.clear();
+            sacrificeStrategies.clear();
+            for (SearchNode& node : resultNodes) {
+                purchaseStrategies.push_back(node.queue().getCompletedPurchases());
+                vector<double> sacStrat = node.queue().getCompletedSacrifices();
+                sacStrat.push_back(
+                    (node.game().getBoostAfterSacrifice() * DC::D2).log10value()
+                );
+                sacrificeStrategies.push_back(sacStrat);
+            }
+            cout << "============================================================" << endl;
+            cout << "Optimizing sacrifices" << endl;
+            resultNodes = PreciseSacrificeIteration(
+                st, progress, purchaseStrategies, sacrificeStrategies, verbose).run();
+            sacrificeStrategies.clear();
+            for (SearchNode& node : resultNodes) {
+                sacrificeStrategies.push_back(node.queue().getCompletedSacrifices());
+            }
         }
         const GameInstance& iterationBest = resultNodes[0].gameInstance();
         iterationTime = iterationBest.game().realTimePlayed();
@@ -326,77 +323,4 @@ void PreciseSacrificeIteration::scheduleSacrifice(SearchNode& node, const Decima
     node.addInstructions({Instruction::Sacrifice, target.log10value()});
     node.setNextSacBranching(
         Decimal(1, projectedSacrifices[node.game().sacrifice().getSacrificesDone() + 1]) / tolerance);
-}
-
-bool compare(const double* st1, const double* st2, size_t width) {
-    // Compare the two game states together.
-    // Returns true if all st1's values are bigger or equal than that of st2,
-    // and at least one value is strictly bigger.
-    // Otherwise, return false.
-    bool strictlyBetter = false;
-    for (size_t i = 0; i < width; i++) {
-        if (st1[i] < st2[i]) return false;
-        if (st1[i] > st2[i]) strictlyBetter = true;
-    }
-    return strictlyBetter;
-}
-
-void purge(vector<SearchNode>& nodes, const function<void(int, double)>& onProgress) {
-    size_t size = nodes.size();
-    vector<int> indices(size);
-    iota(indices.begin(), indices.end(), 0);
-    sort(indices.begin(), indices.end(), [&nodes](int i, int j) {
-        return nodes[i].game().AD()[1].getAmount() > nodes[j].game().AD()[1].getAmount();
-    });
-    vector<double> values;
-    int width = 0;
-    for (size_t i = 0; i < size; i++) {
-        const GameState& gst = nodes[indices[i]].game();
-        values.push_back(gst.antimatter().log10value());
-        for (int d = 1; d <= 8; d++) {
-            values.push_back(gst.AD()[d].getAmount().log10value());
-            values.push_back(gst.AD()[d].getPurchases());
-        }
-        values.push_back(gst.sacrifice().getSacrificeBonus().log10value());
-        values.push_back(gst.tickspeed().getPurchases());
-        values.push_back(gst.tickspeed().perSecond().log10value());
-        values.push_back(gst.getAchievementBonus().log10value());
-        if (i == 0) {
-            width = values.size();
-            values.reserve(size * width);
-        }
-    }
-    vector<char> removedCopy(size);
-    int statesPurged = 0;
-    double iterationsTotal = (double) (size) * (size - 1) / 2.0;
-    #pragma omp parallel if(size > PARALLEL_THRESHOLD)
-    for (size_t i = 0; i < size; i++) {
-        #pragma omp single
-        if (onProgress) {
-            double iterationsDone = (double) i * size - (double) i * (i + 1) / 2;
-            onProgress(statesPurged, iterationsDone / iterationsTotal);
-        }
-        if (removedCopy[i] == 1) continue;
-        #pragma omp for reduction(+:statesPurged)
-        for (size_t j = i + 1; j < size; j++) {
-            if (removedCopy[j] == 1) continue;
-            if (compare(&values[i * width], &values[j * width], width)) {
-                removedCopy[j] = 1;
-                statesPurged++;
-            }
-        }
-    }
-    vector<char> removedOrig(size);
-    for (size_t i = 0; i < size; i++) {
-        removedOrig[indices[i]] = removedCopy[i];
-    }
-    vector<SearchNode> result;
-    int i = 0;
-    for (auto stIter = nodes.begin(); stIter != nodes.end(); stIter++) {
-        if (removedOrig[i] == 0) {
-            result.push_back(move(*stIter));
-        }
-        i++;
-    }
-    nodes.swap(result);
 }

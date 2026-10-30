@@ -228,6 +228,7 @@ target_sources(simulation
     PRIVATE
         libraries/simulation/simulation.cpp
         libraries/simulation/searchnode.cpp
+        libraries/simulation/purge.cpp
     PUBLIC
         FILE_SET HEADERS
         BASE_DIRS
@@ -235,6 +236,7 @@ target_sources(simulation
         FILES
             libraries/simulation/simulation.h
             libraries/simulation/searchnode.h
+            libraries/simulation/purge.h
             libraries/simulation/timer.h
 )
 target_link_libraries(simulation
@@ -250,7 +252,13 @@ target_link_libraries(simulation
 add_executable(main)
 target_sources(main 
     PRIVATE 
-        main.cpp
+        release/main.cpp
+    PRIVATE
+        FILE_SET HEADERS
+        BASE_DIRS
+            release
+        FILES
+            release/cmdutils.h
 )
 target_link_libraries(main
     PRIVATE
@@ -263,7 +271,13 @@ target_link_libraries(main
 add_executable(custom)
 target_sources(custom 
     PRIVATE 
-        customRun.cpp
+        release/customRun.cpp
+    PRIVATE
+        FILE_SET HEADERS
+        BASE_DIRS
+            release
+        FILES
+            release/cmdutils.h
 )
 target_link_libraries(custom
     PRIVATE

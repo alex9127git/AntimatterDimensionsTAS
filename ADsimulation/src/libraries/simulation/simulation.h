@@ -153,6 +153,3 @@ class PreciseSacrificeIteration : public Iteration {
 
 GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose=true);
 GameInstance runUntil(GameState st, const Progress& progress, bool useSacrifice, bool verbose);
-
-bool compare(const double* st1, const double* st2, size_t width);
-void purge(std::vector<SearchNode>& nodes, const std::function<void(int, double)>& onProgress={});

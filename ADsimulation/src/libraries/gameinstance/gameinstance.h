@@ -27,5 +27,9 @@ class GameInstance {
         void clearAllInstructions();
         bool runNextInstructions();
 
+    private:
+        void setNextSacrificeInstruction();
+
+    public:
         void tick(double diff) {gameState.tick(diff);}
 };

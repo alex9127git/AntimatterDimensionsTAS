@@ -8,11 +8,7 @@ GameInstance::GameInstance(const GameState& st)
 
 void GameInstance::addInstructions(const vector<double>& instructions) {
     _queue.add(instructions);
-    if (queue().hasNextSacrifice()) {
-        this->nextSacrificeInstruction = gameState.sacrifice().getReqForSac(
-            Decimal(1, queue().peekNextSacrifice())
-        );
-    }
+    if (queue().hasNextSacrifice()) setNextSacrificeInstruction();
 }
 
 void GameInstance::clearAllInstructions() {
@@ -28,13 +24,15 @@ bool GameInstance::runNextInstructions() {
     while (queue().hasNextSacrifice() && this->runSacInstruction()) {
         _queue.completeSacrifice();
         ranInstruction = true;
-        if (queue().hasNextSacrifice()) {
-            this->nextSacrificeInstruction = gameState.sacrifice().getReqForSac(
-                Decimal(1, queue().peekNextSacrifice())
-            );
-        }
+        if (queue().hasNextSacrifice()) setNextSacrificeInstruction();
     }
     return ranInstruction;
+}
+
+void GameInstance::setNextSacrificeInstruction() {
+    this->nextSacrificeInstruction = gameState.sacrifice().getReqForSac(
+        Decimal(1, queue().peekNextSacrifice())
+    );
 }
 
 bool GameInstance::runInstruction(uint16_t instruction) {
