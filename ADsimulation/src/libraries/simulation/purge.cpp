@@ -1,4 +1,5 @@
 #include "simulation.h"
+#include "constants.h"
 #include "purge.h"
 #include <algorithm>
 #include <numeric>

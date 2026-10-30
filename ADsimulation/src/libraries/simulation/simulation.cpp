@@ -4,6 +4,7 @@
 #include "ioutils.h"
 #include "purge.h"
 #include <algorithm>
+#include <stdexcept>
 #include <cstdint>
 #include <string>
 #include <format>
@@ -189,6 +190,10 @@ vector<SearchNode> Iteration::run() {
         tickAllStates();
         purgeObsoleteStates();
         ticks++;
+        if (ticks >= MAX_TICKS) {
+            renderProgressDisplay();
+            throw runtime_error(format("Strategy search stopped: took more than {} ticks", MAX_TICKS));
+        }
     }
     vector<SearchNode> finishedStates;
     for (SearchNode& node : nodes) {

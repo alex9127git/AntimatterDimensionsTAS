@@ -5,9 +5,6 @@
 #include <vector>
 
 
-inline constexpr size_t PARALLEL_THRESHOLD = 1000;
-
-
 class Progress {
     private:
         std::function<bool(const GameState&)> stopCondition;
@@ -82,7 +79,7 @@ class Iteration {
         std::vector<SearchNode> newNodes;
         Stats stats;
         bool isFinished = false;
-        int ticks = 0;
+        int64_t ticks = 0;
         int statesBeforePurge = 1;
         int statesAfterPurge = 1;
         int adds = 0;

@@ -49,3 +49,7 @@ struct DC {
 
     inline static const Decimal INF = Decimal::pow(D2, 1024);
 };
+
+
+inline constexpr size_t PARALLEL_THRESHOLD = 1000;
+inline constexpr int64_t MAX_TICKS = 5000000;
