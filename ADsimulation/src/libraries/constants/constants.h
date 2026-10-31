@@ -56,4 +56,5 @@ struct DC {
 
 
 inline constexpr size_t PARALLEL_THRESHOLD = 1000;
+inline constexpr size_t MAX_STATES_CARRYOVER = 999;
 inline constexpr int64_t MAX_TICKS = 5000000;

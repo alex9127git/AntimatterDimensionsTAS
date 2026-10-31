@@ -8,7 +8,9 @@
 #include <cstdint>
 #include <string>
 #include <format>
+#include <set>
 using namespace std;
+using Strategies = vector<vector<double>>;
 
 
 GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose) {
@@ -34,54 +36,73 @@ GameInstance runUntil(
 ) {
     vector<SearchNode> resultNodes;
     GameInstance best;
+    int64_t bestTime = INT64_MAX;
     int64_t currentIterationTime = INT64_MAX;
     int64_t iterationTime = INT64_MAX;
     int64_t startTime = st.realTimePlayed();
-    vector<vector<double>> purchaseStrategies = {{}};
-    vector<vector<double>> sacrificeStrategies = {{}};
+    Strategies purchaseStrategies = {{}};
+    Strategies sacrificeStrategies = {{}};
+    set<Strategies> seenPurchaseInputs, seenSacrificeInputs;
     int iterationCounter = 0;
+    bool isImproving = true;
+    bool repeated = false;
     do {
         iterationCounter++;
-        currentIterationTime = iterationTime;
+        if (iterationCounter % 2 == 1) currentIterationTime = iterationTime;
         cout << "============================================================" << endl;
         cout << "Running iteration " << iterationCounter << endl;
         if (iterationCounter % 2 == 1) {
             resultNodes = PurchaseIteration(st, progress, sacrificeStrategies, verbose).run();
             purchaseStrategies.clear();
+            set<vector<double>> seenStrategies;
             for (SearchNode& node : resultNodes) {
-                purchaseStrategies.push_back(node.queue().getCompletedPurchases());
+                vector<double> strat = node.queue().getCompletedPurchases();
+                if (seenStrategies.insert(strat).second) purchaseStrategies.push_back(strat);
             }
+            if (!seenPurchaseInputs.insert(purchaseStrategies).second) repeated = true;
         } else {
             resultNodes = ApproxSacrificeIteration(st, progress, purchaseStrategies, verbose).run();
             purchaseStrategies.clear();
             sacrificeStrategies.clear();
+            set<pair<vector<double>, vector<double>>> seenStrategyPairs;
             for (SearchNode& node : resultNodes) {
-                purchaseStrategies.push_back(node.queue().getCompletedPurchases());
+                vector<double> purchStrat = node.queue().getCompletedPurchases();
                 vector<double> sacStrat = node.queue().getCompletedSacrifices();
                 sacStrat.push_back(
                     (node.game().getBoostAfterSacrifice() * DC::D2).log10value()
                 );
-                sacrificeStrategies.push_back(sacStrat);
+                if (seenStrategyPairs.insert(pair(purchStrat, sacStrat)).second) {
+                    purchaseStrategies.push_back(purchStrat);
+                    sacrificeStrategies.push_back(sacStrat);
+                }
             }
             cout << "============================================================" << endl;
             cout << "Optimizing sacrifices" << endl;
             resultNodes = PreciseSacrificeIteration(
                 st, progress, purchaseStrategies, sacrificeStrategies, verbose).run();
             sacrificeStrategies.clear();
+            set<vector<double>> seenStrategies;
             for (SearchNode& node : resultNodes) {
-                sacrificeStrategies.push_back(node.queue().getCompletedSacrifices());
+                vector<double> strat = node.queue().getCompletedSacrifices();
+                if (seenStrategies.insert(strat).second) sacrificeStrategies.push_back(strat);
             }
+            if (!seenSacrificeInputs.insert(sacrificeStrategies).second) repeated = true;
         }
         const GameInstance& iterationBest = resultNodes[0].gameInstance();
         iterationTime = iterationBest.game().realTimePlayed();
-        if (iterationTime < currentIterationTime) best = iterationBest;
+        isImproving = iterationCounter % 2 == 1 || iterationTime < currentIterationTime;
+        if (iterationTime < bestTime) {
+            best = iterationBest;
+            bestTime = iterationTime;
+        }
         if (verbose) {
             cout << "Iteration " << iterationCounter << " results:" << endl;
             cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
             cout << "Cumulative time: " << renderTime(iterationTime) << endl;
-            cout << "Winning strategies left: " << purchaseStrategies.size() << endl;
+            cout << "Winning strategies left: " << (iterationCounter % 2 == 1 ?
+                 purchaseStrategies.size() : sacrificeStrategies.size()) << endl;
         }
-    } while (st.dimensionBoosts() >= 5 && useSacrifice && iterationTime < currentIterationTime);
+    } while (st.dimensionBoosts() >= 5 && useSacrifice && isImproving && !repeated);
     best.clearAllInstructions();
     return best;
 }
@@ -206,6 +227,7 @@ vector<SearchNode> Iteration::run() {
     }
     vector<SearchNode> finishedStates;
     for (SearchNode& node : nodes) {
+        if (finishedStates.size() >= MAX_STATES_CARRYOVER) break;
         if (progress.isFinished(node.game())) {
             finishedStates.push_back(move(node));
         }
