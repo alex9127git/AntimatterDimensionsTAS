@@ -1,12 +1,19 @@
 #pragma once
 #include "gameinstance.h"
 #include "ioutils.h"
+#include <stdexcept>
 #include <iostream>
 #include <fstream>
 #include <cstdio>
 #include <string>
 #include <map>
 
+
+enum RunType {
+    NextDimboost,
+    NextGalaxy,
+    ForceNextGalaxy
+};
 
 struct InputData {
     bool isValid = true;
@@ -18,6 +25,7 @@ struct InputData {
     bool useSacrifice = false;
 
     GameState gameState;
+    RunType runType = NextDimboost;
     
     void saveResult(const GameInstance& instance) {
         std::cout << "Finished simulation; dumping result game state into " << outputFile << std::endl;
@@ -30,6 +38,12 @@ struct InputData {
         }
     }
 };
+
+inline InputData cancel(InputData& data) {
+    std::cout << "Unrecognized input. Aborting execution." << std::endl;
+    data.isValid = false;
+    return data;
+}
 
 inline InputData getInputFromCmd(int argc, char* argv[]) {
     InputData result = InputData();
@@ -76,14 +90,31 @@ inline InputData getInputFromCmd(int argc, char* argv[]) {
         std::cout << "Command output filename not specified. Command sequence will not be saved." << std::endl;
         result.saveCommands = false;
     }
+    std::cout << "Choose type of run:" << std::endl;
+    std::cout << "0 - Get next Dimension Boost" << std::endl;
+    std::cout << "1 - Get next Antimatter Galaxy" << std::endl;
+    if (result.gameState.dimensionBoosts() >= 4) {
+        std::cout << "2 - Force Antimatter Galaxy" << std::endl;
+    }
+    std::string line;
+    std::getline(std::cin, line);
+    int t;
+    try {
+        t = line.empty() ? 0 : std::stoi(line);
+    } catch (const std::exception& e) {
+        return cancel(result);
+    };
+    if (t < 0 || t > 2) return cancel(result);
+    if (t == 2 && result.gameState.dimensionBoosts() < 4) return cancel(result);
+    result.runType = (RunType) t;
     if (result.gameState.dimensionBoosts() >= 5) {
         std::cout << "Input game state has 5 dimension boosts or more. Do you want to use sacrifice? [Y/n] ";
-        char confirmation = getchar();
+        std::getline(std::cin, line);
+        char confirmation = line.empty() ? 'y' : line[0];
         switch (confirmation) {
             case 'Y':
             case 'y':
             case '\r':
-            case '\n':
                 result.useSacrifice = true;
                 break;
             case 'N':
@@ -91,9 +122,7 @@ inline InputData getInputFromCmd(int argc, char* argv[]) {
                 result.useSacrifice = false;
                 break;
             default:
-                std::cout << "Unrecognized input. Aborting the execution." << std::endl;
-                result.isValid = false;
-                return result;
+                return cancel(result);
         }
     }
     return result;

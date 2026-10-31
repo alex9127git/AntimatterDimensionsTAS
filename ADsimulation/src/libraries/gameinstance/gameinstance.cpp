@@ -41,7 +41,9 @@ bool GameInstance::runInstruction(uint16_t instruction) {
     } else if (instruction == Instruction::TickspeedSingle) {
         return gameState.buyTickspeed();
     } else if (instruction == Instruction::DimensionBoost) {
-        return gameState.requestDimboost();
+        return gameState.dimboostReset();
+    } else if (instruction == Instruction::AntimatterGalaxy) {
+        return gameState.galaxyReset();
     } else if (instruction == Instruction::KonamiCode) {
         return gameState.handleKonamiCode();
     } else {

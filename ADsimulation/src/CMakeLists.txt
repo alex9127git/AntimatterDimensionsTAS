@@ -196,9 +196,8 @@ target_sources(achievements
 target_link_libraries(achievements
     PUBLIC
         interfaces
-        decimal
-    PRIVATE
         constants
+        decimal
 )
 
 add_library(gamestate)

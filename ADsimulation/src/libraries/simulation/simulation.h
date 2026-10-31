@@ -29,6 +29,15 @@ class Progress {
             );
         }
 
+        static Progress untilGalaxy() {
+            return Progress(
+                [](const GameState& st) {return st.canBuyNextGalaxy();}, 
+                [](const GameState& st) {
+                    return st.antimatterThisReset().log10value() / st.getAntimatterGoalForGalaxy().log10value();
+                }
+            );
+        }
+
         double getFraction() const {return progressFraction;}
         void finish() {
             progressFraction = 1.0;
@@ -149,4 +158,5 @@ class PreciseSacrificeIteration : public Iteration {
 };
 
 GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose=true);
+GameInstance runGalaxy(GameState st, bool useSacrifice, bool verbose=true);
 GameInstance runUntil(GameState st, const Progress& progress, bool useSacrifice, bool verbose);

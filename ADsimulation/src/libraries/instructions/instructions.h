@@ -14,6 +14,7 @@ namespace Instruction {
 
     constexpr uint16_t TickspeedSingle = 9;
     constexpr uint16_t DimensionBoost = 100;
+    constexpr uint16_t AntimatterGalaxy = 101;
     constexpr uint16_t Sacrifice = 108;
     constexpr uint16_t KonamiCode = 130;
 }

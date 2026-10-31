@@ -70,12 +70,10 @@ bool GameState::buyOneDimension(int tier) {
             recalcAD(tier);
         }
         unlockAchievement(10 + tier, true);
-        if (tier == 2) {
-            _tickspeed.unlock();
-        }
-        if (tier < 8 && _dimensionBoosts >= tier - 3) {
-            _AD[tier + 1].unlock();
-        }
+        unlockAchievement(23, false);
+        if (tier == 1) unlockAchievement(28, false);
+        if (tier == 2) _tickspeed.unlock();
+        if (tier < 8 && _dimensionBoosts >= tier - 3) _AD[tier + 1].unlock();
         return true;
     }
     return false;
@@ -136,7 +134,11 @@ bool GameState::canBuyNextDimboost() const {
             getAmountForDimboost(_dimensionBoosts + 1));
 }
 
-bool GameState::requestDimboost() {
+bool GameState::canBuyNextGalaxy() const {
+    return (this->_AD[8].getPurchases() >= getAmountForGalaxy(_antimatterGalaxies + 1));
+}
+
+bool GameState::dimboostReset() {
     if (canBuyNextDimboost()) {
         _dimensionBoosts += 1;
         _AD = AntimatterDimensions();
@@ -144,6 +146,25 @@ bool GameState::requestDimboost() {
         _sacrifice = Sacrifice();
         _antimatter = DC::D10;
         _antimatterThisReset = DC::D10;
+        unlockAchievement(25, false);
+        recalcTickspeed();
+        recalcAD();
+        return true;
+    }
+    return false;
+}
+
+bool GameState::galaxyReset() {
+    if (canBuyNextGalaxy()) {
+        unlockAchievement(26, true);
+        _dimensionBoosts = 0;
+        _antimatterGalaxies += 1;
+        _AD = AntimatterDimensions();
+        _tickspeed = Tickspeed();
+        _sacrifice = Sacrifice();
+        _antimatter = DC::D10;
+        _antimatterThisReset = DC::D10;
+        unlockAchievement(27, false);
         recalcTickspeed();
         recalcAD();
         return true;
@@ -169,6 +190,7 @@ Decimal GameState::getBoostAfterSacrifice() const {
 bool GameState::sacrificeReset() {
     if (!canSacrifice()) return false;
     _sacrifice.increaseSacrifice(_AD[1].getAmount());
+    unlockAchievement(32, false);
     for (int i = 1; i <= 7; i++) {
         _AD[i].resetAmount();
     }

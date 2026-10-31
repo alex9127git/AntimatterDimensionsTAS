@@ -15,7 +15,16 @@ GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose) {
     GameInstance result = runUntil(
         st, Progress::untilDimboost(), useSacrifice, verbose
     );
-    result.addInstructions({100});
+    result.addInstructions({Instruction::DimensionBoost});
+    result.runNextInstructions();
+    return result;
+}
+
+GameInstance runGalaxy(GameState st, bool useSacrifice, bool verbose) {
+    GameInstance result = runUntil(
+        st, Progress::untilGalaxy(), useSacrifice, verbose
+    );
+    result.addInstructions({Instruction::AntimatterGalaxy});
     result.runNextInstructions();
     return result;
 }

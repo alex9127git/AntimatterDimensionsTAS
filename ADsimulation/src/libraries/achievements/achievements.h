@@ -1,5 +1,6 @@
 #pragma once
 #include "interfaces.h"
+#include "constants.h"
 #include "decimal.h"
 #include <cstdint>
 #include <vector>
@@ -27,6 +28,7 @@ class Achievements : public ISerializable {
         int achCount() const;
 
         Decimal calcBonus() const;
+        Decimal effectOrDefault(int id, Decimal arg=DC::D0) const;
 
         json to_json() const override;
         void from_json(const json& j) override;

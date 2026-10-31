@@ -77,7 +77,9 @@ class GameState : public ISerializable {
         Decimal getAntimatterGoalForDimboost() const;
         Decimal getAntimatterGoalForGalaxy() const;
         bool canBuyNextDimboost() const;
-        bool requestDimboost();
+        bool canBuyNextGalaxy() const;
+        bool dimboostReset();
+        bool galaxyReset();
         bool canSacrifice() const;
     private:
         Decimal sacrificeIncrease() const;

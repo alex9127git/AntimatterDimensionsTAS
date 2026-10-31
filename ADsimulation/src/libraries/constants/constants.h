@@ -24,6 +24,7 @@ struct DC {
     inline static const Decimal D10 = Decimal(10);
     inline static const Decimal D20 = Decimal(20);
     inline static const Decimal D100 = Decimal(100);
+    inline static const Decimal D600 = Decimal(600);
 
     inline static const Decimal D1E3 = Decimal(1, (int64_t) 3LL);
     inline static const Decimal D5E3 = Decimal(5, (int64_t) 3LL);
@@ -34,6 +35,7 @@ struct DC {
     inline static const Decimal D1E7 = Decimal(1, (int64_t) 7LL);
     inline static const Decimal D1E8 = Decimal(1, (int64_t) 8LL);
     inline static const Decimal D1E9 = Decimal(1, (int64_t) 9LL);
+
     inline static const Decimal D1E10 = Decimal(1, (int64_t) 10LL);
     inline static const Decimal D5E10 = Decimal(5, (int64_t) 10LL);
     inline static const Decimal D1E12 = Decimal(1, (int64_t) 12LL);
@@ -42,10 +44,12 @@ struct DC {
     inline static const Decimal D1E18 = Decimal(1, (int64_t) 18LL);
     inline static const Decimal D1E24 = Decimal(1, (int64_t) 24LL);
     inline static const Decimal D5E25 = Decimal(5, (int64_t) 25LL);
-    inline static const Decimal D1E26 = Decimal(1, (int64_t) 26LL);
+    inline static const Decimal D1E28 = Decimal(1, (int64_t) 28LL);
     inline static const Decimal D1E31 = Decimal(1, (int64_t) 31LL);
     inline static const Decimal D1E63 = Decimal(1, (int64_t) 63LL);
     inline static const Decimal D1E80 = Decimal(1, (int64_t) 80LL);
+
+    inline static const Decimal D1E150 = Decimal(1, (int64_t) 150LL);
 
     inline static const Decimal INF = Decimal::pow(D2, 1024);
 };

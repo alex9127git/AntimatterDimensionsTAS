@@ -134,6 +134,10 @@ Decimal Achievements::calcBonus() const {
     return Decimal::pow(DC::D1_25, fullRows) * Decimal::pow(DC::D1_03, achievements);
 }
 
+Decimal Achievements::effectOrDefault(int id, Decimal arg) const {
+    return isUnlocked(id) ? effectFormulae[idToIndex(id)](arg) : DC::D1;
+}
+
 json Achievements::to_json() const {
     json j;
     vector<int> ids;

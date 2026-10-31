@@ -27,6 +27,16 @@ void SearchNode::computeAllowedPurchases() {
     while (st.AD()[frontier].getPurchases() >= 10 && frontier < min(st.dimensionBoosts() + 4, 8)) {
         frontier++;
     }
+    if (st.tickspeed().isUnlocked() && st.tickspeed().getCost() * DC::D1E3 <= st.antimatter()) {
+        allowedPurchases.push_back(9);
+        return;
+    }
+    for (int i = 1; i <= frontier; i++) {
+        if (costOf(i) * DC::D1E3 <= st.antimatter()) {
+            allowedPurchases.push_back(i);
+            return;
+        }
+    }
     for (int i = 1; i <= frontier; i++) {
         if (st.AD()[i].getPurchases() > 10 && st.AD()[i].getPurchases() % 10 != 0) {
             allowedPurchases.push_back(i);

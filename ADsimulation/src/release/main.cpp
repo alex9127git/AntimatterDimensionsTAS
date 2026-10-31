@@ -15,8 +15,19 @@ int main(int argc, char* argv[]) {
 
     InputData data = getInputFromCmd(argc, argv);
     if (!data.isValid) return 0;
-    
-    GameInstance instance = runDimboost(data.gameState, data.useSacrifice);
+
+    GameInstance instance;
+    switch (data.runType) {
+        case NextDimboost:
+            instance = runDimboost(data.gameState, data.useSacrifice);
+            break;
+        case NextGalaxy:
+            cout << "not implemented yet" << endl;
+            return 0;
+        case ForceNextGalaxy:
+            instance = runGalaxy(data.gameState, data.useSacrifice);
+            break;
+    }
     data.saveResult(instance);
     return 0;
 };
