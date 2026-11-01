@@ -7,5 +7,5 @@
 
 void appendValues(const GameState& st, std::vector<double>& values);
 
-bool compare(const double* st1, const double* st2, size_t width);
+int compare(const double* st1, const double* st2, size_t width);
 void purge(std::vector<SearchNode>& nodes, const std::function<void(int, double)>& onProgress={});

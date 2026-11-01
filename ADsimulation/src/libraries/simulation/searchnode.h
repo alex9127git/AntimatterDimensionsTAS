@@ -46,6 +46,7 @@ class SearchNode {
         void computeAllowedPurchases();
     public:
         const std::vector<uint16_t>& getPurchaseBranches() const;
+        Decimal getNextSacBranch() const {return nextSacrificeBranch;}
         
         // sacrifice branching methods
         

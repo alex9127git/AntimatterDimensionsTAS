@@ -40,6 +40,9 @@ class InstructionQueue {
         const std::vector<uint16_t>& getCompletedInstructions() const;
         std::vector<double> getCompletedPurchases() const;
         const std::vector<double>& getCompletedSacrifices() const;
+
+        std::vector<uint16_t> getQueuedPurchases() const;
+        std::vector<double> getQueuedSacrifices() const;
 };
 
 void writeInstructions(std::ostream& f, const InstructionQueue& queue);

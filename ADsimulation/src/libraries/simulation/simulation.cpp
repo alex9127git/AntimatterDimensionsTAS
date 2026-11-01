@@ -14,9 +14,16 @@ using Strategies = vector<vector<double>>;
 
 
 GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose) {
-    GameInstance result = runUntil(
-        st, Progress::untilDimboost(), useSacrifice, verbose
-    );
+    GameInstance result;
+    if (st.antimatterGalaxies() == 1 && st.dimensionBoosts() == 9) {
+        result = runUntil(
+            st, Progress::untilAch23(), useSacrifice, verbose
+        );
+    } else {
+        result = runUntil(
+            st, Progress::untilDimboost(), useSacrifice, verbose
+        );
+    }
     result.addInstructions({Instruction::DimensionBoost});
     result.runNextInstructions();
     return result;

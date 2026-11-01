@@ -19,17 +19,18 @@ void appendValues(const GameState& st, vector<double>& values) {
 }
 
 
-bool compare(const double* st1, const double* st2, size_t width) {
+int compare(const double* st1, const double* st2, size_t width) {
     // Compare the two game states together.
-    // Returns true if all st1's values are bigger or equal than that of st2,
+    // Returns 1 if all st1's values are bigger or equal than that of st2,
     // and at least one value is strictly bigger.
-    // Otherwise, return false.
+    // Returns 0 if all compared values are equal
+    // Returns -1 otherwise.
     bool strictlyBetter = false;
     for (size_t i = 0; i < width; i++) {
-        if (st1[i] < st2[i]) return false;
+        if (st1[i] < st2[i]) return -1;
         if (st1[i] > st2[i]) strictlyBetter = true;
     }
-    return strictlyBetter;
+    return strictlyBetter ? 1 : 0;
 }
 
 void purge(vector<SearchNode>& nodes, const function<void(int, double)>& onProgress) {
@@ -63,7 +64,16 @@ void purge(vector<SearchNode>& nodes, const function<void(int, double)>& onProgr
         #pragma omp for reduction(+:statesPurged)
         for (size_t j = i + 1; j < size; j++) {
             if (removedCopy[j] == 1) continue;
-            if (compare(&values[i * width], &values[j * width], width)) {
+            int compareResult = compare(&values[i * width], &values[j * width], width);
+            if (compareResult == 1) {
+                removedCopy[j] = 1;
+                statesPurged++;
+            } else if (compareResult == 0) {
+                const SearchNode& nodeA = nodes[indices[i]];
+                const SearchNode& nodeB = nodes[indices[j]];
+                if (nodeA.queue().getQueuedPurchases() != nodeB.queue().getQueuedPurchases()) continue;
+                if (nodeA.queue().getQueuedSacrifices() != nodeB.queue().getQueuedSacrifices()) continue;
+                if (nodeA.getNextSacBranch() != nodeB.getNextSacBranch()) continue;
                 removedCopy[j] = 1;
                 statesPurged++;
             }

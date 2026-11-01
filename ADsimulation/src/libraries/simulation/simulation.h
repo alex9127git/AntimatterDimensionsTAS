@@ -28,6 +28,15 @@ class Progress {
                 }
             );
         }
+        
+        static Progress untilAch23() {
+            return Progress(
+                [](const GameState& st) {return st.achievements().isUnlocked(23);}, 
+                [](const GameState& st) {
+                    return st.antimatterThisReset().log10value() / st.getAntimatterGoalForDimboost().log10value();
+                }
+            );
+        }
 
         static Progress untilGalaxy() {
             return Progress(

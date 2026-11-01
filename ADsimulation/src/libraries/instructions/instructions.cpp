@@ -85,6 +85,22 @@ const vector<double>& InstructionQueue::getCompletedSacrifices() const {
     return completedSacrifices;
 }
 
+vector<uint16_t> InstructionQueue::getQueuedPurchases() const {
+    vector<uint16_t> result;
+    for (size_t i = purchaseIndex; i < purchaseInstructions.size(); i++) {
+        result.push_back(purchaseInstructions[i]);
+    }
+    return result;
+}
+
+vector<double> InstructionQueue::getQueuedSacrifices() const {
+    vector<double> result;
+    for (size_t i = sacrificeIndex; i < sacrificeInstructions.size(); i++) {
+        result.push_back(sacrificeInstructions[i]);
+    }
+    return result;
+}
+
 void writeInstructions(ostream& f, const InstructionQueue& queue) {
     f << "[\n";
     const vector<uint16_t>& completed = queue.getCompletedInstructions();
@@ -102,6 +118,8 @@ void writeInstructions(ostream& f, const InstructionQueue& queue) {
             lines.push_back("[\"buyTickSpeed\",[0]]");
         } else if (instruction == Instruction::DimensionBoost) {
             lines.push_back("[\"buyDimensionBoost\",[0]]");
+        } else if (instruction == Instruction::AntimatterGalaxy) {
+            lines.push_back("[\"buyGalaxyReset\",[0]]");
         } else if (instruction == Instruction::Sacrifice) {
             Decimal sacTarget = Decimal(1, sacrifices[sacrificeIndex++]);
             lines.push_back(format("[\"trySacrificeReset\",[\"{}\"]]", sacTarget.toString(10)));
