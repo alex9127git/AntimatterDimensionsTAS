@@ -26,6 +26,8 @@ class GameInstance {
         void addInstructions(const std::vector<double>& instructions);
         void clearAllInstructions();
         bool runNextInstructions();
+        bool runNextPurchases();
+        bool runNextSacrifices();
 
     private:
         void setNextSacrificeInstruction();

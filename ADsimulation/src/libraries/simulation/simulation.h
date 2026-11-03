@@ -3,6 +3,7 @@
 #include "timer.h"
 #include <functional>
 #include <vector>
+using Strategies = std::vector<std::vector<double>>;
 
 
 class Progress {
@@ -132,7 +133,7 @@ class PurchaseIteration : public Iteration {
     public:
         PurchaseIteration(
             GameState st, const Progress& progress,
-            const std::vector<std::vector<double>>& sacrificeStrategies, bool verbose
+            const Strategies& sacrificeStrategies, bool verbose
         );
 };
 
@@ -145,7 +146,7 @@ class ApproxSacrificeIteration : public Iteration {
     public:
         ApproxSacrificeIteration(
             GameState st, const Progress& progress,
-            const std::vector<std::vector<double>>& purchaseStrategies, bool verbose
+            const Strategies& purchaseStrategies, bool verbose
         );
 };
 
@@ -153,7 +154,7 @@ class PreciseSacrificeIteration : public Iteration {
     private:
         inline static const Decimal tolerance = DC::D1_01;
         inline static const Decimal precision = DC::D1 + Decimal(1e-9);
-        std::vector<double> projectedSacrifices;
+        Strategies projectedSacrifices;
 
         void addBranches() override;
         void scheduleSacrifice(SearchNode& st, const Decimal& target) const;
@@ -161,8 +162,8 @@ class PreciseSacrificeIteration : public Iteration {
     public:
         PreciseSacrificeIteration(
             GameState st, const Progress& progress,
-            const std::vector<std::vector<double>>& purchaseStrategies, 
-            const std::vector<std::vector<double>>& sacrificeStrategies, bool verbose
+            const Strategies& purchaseStrategies, 
+            const Strategies& sacrificeStrategies, bool verbose
         );
 };
 

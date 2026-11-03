@@ -17,6 +17,7 @@ class SearchNode {
         Decimal nextPurchaseCost = DC::D0;
 
         int sacsAtBranchSet = 0;
+        size_t projRouteIndex = 0;
 
     public:
         SearchNode(const GameState& st);
@@ -31,11 +32,13 @@ class SearchNode {
             return code == Instruction::TickspeedSingle ? 
                         game().tickspeed().getCost() : game().AD()[code].getCost();
         }
+        size_t getProjRouteIndex() const {return projRouteIndex;}
 
         // instruction methods
 
         void addInstructions(const std::vector<double>& instructions) {instance.addInstructions(instructions);}
         void runNextInstructions() {if (instance.runNextInstructions()) validated = false;}
+        void runNextPurchases() {if (instance.runNextPurchases()) validated = false;}
 
         void tick(double diff) {
             prevAD1 = instance.game().AD()[1].getAmount();
@@ -54,5 +57,6 @@ class SearchNode {
         // sacrifice branching methods
         
         bool canSacBranch();
+        void initProjRoute(size_t index) {projRouteIndex = index;}
         void setNextSacBranching(Decimal sacValue);
 };

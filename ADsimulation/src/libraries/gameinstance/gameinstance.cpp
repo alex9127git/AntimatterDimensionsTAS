@@ -16,11 +16,22 @@ void GameInstance::clearAllInstructions() {
 }
 
 bool GameInstance::runNextInstructions() {
+    bool ranPurchases = runNextPurchases();
+    bool ranSacrifices = runNextSacrifices();
+    return ranPurchases || ranSacrifices;
+}
+
+bool GameInstance::runNextPurchases() {
     bool ranInstruction = false;
     while (queue().hasNextPurchase() && this->runInstruction(queue().peekNextPurchase())) {
         _queue.completePurchase();
         ranInstruction = true;
     }
+    return ranInstruction;
+}
+
+bool GameInstance::runNextSacrifices() {
+    bool ranInstruction = false;
     while (queue().hasNextSacrifice() && this->runSacInstruction()) {
         _queue.completeSacrifice();
         ranInstruction = true;

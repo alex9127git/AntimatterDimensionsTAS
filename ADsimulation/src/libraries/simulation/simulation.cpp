@@ -10,7 +10,6 @@
 #include <format>
 #include <set>
 using namespace std;
-using Strategies = vector<vector<double>>;
 
 
 GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose) {
@@ -168,7 +167,7 @@ void Iteration::tickAllStates() {
     #pragma omp parallel for if(nodes.size() > PARALLEL_THRESHOLD) 
     for (SearchNode& node : nodes) {
         node.tick(0.033);
-        node.runNextInstructions();
+        node.runNextPurchases();
     }
     stats.updateTickTime();
 }
@@ -244,7 +243,7 @@ vector<SearchNode> Iteration::run() {
 
 PurchaseIteration::PurchaseIteration(
     GameState st, const Progress& progress,
-    const vector<vector<double>>& sacrificeStrategies, bool verbose
+    const Strategies& sacrificeStrategies, bool verbose
 )   :   Iteration(progress, verbose)
 {
     SearchNode node = SearchNode(st);
@@ -271,7 +270,7 @@ void PurchaseIteration::addBranches() {
     size_t end = nodes.size();
     while (begin < end) {
         for (size_t i = begin; i < end; i++) {
-            nodes[i].runNextInstructions();
+            nodes[i].runNextPurchases();
             computePurchaseBranches(nodes[i], newNodes);
         }
         appendNewStates();
@@ -286,17 +285,17 @@ void PurchaseIteration::computePurchaseBranches(SearchNode& node, vector<SearchN
         for (size_t i = 1; i < variants.size(); i++) {
             SearchNode newNode = node;
             newNode.addInstructions({(double) variants[i]});
-            newNode.runNextInstructions();
+            newNode.runNextPurchases();
             branches.push_back(move(newNode));
         }
         node.addInstructions({(double) variants[0]});
-        node.runNextInstructions();
+        node.runNextPurchases();
     }
 }
 
 ApproxSacrificeIteration::ApproxSacrificeIteration(
     GameState st, const Progress& progress,
-    const vector<vector<double>>& purchaseStrategies, bool verbose
+    const Strategies& purchaseStrategies, bool verbose
 )   :   Iteration(progress, verbose)
 {
     SearchNode node = SearchNode(st);
@@ -327,16 +326,17 @@ void ApproxSacrificeIteration::addBranches() {
 
 PreciseSacrificeIteration::PreciseSacrificeIteration(
     GameState st, const Progress& progress,
-    const vector<vector<double>>& purchaseStrategies, 
-    const vector<vector<double>>& sacrificeStrategies, bool verbose
+    const Strategies& purchaseStrategies, 
+    const Strategies& sacrificeStrategies, bool verbose
 )   :   Iteration(progress, verbose)
 {
     SearchNode node = SearchNode(st);
-    projectedSacrifices = sacrificeStrategies[0];
+    projectedSacrifices = sacrificeStrategies;
     for (size_t i = 0; i < purchaseStrategies.size(); i++) {
         nodes.push_back(node);
         nodes[i].addInstructions(purchaseStrategies[i]);
-        nodes[i].setNextSacBranching(Decimal(1, projectedSacrifices[0]) / tolerance);
+        nodes[i].initProjRoute(i);
+        nodes[i].setNextSacBranching(Decimal(1, projectedSacrifices[i][0]) / tolerance);
     }
     states = nodes.size();
 }
@@ -348,7 +348,9 @@ void PreciseSacrificeIteration::addBranches() {
             Decimal prevSac = node.game().sacrifice().getSacrificeBonus() * 
                 Decimal::max(node.game().sacrifice().sacrificeIncrease(node.getPrevAD1()), DC::D1);
             Decimal target = (currSac + prevSac) / DC::D2;
-            if (currSac > Decimal(1, projectedSacrifices[node.game().sacrifice().getSacrificesDone()]) * tolerance) {
+            if (currSac > Decimal(1, 
+                projectedSacrifices[node.getProjRouteIndex()][node.game().sacrifice().getSacrificesDone()]
+            ) * tolerance) {
                 scheduleSacrifice(node, target);
             } else {
                 SearchNode newNode = node;
@@ -365,5 +367,7 @@ void PreciseSacrificeIteration::addBranches() {
 void PreciseSacrificeIteration::scheduleSacrifice(SearchNode& node, const Decimal& target) const {
     node.addInstructions({Instruction::Sacrifice, target.log10value()});
     node.setNextSacBranching(
-        Decimal(1, projectedSacrifices[node.game().sacrifice().getSacrificesDone() + 1]) / tolerance);
+        Decimal(1, 
+            projectedSacrifices[node.getProjRouteIndex()][node.game().sacrifice().getSacrificesDone() + 1]
+        ) / tolerance);
 }
