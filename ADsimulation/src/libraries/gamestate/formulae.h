@@ -19,6 +19,7 @@ struct AchConstants {
 Decimal getADmult(const GameState& st, int tier);
 Decimal getTickspeedMultPerPurchase(const GameState& st);
 Decimal getTotalTickspeed(const GameState& st);
+Decimal getSacrificeExponent(const GameState& st);
 
 Decimal getCostForDimPurchases(const ExponentialCostScaling& costRule, int32_t dimTarget);
 

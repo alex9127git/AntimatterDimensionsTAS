@@ -125,6 +125,10 @@ Decimal getTotalTickspeed(const GameState& st) {
     return DC::D1E3 * Decimal::pow(getTickspeedMultPerPurchase(st), st.tickspeed().getPurchases());
 }
 
+Decimal getSacrificeExponent(const GameState& st) {
+    return DC::D2 * st.achievements().effectOrDefault(32);
+}
+
 Decimal getCostForDimPurchases(const ExponentialCostScaling& costRule, int32_t dimTarget) {
     return costRule.getCost((dimTarget - 1) / 10) * Decimal(dimTarget % 10 == 0 ? 10 : dimTarget % 10);
 }

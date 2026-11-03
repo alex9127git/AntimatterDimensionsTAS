@@ -34,6 +34,7 @@ class GameState : public ISerializable {
         void recalcAD();
         void recalcAD(int tier);
         void recalcTickspeed();
+        void recalcSacrifice();
         void recalcAchievementBonus();
 
         // checks

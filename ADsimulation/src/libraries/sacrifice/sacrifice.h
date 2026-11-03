@@ -12,6 +12,7 @@ class Sacrifice : public ISerializable {
 
         int sacrificesDone = 0;
         Decimal sacrificeBonus = DC::D1;
+        Decimal sacrificeExponent = DC::D2;
 
         void recalcSacrificeBonus();
 
@@ -19,7 +20,6 @@ class Sacrifice : public ISerializable {
         Sacrifice();
         Sacrifice(const json& j);
 
-        Decimal getSacrificeExponent() const;
         Decimal getSacrificeBonus() const {return sacrificeBonus;}
         Decimal getSacrificedAmount() const {return _sacrificed;}
         int getSacrificesDone() const {return sacrificesDone;}
@@ -28,6 +28,7 @@ class Sacrifice : public ISerializable {
         Decimal getReqForSac(const Decimal& sacValue) const;
 
         void increaseSacrifice(const Decimal& amount);
+        void updateExponent(const Decimal& newExponent);
 
         json to_json() const override;
         void from_json(const json& j) override;

@@ -16,6 +16,7 @@ GameState::GameState(const json& j)
 
 void GameState::prepare() {
     recalcAchievementBonus();
+    recalcSacrifice();
     recalcTickspeed();
     recalcAD();
     for (int i = 0; i < achievements().achCount(); i++) {
@@ -34,6 +35,10 @@ void GameState::recalcAD(int tier) {
 
 void GameState::recalcTickspeed() {
     _tickspeed.update(getTotalTickspeed(*this));
+}
+
+void GameState::recalcSacrifice() {
+    _sacrifice.updateExponent(getSacrificeExponent(*this));
 }
 
 void GameState::recalcAchievementBonus() {
@@ -147,6 +152,7 @@ bool GameState::dimboostReset() {
         _antimatter = DC::D10;
         _antimatterThisReset = DC::D10;
         unlockAchievement(25, false);
+        recalcSacrifice();
         recalcTickspeed();
         recalcAD();
         return true;
@@ -165,6 +171,7 @@ bool GameState::galaxyReset() {
         _antimatter = DC::D10;
         _antimatterThisReset = DC::D10;
         unlockAchievement(27, false);
+        recalcSacrifice();
         recalcTickspeed();
         recalcAD();
         return true;
@@ -194,6 +201,7 @@ bool GameState::sacrificeReset() {
     for (int i = 1; i <= 7; i++) {
         _AD[i].resetAmount();
     }
+    recalcSacrifice();
     recalcAD(8);
     return true;
 }

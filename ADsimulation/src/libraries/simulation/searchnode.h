@@ -10,10 +10,13 @@ class SearchNode {
     private:
         GameInstance instance;
         Decimal prevAD1 = DC::D1;
+        Decimal nextSacrificeValue = DC::D1;
         Decimal nextSacrificeBranch = DC::D1;
         bool validated = false;
         std::vector<uint16_t> allowedPurchases;
         Decimal nextPurchaseCost = DC::D0;
+
+        int sacsAtBranchSet = 0;
 
     public:
         SearchNode(const GameState& st);
@@ -46,10 +49,10 @@ class SearchNode {
         void computeAllowedPurchases();
     public:
         const std::vector<uint16_t>& getPurchaseBranches() const;
-        Decimal getNextSacBranch() const {return nextSacrificeBranch;}
+        Decimal getNextSacValue() const {return nextSacrificeValue;}
         
         // sacrifice branching methods
         
-        bool canSacBranch() const;
+        bool canSacBranch();
         void setNextSacBranching(Decimal sacValue);
 };

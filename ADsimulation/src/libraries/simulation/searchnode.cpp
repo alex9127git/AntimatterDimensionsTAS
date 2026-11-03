@@ -66,10 +66,15 @@ void SearchNode::computeAllowedPurchases() {
     );
 }
 
-bool SearchNode::canSacBranch() const {
+bool SearchNode::canSacBranch() {
+    if (this->sacsAtBranchSet != game().sacrifice().getSacrificesDone()) {
+        setNextSacBranching(this->nextSacrificeValue);
+    }
     return game().AD()[1].getAmount() >= this->nextSacrificeBranch;
 }
 
 void SearchNode::setNextSacBranching(Decimal sacValue) {
+    this->nextSacrificeValue = sacValue;
+    this->sacsAtBranchSet = game().sacrifice().getSacrificesDone();
     this->nextSacrificeBranch = game().sacrifice().getReqForSac(sacValue);
 }
