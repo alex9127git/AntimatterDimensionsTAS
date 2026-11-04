@@ -74,6 +74,7 @@ void purge(vector<SearchNode>& nodes, const function<void(int, double)>& onProgr
                 if (nodeA.queue().getQueuedPurchases() != nodeB.queue().getQueuedPurchases()) continue;
                 if (nodeA.queue().getQueuedSacrifices() != nodeB.queue().getQueuedSacrifices()) continue;
                 if (nodeA.getNextSacValue() != nodeB.getNextSacValue()) continue;
+                if (nodeA.getProjRouteIndex() != nodeB.getProjRouteIndex()) continue;
                 removedCopy[j] = 1;
                 statesPurged++;
             }
