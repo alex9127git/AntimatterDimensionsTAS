@@ -3,29 +3,66 @@
 #include "purge.h"
 #include <algorithm>
 #include <numeric>
+#include <map>
 using namespace std;
 
 
-void appendValues(const GameState& st, vector<double>& values) {
-    values.push_back(st.antimatter().log10value());
-    for (int d = 1; d <= 8; d++) {
-        values.push_back(st.AD()[d].getAmount().log10value());
-        values.push_back(st.AD()[d].getPurchases());
+void Grouping::initialize(vector<SearchNode>& nodes, vector<int>& indices) {
+    size_t size = nodes.size();
+    groupLookup.resize(size);
+    map<Key, int> keyLookup;
+    for (size_t i = 0; i < size; i++) {
+        Key key = getPurchasesFrom(nodes[indices[i]].game());
+        auto [entry, inserted] = keyLookup.try_emplace(key, keys.size());
+        if (inserted) keys.push_back(key);
+        groupLookup[i] = entry->second;
     }
+    groupCnt = keys.size();
+    
+    // If there are too many groups, don't initialize the comparison table - will take way too long otherwise
+    if (groupCnt > GROUP_THRESHOLD) return;
+    size_t keySize = keys[0].size();
+    groupCompares.resize(groupCnt * groupCnt);
+    for (size_t i = 0; i < groupCnt; i++) {
+        for (size_t j = 0; j < groupCnt; j++) {
+            bool comparison = true;
+            for (size_t k = 0; k < keySize; k++) comparison &= keys[i][k] >= keys[j][k];
+            groupCompares[i * groupCnt + j] = comparison;
+        }
+    }
+}
+
+bool Grouping::canDominate(int a, int b) const {
+    if (!groupCompares.empty()) return groupCompares[a * groupCnt + b];
+    for (size_t k = 0; k < keys[a].size(); k++) {
+        if (keys[a][k] < keys[b][k]) return false;
+    }
+    return true;
+}
+
+void appendValues(const GameState& st, vector<double>& values) {
     values.push_back(st.sacrifice().getSacrificeBonus().log10value());
-    values.push_back(st.tickspeed().getPurchases());
+    values.push_back(st.antimatter().log10value());
+    for (int d = 1; d <= 8; d++) values.push_back(st.AD()[d].getAmount().log10value());
     values.push_back(st.tickspeed().perSecond().log10value());
     values.push_back(st.getAchievementBonus().log10value());
 }
 
+Key getPurchasesFrom(const GameState& st) {
+    Key result;
+    for (int d = 1; d <= 8; d++) {
+        result[d] = st.AD()[d].getPurchases();
+    }
+    result[0] = st.tickspeed().getPurchases();
+    return result;
+}
 
-int compare(const double* st1, const double* st2, size_t width) {
+int compare(const double* st1, const double* st2, size_t width, bool strictlyBetter) {
     // Compare the two game states together.
     // Returns 1 if all st1's values are bigger or equal than that of st2,
     // and at least one value is strictly bigger.
     // Returns 0 if all compared values are equal
     // Returns -1 otherwise.
-    bool strictlyBetter = false;
     for (size_t i = 0; i < width; i++) {
         if (st1[i] < st2[i]) return -1;
         if (st1[i] > st2[i]) strictlyBetter = true;
@@ -33,14 +70,28 @@ int compare(const double* st1, const double* st2, size_t width) {
     return strictlyBetter ? 1 : 0;
 }
 
+bool isFutureEqual(const SearchNode& nodeA, const SearchNode& nodeB) {
+    if (nodeA.queue().getQueuedPurchases() != nodeB.queue().getQueuedPurchases()) return false;
+    if (nodeA.queue().getQueuedSacrifices() != nodeB.queue().getQueuedSacrifices()) return false;
+    if (nodeA.getNextSacValue() != nodeB.getNextSacValue()) return false;
+    if (nodeA.getProjRouteIndex() != nodeB.getProjRouteIndex()) return false;
+    return true;
+}
+
 void purge(vector<SearchNode>& nodes, const function<void(int, double)>& onProgress) {
     size_t size = nodes.size();
     if (size == 0) return;
+
+    // Sort savestates by decreasing AD1 amount
     vector<int> indices(size);
     iota(indices.begin(), indices.end(), 0);
     sort(indices.begin(), indices.end(), [&nodes](int i, int j) {
         return nodes[i].game().AD()[1].getAmount() > nodes[j].game().AD()[1].getAmount();
     });
+
+    Grouping grouping;
+    grouping.initialize(nodes, indices);
+
     vector<double> values;
     size_t width = 0;
     for (size_t i = 0; i < size; i++) {
@@ -61,22 +112,23 @@ void purge(vector<SearchNode>& nodes, const function<void(int, double)>& onProgr
             onProgress(statesPurged, iterationsDone / iterationsTotal);
         }
         if (removedCopy[i] == 1) continue;
+        int groupI = grouping.groupLookup[i];
         #pragma omp for reduction(+:statesPurged)
         for (size_t j = i + 1; j < size; j++) {
             if (removedCopy[j] == 1) continue;
-            int compareResult = compare(&values[i * width], &values[j * width], width);
+            int groupJ = grouping.groupLookup[j];
+            if (!grouping.canDominate(groupI, groupJ)) continue;
+            int compareResult = compare(&values[i * width], &values[j * width], width, groupI != groupJ);
             if (compareResult == 1) {
                 removedCopy[j] = 1;
                 statesPurged++;
             } else if (compareResult == 0) {
                 const SearchNode& nodeA = nodes[indices[i]];
                 const SearchNode& nodeB = nodes[indices[j]];
-                if (nodeA.queue().getQueuedPurchases() != nodeB.queue().getQueuedPurchases()) continue;
-                if (nodeA.queue().getQueuedSacrifices() != nodeB.queue().getQueuedSacrifices()) continue;
-                if (nodeA.getNextSacValue() != nodeB.getNextSacValue()) continue;
-                if (nodeA.getProjRouteIndex() != nodeB.getProjRouteIndex()) continue;
-                removedCopy[j] = 1;
-                statesPurged++;
+                if (isFutureEqual(nodeA, nodeB)) {
+                    removedCopy[j] = 1;
+                    statesPurged++;
+                }
             }
         }
     }
