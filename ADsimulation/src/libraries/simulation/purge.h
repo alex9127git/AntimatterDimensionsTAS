@@ -7,8 +7,6 @@
 using Key = std::array<int32_t, 9>;
 
 
-inline constexpr size_t GROUP_THRESHOLD = 4096;
-
 struct Grouping {
     std::vector<Key> keys;
     std::vector<int> groupLookup;

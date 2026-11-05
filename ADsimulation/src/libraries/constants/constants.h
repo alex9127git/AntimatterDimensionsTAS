@@ -55,6 +55,12 @@ struct DC {
 };
 
 
+// simulation constants
+inline constexpr size_t GROUP_THRESHOLD = 4096;
 inline constexpr size_t PARALLEL_THRESHOLD = 1000;
+
+inline constexpr double SAC_BONUS_EPSILON = 1e-4;
 inline constexpr size_t MAX_STATES_CARRYOVER = 999;
+
 inline constexpr int64_t MAX_TICKS = 5000000;
+inline constexpr size_t MAX_STATES = 1000000;

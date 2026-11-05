@@ -18,6 +18,7 @@ class SearchNode {
 
         int sacsAtBranchSet = 0;
         size_t projRouteIndex = 0;
+        std::vector<double> sacrificeDiffs;
 
     public:
         SearchNode(const GameState& st);
@@ -59,4 +60,6 @@ class SearchNode {
         bool canSacBranch();
         void initProjRoute(size_t index) {projRouteIndex = index;}
         void setNextSacBranching(Decimal sacValue);
+        const std::vector<double>& getSacrificeDiffs() const {return sacrificeDiffs;}
+        void appendSacrificeDiff(double diff) {sacrificeDiffs.push_back(diff);}
 };

@@ -63,7 +63,9 @@ int compare(const double* st1, const double* st2, size_t width, bool strictlyBet
     // and at least one value is strictly bigger.
     // Returns 0 if all compared values are equal
     // Returns -1 otherwise.
-    for (size_t i = 0; i < width; i++) {
+    if (st1[0] < st2[0] - SAC_BONUS_EPSILON) return -1;
+    if (st1[0] > st2[0] + SAC_BONUS_EPSILON) strictlyBetter = true;
+    for (size_t i = 1; i < width; i++) {
         if (st1[i] < st2[i]) return -1;
         if (st1[i] > st2[i]) strictlyBetter = true;
     }

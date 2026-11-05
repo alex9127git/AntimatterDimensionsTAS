@@ -2,15 +2,53 @@
 #include "simulation.h"
 #include "constants.h"
 #include "ioutils.h"
+#include "errors.h"
 #include "purge.h"
 #include <algorithm>
-#include <stdexcept>
 #include <cstdint>
 #include <string>
 #include <format>
 #include <set>
 using namespace std;
 
+
+// Collects strategy pairs (purchase + sacrifice). Removes duplicates if such exist
+void collectStrategyPairs(const vector<SearchNode>& nodes, Strategies& purchaseStrategies,
+                          Strategies& sacrificeStrategies, bool addFinalTarget) 
+{
+    purchaseStrategies.clear();
+    sacrificeStrategies.clear();
+    set<pair<vector<double>, vector<double>>> seenStrategyPairs;
+    for (const SearchNode& node : nodes) {
+        vector<double> purchStrat = node.queue().getCompletedPurchases();
+        vector<double> sacStrat = node.queue().getCompletedSacrifices();
+        if (addFinalTarget) {
+            sacStrat.push_back(
+                (node.game().getBoostAfterSacrifice() * DC::D2).log10value()
+            );
+        }
+        if (seenStrategyPairs.insert(pair(purchStrat, sacStrat)).second) {
+            purchaseStrategies.push_back(purchStrat);
+            sacrificeStrategies.push_back(sacStrat);
+        }
+    }
+}
+
+// Collects sacrifice strategies. Removes duplicates if such exist
+void collectSacrificeStrategies(const vector<SearchNode>& nodes, Strategies& sacrificeStrategies,
+                                Strategies& sacrificeDiffs)
+{
+    sacrificeStrategies.clear();
+    sacrificeDiffs.clear();
+    set<vector<double>> seenStrategies;
+    for (const SearchNode& node : nodes) {
+        vector<double> strat = node.queue().getCompletedSacrifices();
+        if (seenStrategies.insert(strat).second) {
+            sacrificeStrategies.push_back(strat);
+            sacrificeDiffs.push_back(node.getSacrificeDiffs());
+        }
+    }
+}
 
 GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose) {
     GameInstance result;
@@ -42,22 +80,31 @@ GameInstance runUntil(
 ) {
     vector<SearchNode> resultNodes;
     GameInstance best;
+
     int64_t bestTime = INT64_MAX;
     int64_t currentIterationTime = INT64_MAX;
     int64_t iterationTime = INT64_MAX;
     int64_t startTime = st.realTimePlayed();
+
     Strategies purchaseStrategies = {{}};
     Strategies sacrificeStrategies = {{}};
+    Strategies bestSacrificeStrategies;
+    Strategies bestSacrificeDiffs;
+    Strategies sacrificeDiffs = {{}};
     set<Strategies> seenPurchaseInputs, seenSacrificeInputs;
+
     int iterationCounter = 0;
     bool isImproving = true;
     bool repeated = false;
+
+    // Switch between purchases and sacrifices until stuck in a local optimum
     do {
         iterationCounter++;
         if (iterationCounter % 2 == 1) currentIterationTime = iterationTime;
         cout << "============================================================" << endl;
         cout << "Running iteration " << iterationCounter << endl;
         if (iterationCounter % 2 == 1) {
+            cout << "Finding purchases" << endl;
             resultNodes = PurchaseIteration(st, progress, sacrificeStrategies, verbose).run();
             purchaseStrategies.clear();
             set<vector<double>> seenStrategies;
@@ -67,31 +114,14 @@ GameInstance runUntil(
             }
             if (!seenPurchaseInputs.insert(purchaseStrategies).second) repeated = true;
         } else {
+            cout << "Finding sacrifices" << endl;
             resultNodes = ApproxSacrificeIteration(st, progress, purchaseStrategies, verbose).run();
-            purchaseStrategies.clear();
-            sacrificeStrategies.clear();
-            set<pair<vector<double>, vector<double>>> seenStrategyPairs;
-            for (SearchNode& node : resultNodes) {
-                vector<double> purchStrat = node.queue().getCompletedPurchases();
-                vector<double> sacStrat = node.queue().getCompletedSacrifices();
-                sacStrat.push_back(
-                    (node.game().getBoostAfterSacrifice() * DC::D2).log10value()
-                );
-                if (seenStrategyPairs.insert(pair(purchStrat, sacStrat)).second) {
-                    purchaseStrategies.push_back(purchStrat);
-                    sacrificeStrategies.push_back(sacStrat);
-                }
-            }
+            collectStrategyPairs(resultNodes, purchaseStrategies, sacrificeStrategies, true);
             cout << "============================================================" << endl;
             cout << "Optimizing sacrifices" << endl;
             resultNodes = PreciseSacrificeIteration(
                 st, progress, purchaseStrategies, sacrificeStrategies, verbose).run();
-            sacrificeStrategies.clear();
-            set<vector<double>> seenStrategies;
-            for (SearchNode& node : resultNodes) {
-                vector<double> strat = node.queue().getCompletedSacrifices();
-                if (seenStrategies.insert(strat).second) sacrificeStrategies.push_back(strat);
-            }
+            collectSacrificeStrategies(resultNodes, sacrificeStrategies, sacrificeDiffs);
             if (!seenSacrificeInputs.insert(sacrificeStrategies).second) repeated = true;
         }
         const GameInstance& iterationBest = resultNodes[0].gameInstance();
@@ -100,6 +130,8 @@ GameInstance runUntil(
         if (iterationTime < bestTime) {
             best = iterationBest;
             bestTime = iterationTime;
+            bestSacrificeStrategies = sacrificeStrategies;
+            bestSacrificeDiffs = sacrificeDiffs;
         }
         if (verbose) {
             cout << "Iteration " << iterationCounter << " results:" << endl;
@@ -109,6 +141,51 @@ GameInstance runUntil(
                  purchaseStrategies.size() : sacrificeStrategies.size()) << endl;
         }
     } while (st.dimensionBoosts() >= 5 && useSacrifice && isImproving && !repeated);
+
+    size_t maxPlanSize = 0;
+    for (const vector<double>& plan : bestSacrificeStrategies) maxPlanSize = max(maxPlanSize, plan.size());
+    bool useRefine = st.dimensionBoosts() >= 5 && useSacrifice;
+    size_t iterationsLeft = maxPlanSize;
+    size_t windowIndex = -1;
+
+    // Attempt all purchase iterations again, but with ability to move sacrifices; repeat for each sacrifice
+    while (useRefine && maxPlanSize > 0 && iterationsLeft > 0) {
+        windowIndex = (windowIndex + 1) % maxPlanSize;
+        iterationCounter++;
+        cout << "============================================================" << endl;
+        cout << "Running iteration " << iterationCounter << endl;
+        cout << "Polishing sacrifice, step " << windowIndex + 1 << " of " << maxPlanSize << endl;
+        try {
+            resultNodes = PurchaseIteration(st, progress, bestSacrificeStrategies, verbose,
+                                            bestSacrificeDiffs, windowIndex).run();
+        } catch (const StateLimitExceeded& e) {
+            cout << e.what() << ", skipped" << endl;
+            iterationsLeft--;
+            continue;
+        }
+        collectStrategyPairs(resultNodes, purchaseStrategies, sacrificeStrategies, false);
+        cout << "============================================================" << endl;
+        cout << "Optimizing sacrifices" << endl;
+        resultNodes = PreciseSacrificeIteration(st, progress, purchaseStrategies,
+                                                sacrificeStrategies, verbose).run();
+        collectSacrificeStrategies(resultNodes, sacrificeStrategies, sacrificeDiffs);
+        iterationsLeft--;
+        const GameInstance& iterationBest = resultNodes[0].gameInstance();
+        iterationTime = iterationBest.game().realTimePlayed();
+        if (iterationTime < bestTime) {
+            best = iterationBest;
+            bestTime = iterationTime;
+            bestSacrificeStrategies = sacrificeStrategies;
+            bestSacrificeDiffs = sacrificeDiffs;
+            iterationsLeft = maxPlanSize;
+        }
+        if (verbose) {
+            cout << "Iteration " << iterationCounter << " results:" << endl;
+            cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
+            cout << "Cumulative time: " << renderTime(iterationTime) << endl;
+            cout << "Winning strategies left: " << sacrificeStrategies.size() << endl;
+        }
+    }
     best.clearAllInstructions();
     return best;
 }
@@ -119,9 +196,10 @@ Progress::Progress(function<bool(const GameState&)> stopFunc, function<double(co
     {};
 
 Iteration::Iteration(
-    const Progress& _progress, bool _verbose
+    const Progress& _progress, bool _verbose, const Strategies& _projectedSacrifices
 )   :   progress(_progress),
-        verbose(_verbose)
+        verbose(_verbose),
+        projectedSacrifices(_projectedSacrifices)
     {}
 
 void Iteration::appendNewStates() {
@@ -177,6 +255,9 @@ void Iteration::purgeObsoleteStates() {
         stats.resetPurgeTimer();
         adds = 0;
         statesBeforePurge = nodes.size();
+        if ((size_t) statesBeforePurge > MAX_STATES) {
+            throw StateLimitExceeded(format("Iteration stopped: more than {} states", MAX_STATES));
+        }
         maxStates = max(maxStates, statesBeforePurge);
         purge(nodes, [this](int purged, double progressFraction) {
             if (!verbose || updateTimer.peek() < RENDER_INTERVAL_MS) return;
@@ -216,6 +297,56 @@ void Iteration::renderProgressDisplay(bool purgeOngoing) {
     cerr << flush;
 }
 
+// Adds all sacrifices from list, from "fromIndex" to the first sacrifice that has a window.
+// If no such sacrifice exists, all remaining sacrifices are added.
+// The sacrifice with window is added as a branching sacrifice
+void Iteration::prepareSacrifices(SearchNode& node, size_t routeIndex, size_t fromIndex) const {
+    const vector<double>& plan = projectedSacrifices[routeIndex];
+    for (size_t index = fromIndex; index < plan.size(); index++) {
+        if (hasSacrificeWindow(routeIndex, index)) {
+            node.setNextSacBranching(
+                Decimal(1, plan[index]) / sacrificeWindow(routeIndex, index).boundLow);
+            return;
+        }
+        node.addInstructions({Instruction::Sacrifice, plan[index]});
+    }
+}
+
+void Iteration::addSacrificeWindowBranches() {
+    for (SearchNode& node : nodes) {
+        size_t routeIndex = node.getProjRouteIndex();
+        const vector<double>& plan = projectedSacrifices[routeIndex];
+        size_t sacrificesDone = node.game().sacrifice().getSacrificesDone();
+        if (sacrificesDone >= plan.size() || !hasSacrificeWindow(routeIndex, sacrificesDone)) continue;
+
+        if (node.game().canSacrifice() && node.canSacBranch()) {
+            Decimal currSac = node.game().getBoostAfterSacrifice();
+            Decimal prevSac = node.game().sacrifice().getSacrificeBonus() * 
+                Decimal::max(node.game().sacrifice().sacrificeIncrease(node.getPrevAD1()), DC::D1);
+            Decimal target = (currSac + prevSac) / DC::D2;
+            double diff = currSac.log10value() - prevSac.log10value();
+            SacrificeWindow sacWindow = sacrificeWindow(node.getProjRouteIndex(), sacrificesDone);
+            if (currSac > Decimal(1, 
+                projectedSacrifices[node.getProjRouteIndex()][sacrificesDone]
+            ) * sacWindow.boundHigh) {
+                scheduleSacrifice(node, target, diff);
+            } else {
+                SearchNode newNode = node;
+                scheduleSacrifice(newNode, target, diff);
+                Decimal nextSac = currSac * sacWindow.precision;
+                node.setNextSacBranching(nextSac);
+                newNodes.push_back(move(newNode));
+            }
+        }
+    }
+}
+
+void Iteration::scheduleSacrifice(SearchNode& node, const Decimal& target, double diff) const {
+    node.addInstructions({Instruction::Sacrifice, target.log10value()});
+    node.appendSacrificeDiff(diff);
+    prepareSacrifices(node, node.getProjRouteIndex(), node.game().sacrifice().getSacrificesDone() + 1);
+}
+
 vector<SearchNode> Iteration::run() {
     while (true) {
         stats.resetBranchTimer();
@@ -243,8 +374,11 @@ vector<SearchNode> Iteration::run() {
 
 PurchaseIteration::PurchaseIteration(
     GameState st, const Progress& progress,
-    const Strategies& sacrificeStrategies, bool verbose
-)   :   Iteration(progress, verbose)
+    const Strategies& sacrificeStrategies, bool verbose,
+    const Strategies& _sacrificeDiffs, int _windowIndex
+)   :   Iteration(progress, verbose, sacrificeStrategies),
+        sacrificeDiffs(_sacrificeDiffs),
+        windowIndex(_windowIndex)
 {
     SearchNode node = SearchNode(st);
     // If Konami code exploit isn't used, assume this is the starting game state 
@@ -258,11 +392,34 @@ PurchaseIteration::PurchaseIteration(
     node.runNextInstructions();
     for (size_t i = 0; i < sacrificeStrategies.size(); i++) {
         nodes.push_back(node);
-        for (double instruction : sacrificeStrategies[i]) {
-            nodes[i].addInstructions({108, instruction});
-        }
+        if (windowIndex >= 0) nodes[i].initProjRoute(i);
+        prepareSacrifices(nodes[i], i, 0);
     }
     states = nodes.size();
+}
+
+SacrificeWindow PurchaseIteration::sacrificeWindow(size_t routeIndex, size_t sacrificeIndex) const {
+    const vector<double>& plan = projectedSacrifices[routeIndex];
+    double diff = sacrificeDiffs[routeIndex][sacrificeIndex];
+    double maxDistBelow = sacrificeIndex > 0 
+        ? plan[sacrificeIndex] - plan[sacrificeIndex - 1]
+        : plan[sacrificeIndex];
+    double maxDistAbove = sacrificeIndex + 1 < plan.size() 
+        ? plan[sacrificeIndex + 1] - plan[sacrificeIndex] 
+        : maxDistBelow;
+    double boundLowLog = min({WINDOW_TICKS * diff, log10(1.01), maxDistBelow});
+    double boundHighLog = min({WINDOW_TICKS * diff, log10(1.1), maxDistAbove});
+    Decimal precision = min(Decimal(1, STEP_TICKS * diff), maxPrecision);
+    return {Decimal(1, boundLowLog), Decimal(1, boundHighLog), precision};
+}
+
+// Checks if the sacrifice with the given index has a window (is able to be moved) in this route.
+// Last condition is a check that prevents branching if the sacrifice diff is not written
+bool PurchaseIteration::hasSacrificeWindow(size_t routeIndex, size_t sacrificeIndex) const {
+    size_t planSize = projectedSacrifices[routeIndex].size();
+    return windowIndex >= 0 && (size_t) windowIndex < planSize
+        && sacrificeIndex == planSize - 1 - windowIndex
+        && sacrificeIndex < sacrificeDiffs[routeIndex].size();
 }
 
 void PurchaseIteration::addBranches() {
@@ -276,6 +433,10 @@ void PurchaseIteration::addBranches() {
         appendNewStates();
         begin = end;
         end = nodes.size();
+    }
+    if (windowIndex >= 0) {
+        addSacrificeWindowBranches();
+        appendNewStates();
     }
 }
 
@@ -328,46 +489,19 @@ PreciseSacrificeIteration::PreciseSacrificeIteration(
     GameState st, const Progress& progress,
     const Strategies& purchaseStrategies, 
     const Strategies& sacrificeStrategies, bool verbose
-)   :   Iteration(progress, verbose)
+)   :   Iteration(progress, verbose, sacrificeStrategies)
 {
     SearchNode node = SearchNode(st);
-    projectedSacrifices = sacrificeStrategies;
     for (size_t i = 0; i < purchaseStrategies.size(); i++) {
         nodes.push_back(node);
         nodes[i].addInstructions(purchaseStrategies[i]);
         nodes[i].initProjRoute(i);
-        nodes[i].setNextSacBranching(Decimal(1, projectedSacrifices[i][0]) / tolerance);
+        prepareSacrifices(nodes[i], i, 0);
     }
     states = nodes.size();
 }
 
 void PreciseSacrificeIteration::addBranches() {
-    for (SearchNode& node : nodes) {
-        if (node.game().canSacrifice() && node.canSacBranch()) {
-            Decimal currSac = node.game().getBoostAfterSacrifice();
-            Decimal prevSac = node.game().sacrifice().getSacrificeBonus() * 
-                Decimal::max(node.game().sacrifice().sacrificeIncrease(node.getPrevAD1()), DC::D1);
-            Decimal target = (currSac + prevSac) / DC::D2;
-            if (currSac > Decimal(1, 
-                projectedSacrifices[node.getProjRouteIndex()][node.game().sacrifice().getSacrificesDone()]
-            ) * tolerance) {
-                scheduleSacrifice(node, target);
-            } else {
-                SearchNode newNode = node;
-                scheduleSacrifice(newNode, target);
-                Decimal nextSac = currSac * precision;
-                node.setNextSacBranching(nextSac);
-                newNodes.push_back(move(newNode));
-            }
-        }
-    }
+    addSacrificeWindowBranches();
     appendNewStates();
-}
-
-void PreciseSacrificeIteration::scheduleSacrifice(SearchNode& node, const Decimal& target) const {
-    node.addInstructions({Instruction::Sacrifice, target.log10value()});
-    node.setNextSacBranching(
-        Decimal(1, 
-            projectedSacrifices[node.getProjRouteIndex()][node.game().sacrifice().getSacrificesDone() + 1]
-        ) / tolerance);
 }

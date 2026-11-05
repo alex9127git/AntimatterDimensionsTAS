@@ -256,6 +256,7 @@ target_sources(simulation
         FILES
             libraries/simulation/simulation.h
             libraries/simulation/searchnode.h
+            libraries/simulation/errors.h
             libraries/simulation/purge.h
             libraries/simulation/timer.h
 )
