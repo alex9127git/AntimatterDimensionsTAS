@@ -133,13 +133,11 @@ GameInstance runUntil(
             bestSacrificeStrategies = sacrificeStrategies;
             bestSacrificeDiffs = sacrificeDiffs;
         }
-        if (verbose) {
-            cout << "Iteration " << iterationCounter << " results:" << endl;
-            cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
-            cout << "Cumulative time: " << renderTime(iterationTime) << endl;
-            cout << "Winning strategies left: " << (iterationCounter % 2 == 1 ?
-                 purchaseStrategies.size() : sacrificeStrategies.size()) << endl;
-        }
+        cout << "Iteration " << iterationCounter << " results:" << endl;
+        cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
+        cout << "Cumulative time: " << renderTime(iterationTime) << endl;
+        cout << "Winning strategies left: " << (iterationCounter % 2 == 1 ?
+                purchaseStrategies.size() : sacrificeStrategies.size()) << endl;
     } while (st.dimensionBoosts() >= 5 && useSacrifice && isImproving && !repeated);
 
     size_t maxPlanSize = 0;
@@ -154,7 +152,8 @@ GameInstance runUntil(
         iterationCounter++;
         cout << "============================================================" << endl;
         cout << "Running iteration " << iterationCounter << endl;
-        cout << "Polishing sacrifice, step " << windowIndex + 1 << " of " << maxPlanSize << endl;
+        cout << "Polishing sacrifice, " << iterationsLeft << " iterations left" << endl;
+        cout << "Optimizing sacrifice #" << maxPlanSize - windowIndex << endl;
         try {
             resultNodes = PurchaseIteration(st, progress, bestSacrificeStrategies, verbose,
                                             bestSacrificeDiffs, windowIndex).run();
@@ -173,18 +172,18 @@ GameInstance runUntil(
         const GameInstance& iterationBest = resultNodes[0].gameInstance();
         iterationTime = iterationBest.game().realTimePlayed();
         if (iterationTime < bestTime) {
+            cout << "Recent iteration found better time; ";
+            cout << maxPlanSize - iterationsLeft << " more iterations added" << endl;
             best = iterationBest;
             bestTime = iterationTime;
             bestSacrificeStrategies = sacrificeStrategies;
             bestSacrificeDiffs = sacrificeDiffs;
             iterationsLeft = maxPlanSize;
         }
-        if (verbose) {
-            cout << "Iteration " << iterationCounter << " results:" << endl;
-            cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
-            cout << "Cumulative time: " << renderTime(iterationTime) << endl;
-            cout << "Winning strategies left: " << sacrificeStrategies.size() << endl;
-        }
+        cout << "Iteration " << iterationCounter << " results:" << endl;
+        cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
+        cout << "Cumulative time: " << renderTime(iterationTime) << endl;
+        cout << "Winning strategies left: " << sacrificeStrategies.size() << endl;
     }
     best.clearAllInstructions();
     return best;
