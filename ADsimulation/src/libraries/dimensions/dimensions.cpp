@@ -78,10 +78,6 @@ void Dimension::onPurchase() {
 
 }
 
-void Dimension::produceCurrency(Decimal& currency, double diff) const {
-    currency += this->productionPerDiff(diff);
-}
-
 void Dimension::produceDimensions(Dimension& dimension, double diff) const {
     dimension.amount += this->productionPerDiff(diff);
 }
@@ -99,10 +95,6 @@ Decimal AntimatterDimension::productionPerSecond(const Tickspeed& t) const {
 
 Decimal AntimatterDimension::productionPerDiff(const Tickspeed& t, double diff) const {
     return this->productionPerSecond(t) * Decimal(diff);
-}
-
-void AntimatterDimension::produceCurrency(Decimal& currency, const Tickspeed& t, double diff) const {
-    currency += this->productionPerDiff(t, diff);
 }
 
 void AntimatterDimension::produceDimensions(AntimatterDimension& dimension, const Tickspeed& t, double diff) const {

@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 SET(FETCHCONTENT_QUIET FALSE)
+
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
@@ -311,15 +312,76 @@ target_link_libraries(custom
 )
 endif()
 
-add_executable(testing)
-target_sources(testing 
-    PRIVATE 
-        tests/test.cpp
+FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/releases/download/v1.15.2/googletest-1.15.2.tar.gz
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
-target_link_libraries(testing
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+file(TOUCH ${CMAKE_BINARY_DIR}/DartConfiguration.tcl)
+include(GoogleTest)
+
+add_library(testhelper)
+target_sources(testhelper 
+    PRIVATE 
+        tests/testHelper.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            tests
+        FILES
+            tests/testHelper.h
+)
+target_link_libraries(testhelper
+    PUBLIC
+        nlohmann_json::nlohmann_json
+        gameinstance
+)
+
+add_executable(decimal_tests tests/decimal_test.cpp)
+target_link_libraries(decimal_tests
+    PRIVATE
+        GTest::gtest_main
+        constants
+        decimal
+)
+gtest_discover_tests(decimal_tests DISCOVERY_MODE PRE_TEST
+    PROPERTIES FIXTURES_SETUP decimal_group TIMEOUT 5)
+
+add_executable(gamemethods_tests tests/gamemethods_test.cpp)
+target_sources(gamemethods_tests 
+    PRIVATE 
+        tests/gamemethods_test.cpp
+)
+target_link_libraries(gamemethods_tests
+    PRIVATE
+        GTest::gtest_main
+        gamestate
+        constants
+        decimal
+)
+gtest_discover_tests(gamemethods_tests DISCOVERY_MODE PRE_TEST
+    PROPERTIES FIXTURES_SETUP gamemethods_group FIXTURES_REQUIRED decimal_group TIMEOUT 5)
+
+add_executable(route_tests tests/route_test.cpp)
+target_sources(route_tests 
+    PRIVATE 
+        tests/route_test.cpp
+)
+target_compile_definitions(route_tests
+    PRIVATE
+        TEST_FILES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files")
+target_link_libraries(route_tests
     PRIVATE
         OpenMP::OpenMP_CXX
-        gameinstance
+        GTest::gtest_main
+        instructions
         simulation
-        ioutils
+        testhelper
 )
+gtest_discover_tests(route_tests DISCOVERY_MODE PRE_TEST
+    PROPERTIES FIXTURES_REQUIRED gamemethods_group TIMEOUT 60)

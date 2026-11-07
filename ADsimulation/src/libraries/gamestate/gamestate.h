@@ -63,7 +63,6 @@ class GameState : public ISerializable {
         // purchase methods
 
         bool buyOneDimension(int dim);
-        bool buyDimUntil10(int dim);
         bool buyTickspeed();
         bool handleKonamiCode();
         void unlockAchievement(int ach, bool force);

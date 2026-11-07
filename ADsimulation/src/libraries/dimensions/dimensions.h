@@ -43,7 +43,6 @@ class Dimension : public ISerializable {
         bool canPurchase(const Decimal& resource) const;
         virtual void onPurchase();
         
-        void produceCurrency(Decimal& currency, double diff) const;
         void produceDimensions(Dimension& dimension, double diff) const;
 };
 
@@ -59,8 +58,6 @@ class AntimatterDimension : public Dimension {
         Decimal productionPerSecond(const Tickspeed& t) const;
         Decimal productionPerDiff(double diff) const = delete;
         Decimal productionPerDiff(const Tickspeed& t, double diff) const;
-        void produceCurrency(Decimal& currency, double diff) const = delete;
-        void produceCurrency(Decimal& currency, const Tickspeed& t, double diff) const;
         void produceDimensions(Dimension& dimension, double diff) const = delete;
         void produceDimensions(AntimatterDimension& dimension, const Tickspeed& t, double diff) const;
 

@@ -85,10 +85,6 @@ void Achievements::unlockAchievement(int id) {
     bitmasks[id / 10 - 1] |= (1 << (id % 10 - 1));
 }
 
-void Achievements::lockAchievement(int id) {
-    bitmasks[id / 10 - 1] &= (255 - (1 << (id % 10 - 1)));
-}
-
 bool Achievements::isUnlocked(int id) const {
     return (bitmasks[id / 10 - 1] & (1 << (id % 10 - 1))) != 0;
 }

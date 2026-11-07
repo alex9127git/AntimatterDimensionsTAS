@@ -20,7 +20,6 @@ class GameInstance {
         GameInstance(const GameState& st);
 
         const GameState& game() const {return gameState;}
-        GameState& game() {return gameState;}
         const InstructionQueue& queue() const {return _queue;}
 
         void addInstructions(const std::vector<double>& instructions);

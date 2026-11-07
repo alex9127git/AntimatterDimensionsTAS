@@ -25,7 +25,6 @@ class Achievements : public ISerializable {
         bool isUnlocked(int id) const;
         
         void unlockAchievement(int id);
-        void lockAchievement(int id);
 
         static int idToIndex(int id);
         static int indexToId(int index);

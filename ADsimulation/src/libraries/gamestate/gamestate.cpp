@@ -83,13 +83,6 @@ bool GameState::buyOneDimension(int tier) {
     return false;
 }
 
-bool GameState::buyDimUntil10(int tier) {
-    do {
-        if (!buyOneDimension(tier)) return false;
-    } while (_AD[tier].getPurchases() % 10 != 0);
-    return true;
-}
-
 bool GameState::buyTickspeed() {
     if (_tickspeed.canPurchase(_antimatter)) {
         _antimatter -= _tickspeed.getCost();
