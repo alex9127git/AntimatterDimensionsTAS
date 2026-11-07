@@ -5,10 +5,11 @@ using namespace std;
 
 
 namespace {
+
     const function<Decimal(const Decimal&)> NO_EFFECT = 
             [](const Decimal&) {return DC::D1;};
 
-    const vector<function<Decimal(const Decimal&)>> effectFormulae = {
+    const function<Decimal(const Decimal&)> effectFormulae[] = {
         NO_EFFECT,
         NO_EFFECT,
         NO_EFFECT,
@@ -74,11 +75,9 @@ namespace {
     };
 }
 
-Achievements::Achievements() {
-    bitmasks = {0, 0, 0, 0, 0, 0, 0};
-}
+static_assert(size(effectFormulae) == Achievements::COUNT);
 
-Achievements::Achievements(const json& j) : Achievements::Achievements() {
+Achievements::Achievements(const json& j) {
     this->from_json(j);
 }
 
@@ -103,7 +102,7 @@ int Achievements::indexToId(int index) {
 }
 
 int Achievements::achCount() const {
-    return bitmasks.size() * 8;
+    return COUNT;
 }
 
 Decimal Achievements::calcBonus() const {

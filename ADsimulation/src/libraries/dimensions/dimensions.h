@@ -3,7 +3,7 @@
 #include "costmath.h"
 #include "decimal.h"
 #include <cstdint>
-#include <vector>
+#include <array>
 
 
 class Tickspeed;
@@ -72,7 +72,7 @@ class AntimatterDimension : public Dimension {
 
 class AntimatterDimensions : ISerializable {
     private:
-        std::vector<AntimatterDimension> dims;
+        std::array<AntimatterDimension, 8> dims;
 
     public:
         AntimatterDimensions();

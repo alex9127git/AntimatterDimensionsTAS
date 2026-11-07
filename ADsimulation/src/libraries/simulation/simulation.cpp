@@ -13,188 +13,6 @@
 using namespace std;
 
 
-// Collects purchase strategies. Removes duplicates if such exist
-void collectPurchaseStrategies(const vector<SearchNode>& nodes, Strategies& purchaseStrategies) {
-    purchaseStrategies.clear();
-    set<vector<double>> seenStrategies;
-    for (const SearchNode& node : nodes) {
-        vector<double> strat = node.queue().getCompletedPurchases();
-        if (seenStrategies.insert(strat).second) purchaseStrategies.push_back(strat);
-    }
-}
-
-// Collects sacrifice strategies. Removes duplicates if such exist
-void collectSacrificeStrategies(const vector<SearchNode>& nodes, Strategies& sacrificeStrategies,
-                                Strategies& sacrificeDiffs)
-{
-    sacrificeStrategies.clear();
-    sacrificeDiffs.clear();
-    set<vector<double>> seenStrategies;
-    for (const SearchNode& node : nodes) {
-        vector<double> strat = node.queue().getCompletedSacrifices();
-        if (seenStrategies.insert(strat).second) {
-            sacrificeStrategies.push_back(strat);
-            sacrificeDiffs.push_back(node.getSacrificeDiffs());
-        }
-    }
-}
-
-// Collects strategy pairs (purchase + sacrifice). Removes duplicates if such exist
-void collectStrategyPairs(const vector<SearchNode>& nodes, Strategies& purchaseStrategies,
-                          Strategies& sacrificeStrategies, bool addFinalTarget) 
-{
-    purchaseStrategies.clear();
-    sacrificeStrategies.clear();
-    set<pair<vector<double>, vector<double>>> seenStrategyPairs;
-    for (const SearchNode& node : nodes) {
-        vector<double> purchStrat = node.queue().getCompletedPurchases();
-        vector<double> sacStrat = node.queue().getCompletedSacrifices();
-        if (addFinalTarget) {
-            sacStrat.push_back(
-                (node.game().getBoostAfterSacrifice() * DC::D2).log10value()
-            );
-        }
-        if (seenStrategyPairs.insert(pair(purchStrat, sacStrat)).second) {
-            purchaseStrategies.push_back(purchStrat);
-            sacrificeStrategies.push_back(sacStrat);
-        }
-    }
-}
-
-GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose) {
-    GameInstance result;
-    if (st.antimatterGalaxies() == 1 && st.dimensionBoosts() == 9) {
-        result = runUntil(
-            st, Progress::untilAch23(), useSacrifice, verbose
-        );
-    } else {
-        result = runUntil(
-            st, Progress::untilDimboost(), useSacrifice, verbose
-        );
-    }
-    result.addInstructions({Instruction::DimensionBoost});
-    result.runNextInstructions();
-    return result;
-}
-
-GameInstance runGalaxy(GameState st, bool useSacrifice, bool verbose) {
-    GameInstance result = runUntil(
-        st, Progress::untilGalaxy(), useSacrifice, verbose
-    );
-    result.addInstructions({Instruction::AntimatterGalaxy});
-    result.runNextInstructions();
-    return result;
-}
-
-GameInstance runUntil(
-    GameState st, const Progress& progress, bool useSacrifice, bool verbose
-) {
-    vector<SearchNode> resultNodes;
-    GameInstance best;
-
-    int64_t bestTime = INT64_MAX;
-    int64_t currentIterationTime = INT64_MAX;
-    int64_t iterationTime = INT64_MAX;
-    int64_t startTime = st.realTimePlayed();
-
-    Strategies purchaseStrategies = {{}};
-    Strategies sacrificeStrategies = {{}};
-    Strategies bestSacrificeStrategies;
-    Strategies bestSacrificeDiffs;
-    Strategies sacrificeDiffs = {{}};
-    set<Strategies> seenPurchaseInputs, seenSacrificeInputs;
-
-    int iterationCounter = 0;
-    bool isImproving = true;
-    bool repeated = false;
-
-    // Switch between purchases and sacrifices until stuck in a local optimum
-    do {
-        iterationCounter++;
-        if (iterationCounter % 2 == 1) currentIterationTime = iterationTime;
-        cout << "============================================================" << endl;
-        cout << "Running iteration " << iterationCounter << endl;
-        if (iterationCounter % 2 == 1) {
-            cout << "Finding purchases" << endl;
-            resultNodes = PurchaseIteration(st, progress, sacrificeStrategies, verbose).run();
-            collectPurchaseStrategies(resultNodes, purchaseStrategies);
-            if (!seenPurchaseInputs.insert(purchaseStrategies).second) repeated = true;
-        } else {
-            cout << "Finding sacrifices" << endl;
-            resultNodes = ApproxSacrificeIteration(st, progress, purchaseStrategies, verbose).run();
-            collectStrategyPairs(resultNodes, purchaseStrategies, sacrificeStrategies, true);
-            cout << "============================================================" << endl;
-            cout << "Refining sacrifices" << endl;
-            resultNodes = SacrificeRefinementIteration(
-                st, progress, purchaseStrategies, sacrificeStrategies, verbose).run();
-            collectSacrificeStrategies(resultNodes, sacrificeStrategies, sacrificeDiffs);
-            if (!seenSacrificeInputs.insert(sacrificeStrategies).second) repeated = true;
-        }
-        const GameInstance& iterationBest = resultNodes[0].gameInstance();
-        iterationTime = iterationBest.game().realTimePlayed();
-        isImproving = iterationCounter % 2 == 1 || iterationTime < currentIterationTime;
-        if (iterationTime < bestTime) {
-            best = iterationBest;
-            bestTime = iterationTime;
-            bestSacrificeStrategies = sacrificeStrategies;
-            bestSacrificeDiffs = sacrificeDiffs;
-        }
-        cout << "Iteration " << iterationCounter << " results:" << endl;
-        cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
-        cout << "Cumulative time: " << renderTime(iterationTime) << endl;
-        cout << "Winning strategies left: " << (iterationCounter % 2 == 1 ?
-                purchaseStrategies.size() : sacrificeStrategies.size()) << endl;
-    } while (st.dimensionBoosts() >= 5 && useSacrifice && isImproving && !repeated);
-
-    size_t maxPlanSize = 0;
-    for (const vector<double>& plan : bestSacrificeStrategies) maxPlanSize = max(maxPlanSize, plan.size());
-    bool useRefine = st.dimensionBoosts() >= 5 && useSacrifice;
-    size_t iterationsLeft = maxPlanSize;
-    int windowIndex = -1;
-
-    // Attempt all purchase iterations again, but with ability to move sacrifices; repeat for each sacrifice
-    while (useRefine && maxPlanSize > 0 && iterationsLeft > 0) {
-        windowIndex = (windowIndex + 1) % maxPlanSize;
-        iterationCounter++;
-        cout << "============================================================" << endl;
-        cout << "Running iteration " << iterationCounter << endl;
-        cout << "Polishing sacrifice, " << iterationsLeft << " iterations left" << endl;
-        cout << "Optimizing sacrifice #" << maxPlanSize - windowIndex << endl;
-        try {
-            resultNodes = PurchaseIteration(st, progress, bestSacrificeStrategies, verbose,
-                                            bestSacrificeDiffs, windowIndex).run();
-        } catch (const StateLimitExceeded& e) {
-            cout << e.what() << ", skipped" << endl;
-            iterationsLeft--;
-            continue;
-        }
-        collectStrategyPairs(resultNodes, purchaseStrategies, sacrificeStrategies, false);
-        cout << "============================================================" << endl;
-        cout << "Refining sacrifices" << endl;
-        resultNodes = SacrificeRefinementIteration(
-            st, progress, purchaseStrategies, sacrificeStrategies, verbose).run();
-        collectSacrificeStrategies(resultNodes, sacrificeStrategies, sacrificeDiffs);
-        iterationsLeft--;
-        const GameInstance& iterationBest = resultNodes[0].gameInstance();
-        iterationTime = iterationBest.game().realTimePlayed();
-        if (iterationTime < bestTime) {
-            cout << "Recent iteration found better time; ";
-            cout << maxPlanSize - iterationsLeft << " more iterations added" << endl;
-            best = iterationBest;
-            bestTime = iterationTime;
-            bestSacrificeStrategies = sacrificeStrategies;
-            bestSacrificeDiffs = sacrificeDiffs;
-            iterationsLeft = maxPlanSize;
-        }
-        cout << "Iteration " << iterationCounter << " results:" << endl;
-        cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
-        cout << "Cumulative time: " << renderTime(iterationTime) << endl;
-        cout << "Winning strategies left: " << sacrificeStrategies.size() << endl;
-    }
-    best.clearAllInstructions();
-    return best;
-}
-
 Progress::Progress(function<bool(const GameState&)> stopFunc, function<double(const GameState&)> progressFunc)
     :   stopCondition(stopFunc),
         progressFunction(progressFunc) 
@@ -508,4 +326,189 @@ SacrificeRefinementIteration::SacrificeRefinementIteration(
 void SacrificeRefinementIteration::addBranches() {
     addSacrificeWindowBranches();
     appendNewStates();
+}
+
+namespace SimulationHelpers {
+    // Collects purchase strategies. Removes duplicates if such exist
+    void collectPurchaseStrategies(const vector<SearchNode>& nodes, Strategies& purchaseStrategies) {
+        purchaseStrategies.clear();
+        set<vector<double>> seenStrategies;
+        for (const SearchNode& node : nodes) {
+            vector<double> strat = node.queue().getCompletedPurchases();
+            if (seenStrategies.insert(strat).second) purchaseStrategies.push_back(strat);
+        }
+    }
+
+    // Collects sacrifice strategies. Removes duplicates if such exist
+    void collectSacrificeStrategies(const vector<SearchNode>& nodes, Strategies& sacrificeStrategies,
+                                    Strategies& sacrificeDiffs)
+    {
+        sacrificeStrategies.clear();
+        sacrificeDiffs.clear();
+        set<vector<double>> seenStrategies;
+        for (const SearchNode& node : nodes) {
+            vector<double> strat = node.queue().getCompletedSacrifices();
+            if (seenStrategies.insert(strat).second) {
+                sacrificeStrategies.push_back(strat);
+                sacrificeDiffs.push_back(node.getSacrificeDiffs());
+            }
+        }
+    }
+
+    // Collects strategy pairs (purchase + sacrifice). Removes duplicates if such exist
+    void collectStrategyPairs(const vector<SearchNode>& nodes, Strategies& purchaseStrategies,
+                            Strategies& sacrificeStrategies, bool addFinalTarget) 
+    {
+        purchaseStrategies.clear();
+        sacrificeStrategies.clear();
+        set<pair<vector<double>, vector<double>>> seenStrategyPairs;
+        for (const SearchNode& node : nodes) {
+            vector<double> purchStrat = node.queue().getCompletedPurchases();
+            vector<double> sacStrat = node.queue().getCompletedSacrifices();
+            if (addFinalTarget) {
+                sacStrat.push_back(
+                    (node.game().getBoostAfterSacrifice() * DC::D2).log10value()
+                );
+            }
+            if (seenStrategyPairs.insert(pair(purchStrat, sacStrat)).second) {
+                purchaseStrategies.push_back(purchStrat);
+                sacrificeStrategies.push_back(sacStrat);
+            }
+        }
+    }
+}
+using namespace SimulationHelpers;
+
+GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose) {
+    GameInstance result;
+    if (st.antimatterGalaxies() == 1 && st.dimensionBoosts() == 9) {
+        result = runUntil(
+            st, Progress::untilAch23(), useSacrifice, verbose
+        );
+    } else {
+        result = runUntil(
+            st, Progress::untilDimboost(), useSacrifice, verbose
+        );
+    }
+    result.addInstructions({Instruction::DimensionBoost});
+    result.runNextInstructions();
+    return result;
+}
+
+GameInstance runGalaxy(GameState st, bool useSacrifice, bool verbose) {
+    GameInstance result = runUntil(
+        st, Progress::untilGalaxy(), useSacrifice, verbose
+    );
+    result.addInstructions({Instruction::AntimatterGalaxy});
+    result.runNextInstructions();
+    return result;
+}
+
+GameInstance runUntil(
+    GameState st, const Progress& progress, bool useSacrifice, bool verbose
+) {
+    vector<SearchNode> resultNodes;
+    GameInstance best;
+
+    int64_t bestTime = INT64_MAX;
+    int64_t currentIterationTime = INT64_MAX;
+    int64_t iterationTime = INT64_MAX;
+    int64_t startTime = st.realTimePlayed();
+
+    Strategies purchaseStrategies = {{}};
+    Strategies sacrificeStrategies = {{}};
+    Strategies bestSacrificeStrategies;
+    Strategies bestSacrificeDiffs;
+    Strategies sacrificeDiffs = {{}};
+    set<Strategies> seenPurchaseInputs, seenSacrificeInputs;
+
+    int iterationCounter = 0;
+    bool isImproving = true;
+    bool repeated = false;
+
+    // Switch between purchases and sacrifices until stuck in a local optimum
+    do {
+        iterationCounter++;
+        if (iterationCounter % 2 == 1) currentIterationTime = iterationTime;
+        cout << "============================================================" << endl;
+        cout << "Running iteration " << iterationCounter << endl;
+        if (iterationCounter % 2 == 1) {
+            cout << "Finding purchases" << endl;
+            resultNodes = PurchaseIteration(st, progress, sacrificeStrategies, verbose).run();
+            collectPurchaseStrategies(resultNodes, purchaseStrategies);
+            if (!seenPurchaseInputs.insert(purchaseStrategies).second) repeated = true;
+        } else {
+            cout << "Finding sacrifices" << endl;
+            resultNodes = ApproxSacrificeIteration(st, progress, purchaseStrategies, verbose).run();
+            collectStrategyPairs(resultNodes, purchaseStrategies, sacrificeStrategies, true);
+            cout << "============================================================" << endl;
+            cout << "Refining sacrifices" << endl;
+            resultNodes = SacrificeRefinementIteration(
+                st, progress, purchaseStrategies, sacrificeStrategies, verbose).run();
+            collectSacrificeStrategies(resultNodes, sacrificeStrategies, sacrificeDiffs);
+            if (!seenSacrificeInputs.insert(sacrificeStrategies).second) repeated = true;
+        }
+        const GameInstance& iterationBest = resultNodes[0].gameInstance();
+        iterationTime = iterationBest.game().realTimePlayed();
+        isImproving = iterationCounter % 2 == 1 || iterationTime < currentIterationTime;
+        if (iterationTime < bestTime) {
+            best = iterationBest;
+            bestTime = iterationTime;
+            bestSacrificeStrategies = sacrificeStrategies;
+            bestSacrificeDiffs = sacrificeDiffs;
+        }
+        cout << "Iteration " << iterationCounter << " results:" << endl;
+        cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
+        cout << "Cumulative time: " << renderTime(iterationTime) << endl;
+        cout << "Winning strategies left: " << (iterationCounter % 2 == 1 ?
+                purchaseStrategies.size() : sacrificeStrategies.size()) << endl;
+    } while (st.dimensionBoosts() >= 5 && useSacrifice && isImproving && !repeated);
+
+    size_t maxPlanSize = 0;
+    for (const vector<double>& plan : bestSacrificeStrategies) maxPlanSize = max(maxPlanSize, plan.size());
+    bool useRefine = st.dimensionBoosts() >= 5 && useSacrifice;
+    size_t iterationsLeft = maxPlanSize;
+    int windowIndex = -1;
+
+    // Attempt all purchase iterations again, but with ability to move sacrifices; repeat for each sacrifice
+    while (useRefine && maxPlanSize > 0 && iterationsLeft > 0) {
+        windowIndex = (windowIndex + 1) % maxPlanSize;
+        iterationCounter++;
+        cout << "============================================================" << endl;
+        cout << "Running iteration " << iterationCounter << endl;
+        cout << "Polishing sacrifice, " << iterationsLeft << " iterations left" << endl;
+        cout << "Optimizing sacrifice #" << maxPlanSize - windowIndex << endl;
+        try {
+            resultNodes = PurchaseIteration(st, progress, bestSacrificeStrategies, verbose,
+                                            bestSacrificeDiffs, windowIndex).run();
+        } catch (const StateLimitExceeded& e) {
+            cout << e.what() << ", skipped" << endl;
+            iterationsLeft--;
+            continue;
+        }
+        collectStrategyPairs(resultNodes, purchaseStrategies, sacrificeStrategies, false);
+        cout << "============================================================" << endl;
+        cout << "Refining sacrifices" << endl;
+        resultNodes = SacrificeRefinementIteration(
+            st, progress, purchaseStrategies, sacrificeStrategies, verbose).run();
+        collectSacrificeStrategies(resultNodes, sacrificeStrategies, sacrificeDiffs);
+        iterationsLeft--;
+        const GameInstance& iterationBest = resultNodes[0].gameInstance();
+        iterationTime = iterationBest.game().realTimePlayed();
+        if (iterationTime < bestTime) {
+            cout << "Recent iteration found better time; ";
+            cout << maxPlanSize - iterationsLeft << " more iterations added" << endl;
+            best = iterationBest;
+            bestTime = iterationTime;
+            bestSacrificeStrategies = sacrificeStrategies;
+            bestSacrificeDiffs = sacrificeDiffs;
+            iterationsLeft = maxPlanSize;
+        }
+        cout << "Iteration " << iterationCounter << " results:" << endl;
+        cout << "Segment time: " << renderTime(iterationTime - startTime) << endl;
+        cout << "Cumulative time: " << renderTime(iterationTime) << endl;
+        cout << "Winning strategies left: " << sacrificeStrategies.size() << endl;
+    }
+    best.clearAllInstructions();
+    return best;
 }

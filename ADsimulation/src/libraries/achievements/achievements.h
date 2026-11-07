@@ -4,18 +4,23 @@
 #include "decimal.h"
 #include <cstdint>
 #include <vector>
+#include <array>
 
 
 class Achievements : public ISerializable {
-    private:
-        std::vector<uint8_t> bitmasks;
-
     public:
+        inline static constexpr int ROWS = 7;
+        inline static constexpr int COUNT = ROWS * 8;
+
         inline static const std::vector<int> afterTickAchievements = {
             24, 31, 42, 43, 45, 46
         };
 
-        Achievements();
+    private:
+        std::array<uint8_t, ROWS> bitmasks = {};
+
+    public:
+        Achievements() = default;
         Achievements(const json& j);
         bool isUnlocked(int id) const;
         

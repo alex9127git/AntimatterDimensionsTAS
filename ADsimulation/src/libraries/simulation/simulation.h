@@ -203,11 +203,6 @@ class SacrificeRefinementIteration : public Iteration {
         );
 };
 
-void collectPurchaseStrategies(const std::vector<SearchNode>& nodes, Strategies& purchaseStrategies);
-void collectSacrificeStrategies(const std::vector<SearchNode>& nodes, Strategies& sacrificeStrategies,
-                                Strategies& sacrificeDiffs);
-void collectStrategyPairs(const std::vector<SearchNode>& nodes, Strategies& purchaseStrategies,
-                          Strategies& sacrificeStrategies, bool addFinalTarget);
 
 GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose=true);
 GameInstance runGalaxy(GameState st, bool useSacrifice, bool verbose=true);

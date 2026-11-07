@@ -13,7 +13,7 @@ const function<bool(const GameState&)> AchConstants::ALWAYS_UNLOCKED =
 const function<bool(const GameState&)> AchConstants::NOT_IMPLEMENTED_YET = 
         [](const GameState&) {return false;};
 
-const vector<function<bool(const GameState&)>> AchConstants::unlockConditions = {
+const function<bool(const GameState&)> AchConstants::unlockConditions[] = {
     NOT_APPLICABLE,
     NOT_APPLICABLE,
     NOT_APPLICABLE,
@@ -93,6 +93,9 @@ const vector<function<bool(const GameState&)>> AchConstants::unlockConditions = 
     NOT_IMPLEMENTED_YET,
     NOT_IMPLEMENTED_YET
 };
+
+static_assert(size(AchConstants::unlockConditions) == Achievements::COUNT);
+
 
 Decimal getADmult(const GameState& st, int tier) {
     Decimal mult = DC::D1;
