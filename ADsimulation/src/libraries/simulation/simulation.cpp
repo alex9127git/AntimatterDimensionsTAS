@@ -1,6 +1,6 @@
 #include "instructions.h"
 #include "simulation.h"
-#include "constants.h"
+#include "simconst.h"
 #include "ioutils.h"
 #include "errors.h"
 #include "purge.h"
@@ -8,9 +8,36 @@
 #include <cstdint>
 #include <string>
 #include <format>
+#include <cmath>
 #include <set>
 using namespace std;
 
+
+// Collects purchase strategies. Removes duplicates if such exist
+void collectPurchaseStrategies(const vector<SearchNode>& nodes, Strategies& purchaseStrategies) {
+    purchaseStrategies.clear();
+    set<vector<double>> seenStrategies;
+    for (const SearchNode& node : nodes) {
+        vector<double> strat = node.queue().getCompletedPurchases();
+        if (seenStrategies.insert(strat).second) purchaseStrategies.push_back(strat);
+    }
+}
+
+// Collects sacrifice strategies. Removes duplicates if such exist
+void collectSacrificeStrategies(const vector<SearchNode>& nodes, Strategies& sacrificeStrategies,
+                                Strategies& sacrificeDiffs)
+{
+    sacrificeStrategies.clear();
+    sacrificeDiffs.clear();
+    set<vector<double>> seenStrategies;
+    for (const SearchNode& node : nodes) {
+        vector<double> strat = node.queue().getCompletedSacrifices();
+        if (seenStrategies.insert(strat).second) {
+            sacrificeStrategies.push_back(strat);
+            sacrificeDiffs.push_back(node.getSacrificeDiffs());
+        }
+    }
+}
 
 // Collects strategy pairs (purchase + sacrifice). Removes duplicates if such exist
 void collectStrategyPairs(const vector<SearchNode>& nodes, Strategies& purchaseStrategies,
@@ -30,22 +57,6 @@ void collectStrategyPairs(const vector<SearchNode>& nodes, Strategies& purchaseS
         if (seenStrategyPairs.insert(pair(purchStrat, sacStrat)).second) {
             purchaseStrategies.push_back(purchStrat);
             sacrificeStrategies.push_back(sacStrat);
-        }
-    }
-}
-
-// Collects sacrifice strategies. Removes duplicates if such exist
-void collectSacrificeStrategies(const vector<SearchNode>& nodes, Strategies& sacrificeStrategies,
-                                Strategies& sacrificeDiffs)
-{
-    sacrificeStrategies.clear();
-    sacrificeDiffs.clear();
-    set<vector<double>> seenStrategies;
-    for (const SearchNode& node : nodes) {
-        vector<double> strat = node.queue().getCompletedSacrifices();
-        if (seenStrategies.insert(strat).second) {
-            sacrificeStrategies.push_back(strat);
-            sacrificeDiffs.push_back(node.getSacrificeDiffs());
         }
     }
 }
@@ -106,20 +117,15 @@ GameInstance runUntil(
         if (iterationCounter % 2 == 1) {
             cout << "Finding purchases" << endl;
             resultNodes = PurchaseIteration(st, progress, sacrificeStrategies, verbose).run();
-            purchaseStrategies.clear();
-            set<vector<double>> seenStrategies;
-            for (SearchNode& node : resultNodes) {
-                vector<double> strat = node.queue().getCompletedPurchases();
-                if (seenStrategies.insert(strat).second) purchaseStrategies.push_back(strat);
-            }
+            collectPurchaseStrategies(resultNodes, purchaseStrategies);
             if (!seenPurchaseInputs.insert(purchaseStrategies).second) repeated = true;
         } else {
             cout << "Finding sacrifices" << endl;
             resultNodes = ApproxSacrificeIteration(st, progress, purchaseStrategies, verbose).run();
             collectStrategyPairs(resultNodes, purchaseStrategies, sacrificeStrategies, true);
             cout << "============================================================" << endl;
-            cout << "Optimizing sacrifices" << endl;
-            resultNodes = PreciseSacrificeIteration(
+            cout << "Refining sacrifices" << endl;
+            resultNodes = SacrificeRefinementIteration(
                 st, progress, purchaseStrategies, sacrificeStrategies, verbose).run();
             collectSacrificeStrategies(resultNodes, sacrificeStrategies, sacrificeDiffs);
             if (!seenSacrificeInputs.insert(sacrificeStrategies).second) repeated = true;
@@ -144,7 +150,7 @@ GameInstance runUntil(
     for (const vector<double>& plan : bestSacrificeStrategies) maxPlanSize = max(maxPlanSize, plan.size());
     bool useRefine = st.dimensionBoosts() >= 5 && useSacrifice;
     size_t iterationsLeft = maxPlanSize;
-    size_t windowIndex = -1;
+    int windowIndex = -1;
 
     // Attempt all purchase iterations again, but with ability to move sacrifices; repeat for each sacrifice
     while (useRefine && maxPlanSize > 0 && iterationsLeft > 0) {
@@ -164,9 +170,9 @@ GameInstance runUntil(
         }
         collectStrategyPairs(resultNodes, purchaseStrategies, sacrificeStrategies, false);
         cout << "============================================================" << endl;
-        cout << "Optimizing sacrifices" << endl;
-        resultNodes = PreciseSacrificeIteration(st, progress, purchaseStrategies,
-                                                sacrificeStrategies, verbose).run();
+        cout << "Refining sacrifices" << endl;
+        resultNodes = SacrificeRefinementIteration(
+            st, progress, purchaseStrategies, sacrificeStrategies, verbose).run();
         collectSacrificeStrategies(resultNodes, sacrificeStrategies, sacrificeDiffs);
         iterationsLeft--;
         const GameInstance& iterationBest = resultNodes[0].gameInstance();
@@ -358,12 +364,11 @@ vector<SearchNode> Iteration::run() {
         ticks++;
         if (ticks >= MAX_TICKS) {
             renderProgressDisplay();
-            throw runtime_error(format("Strategy search stopped: took more than {} ticks", MAX_TICKS));
+            throw TickLimitExceeded(format("Strategy search stopped: took more than {} ticks", MAX_TICKS));
         }
     }
     vector<SearchNode> finishedStates;
     for (SearchNode& node : nodes) {
-        if (finishedStates.size() >= MAX_STATES_CARRYOVER) break;
         if (progress.isFinished(node.game())) {
             finishedStates.push_back(move(node));
         }
@@ -484,7 +489,7 @@ void ApproxSacrificeIteration::addBranches() {
     appendNewStates();
 }
 
-PreciseSacrificeIteration::PreciseSacrificeIteration(
+SacrificeRefinementIteration::SacrificeRefinementIteration(
     GameState st, const Progress& progress,
     const Strategies& purchaseStrategies, 
     const Strategies& sacrificeStrategies, bool verbose
@@ -500,7 +505,7 @@ PreciseSacrificeIteration::PreciseSacrificeIteration(
     states = nodes.size();
 }
 
-void PreciseSacrificeIteration::addBranches() {
+void SacrificeRefinementIteration::addBranches() {
     addSacrificeWindowBranches();
     appendNewStates();
 }

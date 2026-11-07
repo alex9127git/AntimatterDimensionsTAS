@@ -76,23 +76,18 @@ namespace {
 
 Achievements::Achievements() {
     bitmasks = {0, 0, 0, 0, 0, 0, 0};
-    for (size_t i = 0; i < bitmasks.size() * 8; i++) {
-        unlockTimes.push_back(-1LL);
-    }
 }
 
 Achievements::Achievements(const json& j) : Achievements::Achievements() {
     this->from_json(j);
 }
 
-void Achievements::unlockAchievement(int id, int64_t time) {
+void Achievements::unlockAchievement(int id) {
     bitmasks[id / 10 - 1] |= (1 << (id % 10 - 1));
-    unlockTimes[idToIndex(id)] = time;
 }
 
 void Achievements::lockAchievement(int id) {
     bitmasks[id / 10 - 1] &= (255 - (1 << (id % 10 - 1)));
-    unlockTimes[idToIndex(id)] = -1;
 }
 
 bool Achievements::isUnlocked(int id) const {
@@ -108,7 +103,7 @@ int Achievements::indexToId(int index) {
 }
 
 int Achievements::achCount() const {
-    return unlockTimes.size();
+    return bitmasks.size() * 8;
 }
 
 Decimal Achievements::calcBonus() const {
@@ -152,6 +147,6 @@ json Achievements::to_json() const {
 void Achievements::from_json(const json& j) {
     vector<int> ids = j.at("unlockedAchievements");
     for (int id : ids) {
-        unlockAchievement(id, 0);
+        unlockAchievement(id);
     }
 }

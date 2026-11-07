@@ -1,7 +1,9 @@
 #pragma once
 #include "searchnode.h"
+#include "simconst.h"
 #include "timer.h"
 #include <functional>
+#include <algorithm>
 #include <vector>
 using Strategies = std::vector<std::vector<double>>;
 
@@ -12,7 +14,7 @@ struct SacrificeWindow {
     Decimal precision;
 
     static SacrificeWindow refinementWindow() {
-        return {DC::D1_01, DC::D1_01, DC::D1 + Decimal(1e-9)};
+        return {DC::D1_01, DC::D1_01, REFINEMENT_PRECISION};
     }
 };
 
@@ -189,22 +191,23 @@ class ApproxSacrificeIteration : public Iteration {
         );
 };
 
-class PreciseSacrificeIteration : public Iteration {
+class SacrificeRefinementIteration : public Iteration {
     private:
         void addBranches() override;
 
     public:
-        PreciseSacrificeIteration(
+        SacrificeRefinementIteration(
             GameState st, const Progress& progress,
             const Strategies& purchaseStrategies, 
             const Strategies& sacrificeStrategies, bool verbose
         );
 };
 
-void collectStrategyPairs(const std::vector<SearchNode>& nodes, Strategies& purchaseStrategies,
-                          Strategies& sacrificeStrategies, bool addFinalTarget);
+void collectPurchaseStrategies(const std::vector<SearchNode>& nodes, Strategies& purchaseStrategies);
 void collectSacrificeStrategies(const std::vector<SearchNode>& nodes, Strategies& sacrificeStrategies,
                                 Strategies& sacrificeDiffs);
+void collectStrategyPairs(const std::vector<SearchNode>& nodes, Strategies& purchaseStrategies,
+                          Strategies& sacrificeStrategies, bool addFinalTarget);
 
 GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose=true);
 GameInstance runGalaxy(GameState st, bool useSacrifice, bool verbose=true);

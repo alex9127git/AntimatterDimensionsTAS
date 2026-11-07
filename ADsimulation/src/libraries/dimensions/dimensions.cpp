@@ -2,17 +2,14 @@
 #include "tickspeed.h"
 #include "constants.h"
 #include <algorithm>
-#include <cmath>
 using namespace std;
 
 
 Dimension::Dimension(
-    int _tier,
     Decimal _cost, 
     Decimal _scaling,
     bool _unlocked
-)   :   tier(_tier),
-        costRule(_cost, _scaling, DC::D10, DC::INF),
+)   :   costRule(_cost, _scaling, DC::D10, DC::INF),
         amount(DC::D0),
         purchases(0),
         unlocked(_unlocked),
@@ -21,8 +18,7 @@ Dimension::Dimension(
     {}
 
 Dimension::Dimension()
-    :   tier(1),
-        costRule(DC::D10, DC::D1E3, DC::D10, DC::INF),
+    :   costRule(DC::D10, DC::D1E3, DC::D10, DC::INF),
         amount(DC::D0),
         purchases(0),
         unlocked(true),
@@ -91,11 +87,10 @@ void Dimension::produceDimensions(Dimension& dimension, double diff) const {
 }
 
 AntimatterDimension::AntimatterDimension(
-    int _tier,
     Decimal _cost, 
     Decimal _scaling,
     bool _unlocked
-)   :   Dimension(_tier, _cost, _scaling, _unlocked)
+)   :   Dimension(_cost, _scaling, _unlocked)
     {}
 
 Decimal AntimatterDimension::productionPerSecond(const Tickspeed& t) const {
@@ -140,14 +135,14 @@ void AntimatterDimension::from_json(const json& j) {
 
 AntimatterDimensions::AntimatterDimensions() 
     :   dims({
-            AntimatterDimension(1,   DC::D10,    DC::D1E3,     false),
-            AntimatterDimension(2,   DC::D100,   DC::D1E4,     false),
-            AntimatterDimension(3,   DC::D1E4,   DC::D1E5,     false),
-            AntimatterDimension(4,   DC::D1E6,   DC::D1E6,     false),
-            AntimatterDimension(5,   DC::D1E9,   DC::D1E8,     false),
-            AntimatterDimension(6,   DC::D1E13,  DC::D1E10,    false),
-            AntimatterDimension(7,   DC::D1E18,  DC::D1E12,    false),
-            AntimatterDimension(8,   DC::D1E24,  DC::D1E15,    false)
+            AntimatterDimension(DC::D10,    DC::D1E3,     false),
+            AntimatterDimension(DC::D100,   DC::D1E4,     false),
+            AntimatterDimension(DC::D1E4,   DC::D1E5,     false),
+            AntimatterDimension(DC::D1E6,   DC::D1E6,     false),
+            AntimatterDimension(DC::D1E9,   DC::D1E8,     false),
+            AntimatterDimension(DC::D1E13,  DC::D1E10,    false),
+            AntimatterDimension(DC::D1E18,  DC::D1E12,    false),
+            AntimatterDimension(DC::D1E24,  DC::D1E15,    false)
         })
 {
     (*this)[1].unlock();

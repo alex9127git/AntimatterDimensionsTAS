@@ -6,7 +6,6 @@
 #include "sacrifice.h"
 #include "constants.h"
 #include <cstdint>
-#include <iosfwd>
 
 
 class GameState : public ISerializable {

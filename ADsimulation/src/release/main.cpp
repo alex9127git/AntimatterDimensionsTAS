@@ -3,6 +3,7 @@
 #include "cmdutils.h"
 #include "ioutils.h"
 #include <algorithm>
+#include <cstdlib>
 #include <omp.h>
 using namespace std;
 

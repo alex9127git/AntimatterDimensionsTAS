@@ -11,7 +11,6 @@ class Tickspeed;
 
 class Dimension : public ISerializable {
     protected:
-        int tier;
         ExponentialCostScaling costRule;
         Decimal amount;
         int32_t purchases;
@@ -23,7 +22,6 @@ class Dimension : public ISerializable {
 
     public:
         Dimension(
-            int _tier,
             Decimal _cost, 
             Decimal _scaling,
             bool _unlocked
@@ -52,7 +50,6 @@ class Dimension : public ISerializable {
 class AntimatterDimension : public Dimension {
     public:
         AntimatterDimension(
-            int _tier,
             Decimal _cost, 
             Decimal _scaling,
             bool _unlocked

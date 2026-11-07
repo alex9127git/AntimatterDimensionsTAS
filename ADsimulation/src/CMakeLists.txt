@@ -1,6 +1,5 @@
-SET(FETCHCONTENT_QUIET FALSE)
-
 cmake_minimum_required(VERSION 3.23)
+SET(FETCHCONTENT_QUIET FALSE)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
@@ -256,6 +255,7 @@ target_sources(simulation
         FILES
             libraries/simulation/simulation.h
             libraries/simulation/searchnode.h
+            libraries/simulation/simconst.h
             libraries/simulation/errors.h
             libraries/simulation/purge.h
             libraries/simulation/timer.h
@@ -265,6 +265,7 @@ target_link_libraries(simulation
         gameinstance
         instructions
         constants
+        decimal
     PRIVATE
         OpenMP::OpenMP_CXX
         ioutils
@@ -289,6 +290,7 @@ target_link_libraries(main
         ioutils
 )
 
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/release/customRun.cpp)
 add_executable(custom)
 target_sources(custom 
     PRIVATE 
@@ -307,6 +309,7 @@ target_link_libraries(custom
         simulation
         ioutils
 )
+endif()
 
 add_executable(testing)
 target_sources(testing 
@@ -318,7 +321,5 @@ target_link_libraries(testing
         OpenMP::OpenMP_CXX
         gameinstance
         simulation
-        constants
         ioutils
-        decimal
 )

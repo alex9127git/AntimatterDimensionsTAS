@@ -1,7 +1,6 @@
 #include "gamestate.h"
 #include "formulae.h"
 #include <algorithm>
-#include <cmath>
 using namespace std;
 
 
@@ -113,7 +112,7 @@ bool GameState::handleKonamiCode() {
 void GameState::unlockAchievement(int ach, bool force) {
     if (this->_achievements.isUnlocked(ach)) return;
     if (force || this->checkUnlockCondition(ach)) {
-        this->_achievements.unlockAchievement(ach, this->realTimePlayed());
+        this->_achievements.unlockAchievement(ach);
         this->recalcAchievementBonus();
     }
 }

@@ -28,7 +28,7 @@ void SearchNode::computeAllowedPurchases() {
         frontier++;
     }
     if (st.tickspeed().isUnlocked() && st.tickspeed().getCost() * DC::D1E3 <= st.antimatter()) {
-        allowedPurchases.push_back(9);
+        allowedPurchases.push_back(Instruction::TickspeedSingle);
         return;
     }
     for (int i = 1; i <= frontier; i++) {

@@ -1,5 +1,6 @@
-#include "costmath.h"
 #include "constants.h"
+#include "costmath.h"
+#include <cmath>
 
 
 ExponentialCostScaling::ExponentialCostScaling(

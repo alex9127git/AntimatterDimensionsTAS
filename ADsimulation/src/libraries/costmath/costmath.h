@@ -1,5 +1,6 @@
 #pragma once
 #include "decimal.h"
+#include <cstdint>
 
 
 class ExponentialCostScaling {

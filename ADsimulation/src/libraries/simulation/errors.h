@@ -1,3 +1,4 @@
+#pragma once
 #include <stdexcept>
 
 class StateLimitExceeded : public std::runtime_error {

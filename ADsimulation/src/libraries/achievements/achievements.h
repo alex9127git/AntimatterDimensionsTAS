@@ -9,7 +9,6 @@
 class Achievements : public ISerializable {
     private:
         std::vector<uint8_t> bitmasks;
-        std::vector<int64_t> unlockTimes;
 
     public:
         inline static const std::vector<int> afterTickAchievements = {
@@ -20,7 +19,7 @@ class Achievements : public ISerializable {
         Achievements(const json& j);
         bool isUnlocked(int id) const;
         
-        void unlockAchievement(int id, int64_t time);
+        void unlockAchievement(int id);
         void lockAchievement(int id);
 
         static int idToIndex(int id);
