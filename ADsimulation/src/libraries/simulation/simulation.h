@@ -1,9 +1,9 @@
 #pragma once
 #include "searchnode.h"
 #include "simconst.h"
+#include "progress.h"
+#include "stats.h"
 #include "timer.h"
-#include <functional>
-#include <algorithm>
 #include <vector>
 using Strategies = std::vector<std::vector<double>>;
 
@@ -16,89 +16,6 @@ struct SacrificeWindow {
     static SacrificeWindow refinementWindow() {
         return {DC::D1_01, DC::D1_01, REFINEMENT_PRECISION};
     }
-};
-
-class Progress {
-    private:
-        std::function<bool(const GameState&)> stopCondition;
-        std::function<double(const GameState&)> progressFunction;
-        double progressFraction = 0.0;
-
-    public:
-        Progress(std::function<bool(const GameState&)> stopFunc, std::function<double(const GameState&)> progressFunc);
-        void update(const GameState& st) {
-            progressFraction = std::clamp(progressFunction(st), 0.0, 1.0);
-        }
-        bool isFinished(const GameState& st) const {
-            return stopCondition(st);
-        }
-
-        static Progress untilDimboost() {
-            return Progress(
-                [](const GameState& st) {return st.canBuyNextDimboost();}, 
-                [](const GameState& st) {
-                    return st.antimatterThisReset().log10value() / st.getAntimatterGoalForDimboost().log10value();
-                }
-            );
-        }
-        
-        static Progress untilAch23() {
-            return Progress(
-                [](const GameState& st) {return st.achievements().isUnlocked(23);}, 
-                [](const GameState& st) {
-                    return st.antimatterThisReset().log10value() / st.getAntimatterGoalForDimboost().log10value();
-                }
-            );
-        }
-
-        static Progress untilGalaxy() {
-            return Progress(
-                [](const GameState& st) {return st.canBuyNextGalaxy();}, 
-                [](const GameState& st) {
-                    return st.antimatterThisReset().log10value() / st.getAntimatterGoalForGalaxy().log10value();
-                }
-            );
-        }
-
-        double getFraction() const {return progressFraction;}
-        void finish() {
-            progressFraction = 1.0;
-        }
-};
-
-class Stats {
-    private:
-        Timer timer;
-        Timer branchTimer;
-        Timer checkTimer;
-        Timer tickTimer;
-        Timer purgeTimer;
-        double branchTime = 0;
-        double checkTime = 0;
-        double tickTime = 0;
-        double purgeTime = 0;
-
-    public:
-        void resetGlobalTimer() {timer.reset();}
-        void resetBranchTimer() {branchTimer.silentReset();}
-        void resetCheckTimer() {checkTimer.silentReset();}
-        void resetTickTimer() {tickTimer.silentReset();}
-        void resetPurgeTimer() {purgeTimer.silentReset();}
-        void updateBranchTime() {branchTime += branchTimer.silentReset();}
-        void updateCheckTime() {checkTime += checkTimer.silentReset();}
-        void updateTickTime() {tickTime += tickTimer.silentReset();}
-        void updatePurgeTime() {purgeTime += purgeTimer.silentReset();}
-        double getTimeRunning() {return timer.peek();}
-        void printStats(int maxStates) {
-            std::cout << std::endl;
-            std::cout << "Finished! Total time elapsed: ";
-            timer.reset();
-            std::cout << "Max States: " << maxStates << std::endl;
-            std::cout << "branch: " << branchTime << " ms" << std::endl;
-            std::cout << "check: " << checkTime << " ms" << std::endl;
-            std::cout << "tick: " << tickTime << " ms" << std::endl;
-            std::cout << "purge: " << purgeTime << " ms" << std::endl;
-        }
 };
 
 class Iteration {

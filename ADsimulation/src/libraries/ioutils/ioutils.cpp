@@ -37,6 +37,11 @@ string renderTime(long ms) {
     return format("{:02d}:{:02d}:{:02d}.{:03d}", hours, minutes, seconds, milliseconds);
 }
 
+string renderTimeVerbose(long ms) {
+    if (ms >= 1000000) return renderTime(ms);
+    return format("{} ms", ms);
+}
+
 bool needsHelp(int argc, char* argv[]) {
     string arg = argv[1];
     return argc == 2 && (arg == "-h" || arg == "--help");

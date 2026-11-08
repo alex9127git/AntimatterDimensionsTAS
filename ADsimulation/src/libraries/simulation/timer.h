@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 #include <chrono>
 
 
@@ -10,13 +9,7 @@ class Timer {
     public:
         Timer() : start(std::chrono::steady_clock::now()) {}
 
-        void reset() {
-            double result = peek();
-            start = std::chrono::steady_clock::now();
-            std::cout << result << " ms" << std::endl;
-        }
-
-        double silentReset() {
+        double reset() {
             double result = peek();
             start = std::chrono::steady_clock::now();
             return result;

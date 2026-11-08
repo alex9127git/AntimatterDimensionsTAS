@@ -257,7 +257,9 @@ target_sources(simulation
             libraries/simulation/simulation.h
             libraries/simulation/searchnode.h
             libraries/simulation/simconst.h
+            libraries/simulation/progress.h
             libraries/simulation/errors.h
+            libraries/simulation/stats.h
             libraries/simulation/purge.h
             libraries/simulation/timer.h
 )
@@ -265,11 +267,12 @@ target_link_libraries(simulation
     PUBLIC
         gameinstance
         instructions
+        gamestate
         constants
+        ioutils
         decimal
     PRIVATE
         OpenMP::OpenMP_CXX
-        ioutils
 )
 
 add_executable(main)

@@ -1,5 +1,6 @@
 #include "decimal.h"
 #include <stdexcept>
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <format>
@@ -43,7 +44,7 @@ Decimal& Decimal::operator+=(const Decimal& b) {
         this->mantissa = b.mantissa;
         this->exponent = b.exponent;
     } else if (abs(this->exponent - b.exponent) > 20) {
-        const Decimal& bigger = Decimal::max(*this, b);
+        const Decimal& bigger = max(*this, b);
         this->mantissa = bigger.mantissa;
         this->exponent = bigger.exponent;
     } else if (this->exponent >= b.exponent) {
@@ -129,7 +130,7 @@ double Decimal::toNumber(const Decimal& d) {
 Decimal Decimal::add(const Decimal& a, const Decimal& b) {
     if (a.mantissa == 0) return b;
     if (b.mantissa == 0) return a;
-    if (abs(a.exponent - b.exponent) > 20) return Decimal::max(a, b);
+    if (abs(a.exponent - b.exponent) > 20) return max(a, b);
     if (a.exponent >= b.exponent) {
         double scaled = b.mantissa * pow10_table[b.exponent - a.exponent + 20];
         return Decimal(a.mantissa + scaled, a.exponent);
@@ -176,14 +177,6 @@ Decimal Decimal::pow(const Decimal base, const double power) {
     }
 }
 
-Decimal Decimal::max(const Decimal& a, const Decimal& b) {
-    return Decimal::gt(a, b) ? a : b;
-}
-
-Decimal Decimal::min(const Decimal& a, const Decimal& b) {
-    return Decimal::gt(a, b) ? b : a;
-}
-
 bool Decimal::gte(const Decimal& a, const Decimal& b) {
     return Decimal::gt(a, b) || Decimal::eq(a, b);
 }
@@ -216,10 +209,6 @@ void Decimal::normalize() {
         this->exponent--; 
     }
     if (isNegative) this->mantissa = -this->mantissa;
-}
-
-void Decimal::repr() const {
-    cout << "Decimal(" << this->mantissa << ", " << this->exponent << ")" << endl;
 }
 
 string Decimal::toString(const Decimal& d, int precision) {

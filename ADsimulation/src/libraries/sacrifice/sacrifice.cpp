@@ -24,7 +24,7 @@ void Sacrifice::recalcSacrificeBonus() {
 
 Decimal Sacrifice::sacrificeIncrease(const Decimal& AD1amount) const {
     Decimal a = (_sacrificed + AD1amount).log10() / DC::D10;
-    Decimal b = Decimal::max(Decimal::max(_sacrificed, DC::D1).log10() / DC::D10, DC::D1);
+    Decimal b = max(max(_sacrificed, DC::D1).log10() / DC::D10, DC::D1);
     Decimal c = a / b;
     Decimal e = sacrificeExponent;
     return Decimal::pow(c, e);

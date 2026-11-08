@@ -51,16 +51,11 @@ class Decimal {
         static Decimal pow(const Decimal base, const Decimal power);
         static Decimal pow(const Decimal base, const double power);
 
-        static Decimal max(const Decimal& a, const Decimal& b);
-        static Decimal min(const Decimal& a, const Decimal& b);
-
         static bool gte(const Decimal& a, const Decimal& b);
         static bool gt(const Decimal& a, const Decimal& b);
         static bool eq(const Decimal& a, const Decimal& b);
 
         void normalize();
-
-        void repr() const;
 
         static std::string toString(const Decimal& d, int precision);
         std::string toString(int precision) const;

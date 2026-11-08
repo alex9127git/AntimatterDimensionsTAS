@@ -5,6 +5,7 @@
 #include "errors.h"
 #include "purge.h"
 #include <algorithm>
+#include <iostream>
 #include <cstdint>
 #include <string>
 #include <format>
@@ -12,11 +13,6 @@
 #include <set>
 using namespace std;
 
-
-Progress::Progress(function<bool(const GameState&)> stopFunc, function<double(const GameState&)> progressFunc)
-    :   stopCondition(stopFunc),
-        progressFunction(progressFunc) 
-    {};
 
 Iteration::Iteration(
     const Progress& _progress, bool _verbose, const Strategies& _projectedSacrifices
@@ -35,7 +31,7 @@ void Iteration::appendNewStates() {
 void Iteration::checkProgress() {
     stats.resetCheckTimer();
     bool doRender = updateTimer.peek() > RENDER_INTERVAL_MS && verbose;
-    if (doRender) updateTimer.silentReset();
+    if (doRender) updateTimer.reset();
     bool anyFinished = false;
     #pragma omp parallel for if(nodes.size() > PARALLEL_THRESHOLD) reduction(||:anyFinished)
     for (SearchNode& node : nodes) {
@@ -84,7 +80,7 @@ void Iteration::purgeObsoleteStates() {
         maxStates = max(maxStates, statesBeforePurge);
         purge(nodes, [this](int purged, double progressFraction) {
             if (!verbose || updateTimer.peek() < RENDER_INTERVAL_MS) return;
-            updateTimer.silentReset();
+            updateTimer.reset();
             statesPurged = purged;
             purgeProgress = progressFraction;
             renderProgressDisplay(true);
@@ -145,7 +141,7 @@ void Iteration::addSacrificeWindowBranches() {
         if (node.game().canSacrifice() && node.canSacBranch()) {
             Decimal currSac = node.game().getBoostAfterSacrifice();
             Decimal prevSac = node.game().sacrifice().getSacrificeBonus() * 
-                Decimal::max(node.game().sacrifice().sacrificeIncrease(node.getPrevAD1()), DC::D1);
+                max(node.game().sacrifice().sacrificeIncrease(node.getPrevAD1()), DC::D1);
             Decimal target = (currSac + prevSac) / DC::D2;
             double diff = currSac.log10value() - prevSac.log10value();
             SacrificeWindow sacWindow = sacrificeWindow(node.getProjRouteIndex(), sacrificesDone);
@@ -295,7 +291,7 @@ void ApproxSacrificeIteration::addBranches() {
             SearchNode newNode = node;
             Decimal currSac = newNode.game().getBoostAfterSacrifice();
             Decimal prevSac = newNode.game().sacrifice().getSacrificeBonus() * 
-                Decimal::max(newNode.game().sacrifice().sacrificeIncrease(newNode.getPrevAD1()), DC::D1);
+                max(newNode.game().sacrifice().sacrificeIncrease(newNode.getPrevAD1()), DC::D1);
             Decimal target = (currSac + prevSac) / DC::D2;
             newNode.addInstructions({Instruction::Sacrifice, target.log10value()});
             Decimal nextSac = currSac * precision;

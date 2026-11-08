@@ -51,7 +51,7 @@ namespace {
         NO_EFFECT,
         [](const Decimal&) {return DC::D5E5;},
         [](const Decimal&) {return DC::D5E10;},
-        [](Decimal minutes) {return Decimal::max(DC::D6 / (minutes + DC::D3), DC::D1);},
+        [](Decimal minutes) {return max(DC::D6 / (minutes + DC::D3), DC::D1);},
         [](const Decimal&) {return DC::D1_1;},
         [](const Decimal&) {return DC::D1_01;},
 
@@ -59,7 +59,7 @@ namespace {
         NO_EFFECT,
         NO_EFFECT,
         [](const Decimal&) {return DC::D1_25;},
-        [](Decimal minutes) {return Decimal::max(DC::D4 / (minutes + DC::D1), DC::D1);},
+        [](Decimal minutes) {return max(DC::D4 / (minutes + DC::D1), DC::D1);},
         [](const Decimal&) {return DC::D1_02;},
         NO_EFFECT,
         [](const Decimal&) {return DC::D1_5;},
@@ -69,7 +69,7 @@ namespace {
         [](Decimal antimatter) {return Decimal::pow(antimatter, 0.00002) + DC::D1;},
         [](const Decimal&) {return DC::D1_4;},
         NO_EFFECT,
-        [](Decimal days) {return Decimal::max(Decimal::pow(days / DC::D2, 0.05), DC::D1);},
+        [](Decimal days) {return max(Decimal::pow(days / DC::D2, 0.05), DC::D1);},
         NO_EFFECT,
         [](const Decimal&) {return DC::D5E25;},
     };
