@@ -71,7 +71,7 @@ void Iteration::tickAllStates() {
 }
 
 void Iteration::purgeObsoleteStates() {
-    if ((size_t) statesBeforePurge > MAX_STATES) {
+    if ((size_t) nodes.size() > MAX_STATES) {
         throw StateLimitExceeded(format("Iteration stopped: more than {} states", MAX_STATES));
     }
     if (adds >= 300 || states >= statesAfterPurge * 1.5) {
