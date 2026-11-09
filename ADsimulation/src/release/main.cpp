@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <omp.h>
+#include <map>
 using namespace std;
 
 
@@ -17,18 +18,22 @@ int main(int argc, char* argv[]) {
     InputData data = getInputFromCmd(argc, argv);
     if (!data.isValid) return 0;
 
-    GameInstance instance;
     switch (data.runType) {
-        case NextDimboost:
-            instance = runDimboost(data.gameState, data.useSacrifice);
+        case NextDimboost: {
+            GameInstance instance = runDimboost(data.gameState, data.useSacrifice);
+            data.saveResult(instance);
             break;
-        case NextGalaxy:
-            cout << "not implemented yet" << endl;
-            return 0;
-        case ForceNextGalaxy:
-            instance = runGalaxy(data.gameState, data.useSacrifice);
+        }
+        case NextGalaxy: {
+            map<int32_t, GameInstance> routes = runFullGalaxy(data.gameState, data.useSacrifice);
+            data.saveResult(routes);
             break;
+        }
+        case ForceNextGalaxy: {
+            GameInstance instance = runGalaxy(data.gameState, data.useSacrifice);
+            data.saveResult(instance);
+            break;
+        }
     }
-    data.saveResult(instance);
     return 0;
 };

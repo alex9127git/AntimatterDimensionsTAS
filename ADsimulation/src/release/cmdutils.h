@@ -36,6 +36,25 @@ struct InputData {
             writeInstructions(cmd_out, instance.queue());
         }
     }
+
+    void saveResult(const std::map<int32_t, GameInstance>& routes) {
+        std::cout << "Finished simulation; dumping result game state into temporary files" << std::endl;
+        if (saveCommands) std::cout << "Command sequences will also be saved in temporary files" << std::endl;
+        size_t writtenSegments = 0;
+        bool isFinal;
+        for (const auto& [i, instance] : routes) {
+            isFinal = writtenSegments + 1 == routes.size();
+            std::ofstream save_out = std::ofstream(
+                isFinal ? outputFile : "save_tmp_d" + std::to_string(i) + ".json");
+            save_out << instance.game().to_json();
+            if (saveCommands) {
+                std::ofstream cmd_out = std::ofstream(
+                    isFinal ? cmdOutFile : "cmd_tmp_d" + std::to_string(i) + ".json");
+                writeInstructions(cmd_out, instance.queue());
+            }
+            writtenSegments++;
+        }
+    }
 };
 
 inline InputData cancel(InputData& data) {
@@ -106,8 +125,12 @@ inline InputData getInputFromCmd(int argc, char* argv[]) {
     if (t < 0 || t > 2) return cancel(result);
     if (t == 2 && result.gameState.dimensionBoosts() < 4) return cancel(result);
     result.runType = (RunType) t;
-    if (result.gameState.dimensionBoosts() >= 5) {
-        std::cout << "Input game state has 5 dimension boosts or more. Do you want to use sacrifice? [Y/n] ";
+    if (t == 1 || result.gameState.dimensionBoosts() >= 5) {
+        if (t == 1) {
+            std::cout << "This will run segments where sacrifice is unlocked. Do you want to use sacrifice? [Y/n] ";
+        } else {
+            std::cout << "Input game state has 5 dimension boosts or more. Do you want to use sacrifice? [Y/n] ";
+        }
         std::getline(std::cin, line);
         char confirmation = line.empty() ? 'y' : line[0];
         switch (confirmation) {

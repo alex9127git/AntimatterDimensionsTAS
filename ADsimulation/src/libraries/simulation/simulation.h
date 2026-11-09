@@ -5,6 +5,7 @@
 #include "stats.h"
 #include "timer.h"
 #include <vector>
+#include <map>
 using Strategies = std::vector<std::vector<double>>;
 
 
@@ -124,3 +125,5 @@ class SacrificeRefinementIteration : public Iteration {
 GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose=true);
 GameInstance runGalaxy(GameState st, bool useSacrifice, bool verbose=true);
 GameInstance runUntil(GameState st, const Progress& progress, bool useSacrifice, bool verbose);
+
+std::map<int32_t, GameInstance> runFullGalaxy(GameState st, bool useSacrifice, bool verbose=true);

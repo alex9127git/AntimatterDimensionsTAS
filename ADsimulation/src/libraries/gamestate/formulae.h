@@ -25,5 +25,6 @@ Decimal getCostForDimPurchases(const ExponentialCostScaling& costRule, int32_t d
 
 int getTierForDimboost(int32_t dimboostTarget);
 int32_t getAmountForDimboost(int32_t dimboostTarget);
-
 int32_t getAmountForGalaxy(int32_t galaxyTarget);
+
+int32_t getDimboostsForAmount(int32_t tier8amount);

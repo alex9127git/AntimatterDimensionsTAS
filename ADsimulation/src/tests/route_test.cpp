@@ -83,8 +83,20 @@ TEST(IntegrationTesting, ComplexSearchAndRetraceTest) {
     omp_set_num_threads(max(1, omp_get_num_procs() / 2));
     json save = readJson(TEST_FILES_DIR "/02_purchAndSacTest/in.json");
     GameState st = GameState(save);
+
+    testing::internal::CaptureStdout();
     GameInstance actual = runDimboost(st, true, false);
+    string output = testing::internal::GetCapturedStdout();
+
     json saveExpected = readJson(TEST_FILES_DIR "/02_purchAndSacTest/out.json");
     json saveActual = actual.game().to_json();
     EXPECT_EQ(saveExpected, saveActual);
+
+    int count = 0;
+    size_t pos = 0;
+    while ((pos = output.find("Running iteration", pos)) != string::npos) {
+        count++;
+        pos++;
+    }
+    EXPECT_EQ(count, 21);
 }

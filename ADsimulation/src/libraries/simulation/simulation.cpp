@@ -1,6 +1,7 @@
 #include "instructions.h"
 #include "simulation.h"
 #include "simconst.h"
+#include "formulae.h"
 #include "ioutils.h"
 #include "errors.h"
 #include "purge.h"
@@ -70,13 +71,13 @@ void Iteration::tickAllStates() {
 }
 
 void Iteration::purgeObsoleteStates() {
+    if ((size_t) statesBeforePurge > MAX_STATES) {
+        throw StateLimitExceeded(format("Iteration stopped: more than {} states", MAX_STATES));
+    }
     if (adds >= 300 || states >= statesAfterPurge * 1.5) {
         stats.resetPurgeTimer();
         adds = 0;
         statesBeforePurge = nodes.size();
-        if ((size_t) statesBeforePurge > MAX_STATES) {
-            throw StateLimitExceeded(format("Iteration stopped: more than {} states", MAX_STATES));
-        }
         maxStates = max(maxStates, statesBeforePurge);
         purge(nodes, [this](int purged, double progressFraction) {
             if (!verbose || updateTimer.peek() < RENDER_INTERVAL_MS) return;
@@ -537,4 +538,47 @@ GameInstance runUntil(
     polishSacrifices(search);
     search.best.clearAllInstructions();
     return search.best;
+}
+
+map<int32_t, GameInstance> runFullGalaxy(GameState st, bool useSacrifice, bool verbose) {
+    map<int32_t, GameInstance> routes;
+    GameInstance start = GameInstance(st);
+    int32_t startDimboosts = start.game().dimensionBoosts();
+    routes[startDimboosts] = start;
+    int32_t maxDimboosts = getDimboostsForAmount(getAmountForGalaxy(st.antimatterGalaxies() + 1)) - 1;
+    int32_t currDimboost = startDimboosts;
+    while (start.game().dimensionBoosts() < maxDimboosts) {
+        currDimboost++;
+        cout << "============================================================" << endl;
+        cout << "Running dimension boost " << currDimboost << endl;
+        start = runDimboost(start.game(), useSacrifice, verbose);
+        routes[start.game().dimensionBoosts()] = start;
+    }
+    int32_t optimalDimboost = startDimboosts;
+    int64_t bestTime = INT64_MAX;
+    GameInstance bestSegment;
+    for (currDimboost = maxDimboosts; currDimboost >= max(4, startDimboosts); currDimboost--) {
+        cout << "============================================================" << endl;
+        cout << "Attempting to get galaxy from dimension boost " << currDimboost << endl;
+        try {
+            GameInstance segment = runGalaxy(routes[currDimboost].game(), useSacrifice, verbose);
+            cout << "============================================================" << endl;
+            cout << "Final time: " << renderTime(segment.game().realTimePlayed()) << endl;
+            if (segment.game().realTimePlayed() < bestTime) {
+                bestTime = segment.game().realTimePlayed();
+                bestSegment = segment;
+                optimalDimboost = currDimboost;
+            }
+        } catch (const TickLimitExceeded& e) {
+            cout << e.what() << ", skipped" << endl;
+        } catch (const StateLimitExceeded& e) {
+            cout << e.what() << ", skipped" << endl;
+        }
+    }
+    cout << "============================================================" << endl;
+    cout << "Final time for this galaxy: " << renderTime(bestSegment.game().realTimePlayed()) << endl;
+    routes.erase(startDimboosts);
+    routes[optimalDimboost + 1] = bestSegment;
+    for (int32_t d = optimalDimboost + 2; d <= maxDimboosts; d++) routes.erase(d);
+    return routes;
 }
