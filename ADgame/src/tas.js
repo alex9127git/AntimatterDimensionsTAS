@@ -70,7 +70,8 @@ export const TAS = {
                 };
                 if (TAS.exportedSave !== null) {
                     TAS.segments.push(TAS.exportedSave);
-                }
+                };
+                if (TAS.variables.debug & 2) dispatch('inst3', pathsToInstructions[i].replace('/input/instructions/', ''));
                 await TAS.prepareAndStart([pathsToInstructions[i]], TAS.segments[i]);
                 i++;
             }
@@ -318,8 +319,7 @@ export function buyDimensionBoost() {
 
 export function trySacrificeReset(value) {
     if (new Decimal(value).divideBy(Sacrifice.totalBoost).lte(TAS.nextBoost)) {
-        sacrificeReset();
-        return true;
+        return sacrificeReset();
     }
     return false;
 };

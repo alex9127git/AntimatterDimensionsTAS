@@ -54,20 +54,34 @@
       #root > *:not(#footer) {
         margin: 5px;
       }
+      #headwrapper {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;     
+      }
       header {
         color: var(--text-color);
         cursor: move;
         user-select: none;
-        display: flex;
-        justify-content: space-between;
         padding-left: 15px;
         padding-top: 5px;
         font-size: 14px;
         box-sizing: border-box;
       }
+      #title {
+        grid-column: 2;
+        justify-self: center;
+        text-align: center;
+        width: max-content;
+      }
       tri-group {
+        grid-column: 3;
         display: flex;
-        flex-stretch: flex-start;
+        justify-self: end;
+        width: fit-content;
+        align-self: start;
       }
       tri-group > * {
         user-select: none;
@@ -81,7 +95,7 @@
       tri-group > span:hover {
         background-color: rgba(240, 240, 240, .5);
       }
-      tri-group > div:hover {
+      tri-group > span.alt:hover {
         background-color: rgba(240, 0, 0, .8);
       }
       section-header {
@@ -92,13 +106,14 @@
         width: 100%;
         table-layout: fixed;
         padding-left: 10px;
-        padding-right: 20px;
+        padding-right: 10px;
         border-spacing: 0;
       }
       td {
         color: white;
         text-align: left;
         padding: 7px 0 7px 8px;
+        overflow: hidden;
       }
       tr:nth-child(even) {
         background-color: var(--table-bg-even);
@@ -117,6 +132,7 @@
         box-sizing: border-box;
       }
       #resize {
+        user-select: none;
         cursor: nwse-resize;
         color: var(--text-color);
         margin-top: 6px;
@@ -179,12 +195,14 @@
     shadow.appendChild(root);
     root.innerHTML = `
         <header id="header">
-            <section-header id="title"> Advanced Layout (for) Easy eXecution </section-header>
-            <tri-group>
-                <span id='minimize' style='line-height: 1.1'>-</span>
-                <span id='restore' style='line-height: 1.2;'>▢</span>
-                <div id='close'>X</div>
-            </tri-group>
+            <div id='headwrapper'>
+                <section-header id="title"> Advanced Layout (for) Easy eXecution </section-header>
+                <tri-group>
+                    <span id='minimize'>—</span>
+                    <span id='restore'>▢</span>
+                    <span class='alt' id='close' style='font-size: 20px; line-height: 1;'>×</span>
+                </tri-group>
+            </div>
         </header>
         <div id="body">
             <div id='tab'>
@@ -201,7 +219,10 @@
                 <div id="contentwrapper">
                     <div><textarea spellcheck='false' type='text' placeholder='Enter expression for the paths' id='enterpath'></textarea></div>
                     <div><textarea spellcheck='false' type='text' placeholder='Enter expression for the save' id='entersave'></textarea></div>
-                    <div id='options'> <span> With TAS Diagnostics? <input type='checkbox' id='o1'></span> </div>
+                    <div id='options'> 
+                    <div> With TAS Diagnostics? <input type='checkbox' id='o1'></div>
+                    <div> As segments? <input type='checkbox' id='o2'></div>
+                    </div>
                     <div id="startTAS"> Start TAS </div>
                 </div>
             </div>
@@ -216,10 +237,11 @@
     const $ = id => root.querySelector(`#${id}`);
     const $$ = (role, val) => root.querySelector(`[data-${role}="${val}"]`);
     
+
+    // TAS ui interface
     const paths = $('enterpath');
     const save = $('entersave');
     const start = $('startTAS');
-    const diag = $('o1');
 
     start.addEventListener("click", () => {
         let val1, val2;
@@ -227,23 +249,29 @@
             val1 = eval(paths.value);
             val2 = eval(save.value);
             if (!Array.isArray(val1)) val1 = [val1];
-            if (diag.checked) {
+            if ($('o1').checked) {
                 TAS.variables.debug |= 2;
             };
-            TAS.prepareAndStart(val1, val2);
+            if ($('o2').checked) {
+                TAS.getSegments(val1, val2);
+            } else {
+                TAS.prepareAndStart(val1, val2);
+            }
         } catch(e) {
             alert(e);
         };
     });
-
-
-
+    
+    
+    // JUST CLOSE IT
     const close = $('close');
     close.addEventListener('click', () => {
         root.hidden = true;
         root.style.display = 'none';
     });
     
+
+    // resize to fullscreen 
     const restore = $('restore');
     let restore_start = null;
     let restore_maximized = false;
@@ -274,6 +302,7 @@
         };
     });
     
+    // minimize tab
     const minimize = $('minimize');
     let minimize_minimized = false;
     let minimize_start = null;
@@ -297,6 +326,8 @@
         }
     });
     
+
+    // draggable header
     const header = $('header');
     
     let header_dragging = false;
@@ -314,7 +345,7 @@
     });
     
     header.addEventListener('pointerdown', e => {
-        if (restore_maximized || e.button !== 0 || e.target.tagName == "DIV" || e.target.tagName == "SPAN") return;
+        if (restore_maximized || e.button !== 0 || e.target.tagName == "SPAN") return;
         header_dragging = true;
         header_val = {
             x: e.clientX,
@@ -334,6 +365,7 @@
         root.style.top = header_val.top + e.clientY - header_val.y + 'px';
     });
     
+    // Resize
     const resize = $('resize');
     let resize_resizing = false;
     let resize_pointerid = null;
@@ -367,34 +399,31 @@
         root.style.height = Math.max(80, base.height + (e.clientY - base['y'])) + 'px';
     });
     
+
     const body = $('body');
     const footer = $('footer');
     
+
+    // changing tabs
     const tabs = {
         0: $('tab1'),
-        1:$('tab2')
+        1: $('tab2'),
     };
+    const bodies = {
+        0: $$('tab', 0),
+        1: $$('tab', 1)
+    }
+    function changeTab(n) { 
+        Object.values(tabs).forEach(el => el.classList.remove('active'));
+        Object.values(bodies).forEach(el => el.hidden = true);
 
-    let current_tab = 0;
-    tabs[0].addEventListener("click", () => {
-        current_tab = 0;
-        tabChanged();
-    });
-    tabs[1].addEventListener("click", () => {
-        current_tab = 1;
-        tabChanged();
-    });
-    function tabChanged() {
-        let active =  $$('tab', `${current_tab}`);
-        let inactive = $$('tab', `${+!current_tab}`);
+        tabs[n].classList.add('active');
+        bodies[n].hidden = false;        
+    }
+    tabs[0].addEventListener('click', () => changeTab(0));
+    tabs[1].addEventListener('click', () => changeTab(1));
 
-        active.hidden = false;
-        inactive.hidden = true;
-
-        tabs[current_tab].classList.add('active');
-        tabs[+!current_tab].classList.remove('active');
-    };
-
+    // quick function to append an element textContent and id to tablebody
     const tablebody = $("table").children[0];
     function appendToTable(title, id) {
         const tr = document.createElement("tr");
@@ -415,6 +444,7 @@
     appendToTable("Cycle counter", 'cycle');
     appendToTable("Instruction #", 'inst1');
     appendToTable("Current instruction", 'inst2');
+    appendToTable("Current TAS path", 'inst3');
     appendToTable("Galaxies", 'gala1');
     appendToTable("Dimboosts", 'dimb1');
     appendToTable("Current game time", 'time1');
@@ -426,8 +456,11 @@
         'gala1',
         'dimb1',
         'time1',
-        'time2'
+        'time2',
+        'inst3'
     ];
+
+    // Event Bus
     const registeredEvents = {};
     function registerEvent(name, fn) {
         if (!(name in registeredEvents)) {
@@ -449,6 +482,9 @@
         registerEvent(event, txt => el.textContent = txt);
         blinkyText(el, '...', 300);
     };
+
+
+    // Blinking text
     function blinkyText(node, text, delay) {
         let base = node.textContent;
         function* iterate() {
