@@ -53,7 +53,7 @@ class Iteration {
         void appendNewStates();
         void checkProgress();
         void tickAllStates();
-        void purgeObsoleteStates();
+        void purgeObsoleteStates(bool force=false);
 
         // sacrifice window behavior
         virtual SacrificeWindow sacrificeWindow(size_t, size_t) const {
@@ -111,6 +111,7 @@ class ApproxSacrificeIteration : public Iteration {
 
 class SacrificeRefinementIteration : public Iteration {
     private:
+        int purgeTicks = 0;
         void addBranches() override;
 
     public:
@@ -122,8 +123,17 @@ class SacrificeRefinementIteration : public Iteration {
 };
 
 
+namespace SimulationHelpers {
+    struct SegmentSearch;
+}
+
+
 GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose=true);
-GameInstance runGalaxy(GameState st, bool useSacrifice, bool verbose=true);
-GameInstance runUntil(GameState st, const Progress& progress, bool useSacrifice, bool verbose);
+GameInstance runGalaxy(GameState st, bool useSacrifice, bool verbose=true,
+    std::function<bool(const SimulationHelpers::SegmentSearch&)> earlyStopCondition=
+        [](const SimulationHelpers::SegmentSearch&) {return false;});
+GameInstance runUntil(GameState st, const Progress& progress, bool useSacrifice, bool verbose,
+    std::function<bool(const SimulationHelpers::SegmentSearch&)> earlyStopCondition=
+        [](const SimulationHelpers::SegmentSearch&) {return false;});
 
 std::map<int32_t, GameInstance> runFullGalaxy(GameState st, bool useSacrifice, bool verbose=true);
