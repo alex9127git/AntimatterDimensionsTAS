@@ -49,7 +49,7 @@ struct InputData {
             save_out << instance.game().to_json();
             if (saveCommands) {
                 std::ofstream cmd_out = std::ofstream(
-                    isFinal ? cmdOutFile : "cmd_tmp_d" + std::to_string(i) + ".json");
+                    isFinal ? cmdOutFile : "cmd_tmp_d" + std::to_string(i - 1) + ".json");
                 writeInstructions(cmd_out, instance.queue());
             }
             writtenSegments++;

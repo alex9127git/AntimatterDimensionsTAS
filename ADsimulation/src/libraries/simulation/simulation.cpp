@@ -70,11 +70,11 @@ void Iteration::tickAllStates() {
     stats.updateTickTime();
 }
 
-void Iteration::purgeObsoleteStates() {
+void Iteration::purgeObsoleteStates(bool force) {
     if ((size_t) nodes.size() > MAX_STATES) {
         throw StateLimitExceeded(format("Iteration stopped: more than {} states", MAX_STATES));
     }
-    if (adds >= 300 || states >= statesAfterPurge * 1.5) {
+    if (force || adds >= 300 || states >= statesAfterPurge * 1.5) {
         stats.resetPurgeTimer();
         adds = 0;
         statesBeforePurge = nodes.size();
@@ -323,6 +323,11 @@ SacrificeRefinementIteration::SacrificeRefinementIteration(
 void SacrificeRefinementIteration::addBranches() {
     addSacrificeWindowBranches();
     appendNewStates();
+    purgeTicks++;
+    if (purgeTicks >= 1000) {
+        purgeObsoleteStates(true);
+        purgeTicks = 0;
+    }
 }
 
 namespace SimulationHelpers {
@@ -340,6 +345,7 @@ namespace SimulationHelpers {
         int iterationCounter = 0;
         GameInstance best = GameInstance();
         int64_t bestTime = INT64_MAX;
+        vector<int64_t> iterationTimes = {};
         RouteStrategies bestStrategies = {};
     };
 
@@ -423,7 +429,9 @@ namespace SimulationHelpers {
         search.bestStrategies = strategies;
     }
 
-    void initialIterationCycle(SegmentSearch& search, bool sacrificeAllowed) {
+    bool initialIterationCycle(
+        SegmentSearch& search, bool sacrificeAllowed, function<bool(const SegmentSearch&)> earlyStopCondition
+    ) {
         vector<SearchNode> resultNodes;
 
         int64_t prevIterationTime = INT64_MAX;
@@ -457,11 +465,14 @@ namespace SimulationHelpers {
             }
             const GameInstance& iterationBest = resultNodes[0].gameInstance();
             iterationTime = iterationBest.game().realTimePlayed();
+            search.iterationTimes.push_back(iterationTime - search.startTime);
             if (!isPurchasing) isImproving = iterationTime < prevIterationTime;
             if (iterationTime < search.bestTime) updateBest(search, iterationBest, iterationTime, strategies);
             printIterationResults(search, iterationTime,
                 isPurchasing ? strategies.purchases.size() : strategies.sacrifices.size());
+            if (earlyStopCondition(search)) return false;
         } while (sacrificeAllowed && isImproving && !repeated);
+        return true;
     }
 
     void polishSacrifices(SegmentSearch& search) {
@@ -521,9 +532,11 @@ GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose) {
     return result;
 }
 
-GameInstance runGalaxy(GameState st, bool useSacrifice, bool verbose) {
+GameInstance runGalaxy(
+    GameState st, bool useSacrifice, bool verbose, function<bool(const SegmentSearch&)> earlyStopCondition
+) {
     GameInstance result = runUntil(
-        st, Progress::untilGalaxy(), useSacrifice, verbose
+        st, Progress::untilGalaxy(), useSacrifice, verbose, earlyStopCondition
     );
     result.addInstructions({Instruction::AntimatterGalaxy});
     result.runNextInstructions();
@@ -531,11 +544,13 @@ GameInstance runGalaxy(GameState st, bool useSacrifice, bool verbose) {
 }
 
 GameInstance runUntil(
-    GameState st, const Progress& progress, bool useSacrifice, bool verbose
+    GameState st, const Progress& progress, bool useSacrifice, bool verbose,
+    function<bool(const SegmentSearch&)> earlyStopCondition
 ) {
     SegmentSearch search = {st, progress, verbose};
-    initialIterationCycle(search, st.dimensionBoosts() >= 5 && useSacrifice);
-    polishSacrifices(search);
+    if (initialIterationCycle(search, st.dimensionBoosts() >= 5 && useSacrifice, earlyStopCondition)) {
+        polishSacrifices(search);
+    }
     search.best.clearAllInstructions();
     return search.best;
 }
@@ -561,7 +576,17 @@ map<int32_t, GameInstance> runFullGalaxy(GameState st, bool useSacrifice, bool v
         cout << "============================================================" << endl;
         cout << "Attempting to get galaxy from dimension boost " << currDimboost << endl;
         try {
-            GameInstance segment = runGalaxy(routes[currDimboost].game(), useSacrifice, verbose);
+            int64_t finalSegmentTime = bestTime - routes[currDimboost].game().realTimePlayed();
+            GameInstance segment = runGalaxy(
+                routes[currDimboost].game(), useSacrifice, verbose,
+                [finalSegmentTime](const SegmentSearch& search) {
+                    return (
+                        search.iterationCounter == 2 && 
+                        (double) search.iterationTimes[1] / search.iterationTimes[0] -
+                        (double) finalSegmentTime / search.iterationTimes[0] > 0.05
+                    );
+                }
+            );
             cout << "============================================================" << endl;
             cout << "Final time: " << renderTime(segment.game().realTimePlayed()) << endl;
             if (segment.game().realTimePlayed() < bestTime) {
