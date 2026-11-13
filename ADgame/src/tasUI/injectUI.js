@@ -14,6 +14,7 @@ document.body.appendChild(host);
 // Set mode to open to allow JavaScript to affect it
 const shadow = host.attachShadow({mode: 'open'});
 
+// load the font from the link with the name "Nunito"
 const font = new FontFace('Nunito', 'url(https://fonts.gstatic.com/s/nunito/v26/XRXV3I6Li01BKofINeaB.woff2)');
 // AD refutes top-level await statements, so wrap it in an async IIFE
 (async () => {
@@ -25,6 +26,13 @@ const font = new FontFace('Nunito', 'url(https://fonts.gstatic.com/s/nunito/v26/
     }
 })();
 
+/*
+    from here the styles and innerHTML are inlined.
+    creating a nested HTML is annoying to get working
+    and trying to add to the base game files is also annoying.
+
+    The work around is to just inject it with JavaScript
+*/
 const style = document.createElement("style");
 
 style.textContent = `
@@ -260,8 +268,9 @@ style.textContent = `
         color: var(--button-text-hover);
     }
 `;
+// append the style to the shadow DOM
 shadow.appendChild(style);
-
+// create a root for the Shadow DOM
 const root = shadow.appendChild(document.createElement("div"));
 root.id = 'root';
 
@@ -320,6 +329,7 @@ root.innerHTML = `
 `;
 window.root = root;
 
+// jQuery style naming.
 const $ = ( id ) => root.querySelector( `#${id}` );
 const $$ = ( role, val ) => root.querySelector( `[data-${role}="${val}"]` );
 
@@ -334,11 +344,11 @@ $('startTAS').addEventListener("click", () => {
         val1 = eval(paths.value);
         val2 = eval(save.value);
         
-        if ( !Array.isArray(val1) ) {
+        if (!Array.isArray(val1)) {
             val1 = [val1];
         }
 
-        if ( $('o1').checked ) {
+        if ($('o1').checked) {
             TAS.variables.debug |= 2;
         }
 
@@ -356,7 +366,9 @@ $('startTAS').addEventListener("click", () => {
 
 $('stopTAS').addEventListener("click", () => {
     TAS.pause();
+
     clearInterval(TAS.intervals["segmentIntervals"]);
+
     root.classList.remove('active');
 })
 
@@ -411,6 +423,7 @@ restore.addEventListener('click', () => {
 
 // minimize tab
 const minimize = $('minimize');
+
 let minimize_minimized = false;
 let minimize_start = null;
 
@@ -552,22 +565,25 @@ function changeTab(n) {
 tabs[0].addEventListener('click', () => changeTab(0));
 tabs[1].addEventListener('click', () => changeTab(1));
 
-// quick function to append an element textContent and id to tablebody
+// quick function to append an element with it's textContent and id to the tablebody
 const tablebody = $("table").children[0];
 
 function appendToTable(title, id) {
     const tr = document.createElement("tr");
-    tablebody.appendChild(tr);
-    
-    const td = document.createElement("td");
-    td.textContent = title;
-    tr.appendChild(td);
-    
     const value = document.createElement("td");
-    value.style.paddingLeft = '10px';
+    const td = document.createElement("td");
+
+    tablebody.appendChild(tr);
+
+    tr.appendChild(td);
     tr.appendChild(value);
     
+    td.textContent = title;
+    // gross inling up style
+    value.style.paddingLeft = '10px';
+    
     value.id = id;
+
     return value;
 };
 
@@ -594,7 +610,8 @@ const events = [
 const registeredEvents = {};
 
 function registerEvent(name, fn) {
-    if ( !( name in registeredEvents ) ) {
+
+    if (!( name in registeredEvents)) {
         registeredEvents[name] = [];
     }
 
@@ -621,7 +638,7 @@ for (const node of events) {
 };
 
 
-// Blinking text
+// purely cosmetic. Had fun making it - Jade
 function blinkyText(node, text, delay) {
     let base = node.textContent;
 
@@ -637,15 +654,16 @@ function blinkyText(node, text, delay) {
     let iterator = iterate(text);
 
     let id = setInterval(() => {
-        if ( checkTamper() ) {
+        if (checkTamper()) {
             clearInterval(id);
             return;
         }
 
         let { value, done } = iterator.next();
 
-        if ( done ) {
+        if (done) {
             node.textContent = base;
+
             iterator = iterate(text);
         } else {
             node.textContent += value;
