@@ -1,7 +1,7 @@
 export const pathsToFiles = {
     'instructions': [
         '\\input\\instructions\\cmd_0000_1_start.json',
-        '\\input\\instructions\\cmd_0000_2_over in 0 seconds.json',
+        '\\input\\instructions\\cmd_0000_2_over_in_0_seconds.json',
         '\\input\\instructions\\cmd_0000_g0d0.json',
         '\\input\\instructions\\cmd_0001_d1.json',
         '\\input\\instructions\\cmd_0002_d2.json',

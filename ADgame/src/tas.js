@@ -28,19 +28,27 @@ export const TAS = {
         debug: 0,
         tick: 0
     },
+
     intervals: {},
 
     runNextPendingInstruction() {
-        if (!this.isRunning) return;
+        if (!this.isRunning) {
+            return;
+        }
+
         let isSuccessful = true;
+
         while (isSuccessful) {
             isSuccessful = this.runOneInstruction(this.currentInstruction);
+
             if (isSuccessful) {
-                if (TAS.variables.debug & 1) dumpLog();
+                if (TAS.variables.debug & 1) {
+                    dumpLog();
+                }
 
 	            this.currentInstruction += 1;
-            };
-        };
+            }
+        }
     },
 
     runOneInstruction(index) {
@@ -49,29 +57,42 @@ export const TAS = {
             this.pause();
             this.export();
             return;
-        };
+        }
 
         let instruction = this.instructions[index];
+
         return instruction.run();
     },
 
     getSegments(pathsToInstructions, startSave) {
         TAS.segments = [];
         TAS.segments.push(startSave);
+
         let i = 0;
+
         TAS.intervals["segmentInterval"] = setInterval(async () => {
             if (!TAS.isRunning) {
+                
                 console.log(i);
+
                 if (i >= pathsToInstructions.length) {
                     TAS.segments.push(GameStorage.exportModifiedSave());
+
                     console.log('TAS ended');
+
                     this.removeInterval("segmentInterval");
+
                     return;
-                };
+                }
+
                 if (TAS.exportedSave !== null) {
                     TAS.segments.push(TAS.exportedSave);
-                };
-                if (TAS.variables.debug & 2) dispatch('inst3', pathsToInstructions[i].replace('/input/instructions/', ''));
+                }
+
+                if (TAS.variables.debug & 2) {
+                    dispatch('inst3', pathsToInstructions[i].replace('/input/instructions/', ''));
+                }
+
                 await TAS.prepareAndStart([pathsToInstructions[i]], TAS.segments[i]);
                 i++;
             }
@@ -79,21 +100,23 @@ export const TAS = {
     },
 
     removeInterval(id) {
-        clearInterval(TAS.intervals[id])
+        clearInterval(TAS.intervals[id]);
+
         delete TAS.intervals[id];
     },
 
     async prepareAndStart(pathsToInstructions, pathToSave=null) {
         await TAS.prepare(pathsToInstructions, pathToSave);
+
         TAS.start();
     },
 
     async prepare(pathsToInstructions, save) {
         save ??= pathsToFiles.saves[0];
 
-        if (save?.includes('/input')) {
+        if (save?.includes('\\input')) {
             save = await getSave(save);
-        };
+        }
 
         TAS.reset(save);
 
@@ -106,17 +129,23 @@ export const TAS = {
             this.loadInstructions();
             i++;
         }
+
         console.log("Finished loading instructions");
     },
 
     importSave(save) {
         if (save?.includes('AntimatterDimensions')) {
+
             console.log("Save found, importing");
+
             GameStorage.import(save);
+
             return true;
         } else {
             console.log("Save String is invalid, hard resetting");
+
             dev.hardReset();
+
             Speedrun.prepareSave();
         }
     },
@@ -124,10 +153,13 @@ export const TAS = {
     async getInstructions(path) {
         try {
             const response = await fetch(path);
+
             if (!response.ok) {
                 throw new Error(`Error fetching save from ${path}. ${response.status}`);
-            };
+            }
+
             const commands = await response.json();
+
             TAS.queue = commands.map(([fn, args]) => ({
                 fn,
                 args,
@@ -136,6 +168,7 @@ export const TAS = {
                     return this.action(...this.args);
                 }
             }));
+
             return true;
         } catch(e) {
             throw new Error(`Error parsing path to save: ${path}`, {cause: e});
@@ -145,7 +178,9 @@ export const TAS = {
     loadInstructions() {
         // push the instruction set, then flush
         TAS.instructions.push(...TAS.queue);
+
         TAS.queue = [];
+
         return true;
     },
 
@@ -156,6 +191,7 @@ export const TAS = {
         this.variables.dimPurchasesLeft = undefined;
         GameIntervals.restart();
         this.runNextPendingInstruction();
+
         return true;
     },
 
@@ -168,19 +204,24 @@ export const TAS = {
         this.instructions = [];
         this.currentInstruction = 0;
         this.variables.tick = 0;
+
         return true;
     },
 
     pause() {
         GameIntervals.stop();
+
         TAS.isRunning = false;
+
         return true;
     },
 
     export() {
         console.log("TAS finished running, exporting save:");
         GameStorage.save();
+
         TAS.exportedSave = GameStorage.exportModifiedSave();
+
         return console.log(TAS.exportedSave);
     },
 
@@ -189,6 +230,7 @@ export const TAS = {
         let sacrificed = player.sacrificed.clampMin(1);
         let unweighted = amount.add(sacrificed);
         let weighted = new Decimal((unweighted.log10() / 10) / Math.max(sacrificed.log10() / 10, 1));
+
         return weighted.clampMin(1).pow(Sacrifice.sacrificeExponent);
     }
 };
@@ -223,7 +265,7 @@ export async function getSave(path=null) {
     const response = await fetch(path);
     if (!response.ok) {
         throw new Error(`Error fetching save at path: ${path}`);
-    };
+    }
 
     return (await response.text()).trim();
 };
@@ -250,8 +292,11 @@ function dispatch_events() {
 }
 export function tasTick() {
     TAS.variables.tick++;
+
     dispatch_events();
+
     TAS.runNextPendingInstruction();
+
     return true;
 };
 
@@ -261,25 +306,31 @@ export function waitNextTick() {
 
 export function startCycle(repeat) {
     TAS.cycleCounter = repeat;
+
     TAS.lastCycleInstruction = TAS.currentInstruction;
+
     return true;
 };
 
 export function endCycle() {
     TAS.cycleCounter -= 1;
+
     if (TAS.cycleCounter > 0) {
         TAS.currentInstruction = TAS.lastCycleInstruction;
     }
+
     return true;
 };
 
 export function exportSave() {
     TAS.variables.save = GameStorage.exportModifiedSave();
+
     return true;
 };
 
 export function importSave() {
     GameStorage.import(TAS.variables.save);
+
     return true;
 };
 
@@ -289,30 +340,40 @@ export function simulateEvent(type, key, keyCode) {
         keyCode: keyCode,
         which: keyCode
     });
+
     return document.dispatchEvent(event);
 };
 
 
 
 export function buyDimension(tier, times) {
-    if (TAS.variables.dimPurchasesLeft === undefined) TAS.variables.dimPurchasesLeft = times;
+    if (TAS.variables.dimPurchasesLeft === undefined) {
+        TAS.variables.dimPurchasesLeft = times;
+    }
+
     let successfulPurchase = true;
+
     while (successfulPurchase) {
         successfulPurchase = buyOneDimension(tier);
+
         if (successfulPurchase) {
             TAS.variables.dimPurchasesLeft--;
         }
+
         if (TAS.variables.dimPurchasesLeft <= 0) {
             TAS.variables.dimPurchasesLeft = undefined;
+
             return true;
         }
     }
+
     return false;
 }
 
 export function buyDimensionBoost() {
     let oldValue = player.dimensionBoosts;
     requestDimensionBoost();
+
     let newValue = player.dimensionBoosts;
     return oldValue !== newValue;
 };
@@ -321,11 +382,16 @@ export function trySacrificeReset(value) {
     if (new Decimal(value).divideBy(Sacrifice.totalBoost).lte(TAS.nextBoost)) {
         return sacrificeReset();
     }
+
     return false;
 };
 
 export function tryBigCrunchReset(ip) {
-    if (!Player.canCrunch || gainedInfinityPoints().gte(Decimal.pow10(ip))) return false;
+    if (!Player.canCrunch || gainedInfinityPoints().gte(Decimal.pow10(ip))) {
+        return false;
+    }
+
     bigCrunchReset(false, false);
+
     return true;
 };
