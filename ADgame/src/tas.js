@@ -386,8 +386,8 @@ export function trySacrificeReset(value) {
     return false;
 };
 
-export function tryBigCrunchReset(ip) {
-    if (!Player.canCrunch || gainedInfinityPoints().gte(Decimal.pow10(ip))) {
+export function tryBigCrunchReset(goal) {
+    if (!Player.canCrunch || gainedInfinityPoints().lt(Decimal.pow10(goal))) {
         return false;
     }
 

@@ -319,7 +319,6 @@ root.innerHTML = `
     </div>
 `;
 window.root = root;
-root.classList.add('alt');
 
 const $ = ( id ) => root.querySelector( `#${id}` );
 const $$ = ( role, val ) => root.querySelector( `[data-${role}="${val}"]` );
