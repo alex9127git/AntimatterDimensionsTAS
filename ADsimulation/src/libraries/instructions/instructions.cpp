@@ -51,7 +51,7 @@ double InstructionQueue::peekNextSacrifice() const {
 }
 
 void InstructionQueue::completePurchase() {
-    completedInstructions.push_back(purchaseInstructions[purchaseIndex++]);
+    completedInstructions.push_back({purchaseInstructions[purchaseIndex++]});
     if (purchaseIndex == purchaseInstructions.size()) {
         purchaseInstructions.clear();
         purchaseIndex = 0;
@@ -60,7 +60,7 @@ void InstructionQueue::completePurchase() {
 
 void InstructionQueue::completeSacrifice() {
     completedInstructions.push_back(Instruction::Sacrifice);
-    completedSacrifices.push_back(sacrificeInstructions[sacrificeIndex++]);
+    instructionArgs[completedInstructions.size() - 1] = sacrificeInstructions[sacrificeIndex++];
     if (sacrificeIndex == sacrificeInstructions.size()) {
         sacrificeInstructions.clear();
         sacrificeIndex = 0;
@@ -81,8 +81,20 @@ vector<double> InstructionQueue::getCompletedPurchases() const {
     return purchases;
 }
 
-const vector<double>& InstructionQueue::getCompletedSacrifices() const {
-    return completedSacrifices;
+vector<double> InstructionQueue::getCompletedSacrifices() const {
+    vector<double> sacrifices;
+    uint32_t i = 0;
+    for (double instruction : this->completedInstructions) {
+        if (instruction == Instruction::Sacrifice) {
+            sacrifices.push_back(instructionArgs.at(i));
+        }
+        i++;
+    }
+    return sacrifices;
+}
+
+const map<uint32_t, double>& InstructionQueue::getInstructionArgs() const {
+    return instructionArgs;
 }
 
 vector<uint16_t> InstructionQueue::getQueuedPurchases() const {
@@ -104,8 +116,7 @@ vector<double> InstructionQueue::getQueuedSacrifices() const {
 void writeInstructions(ostream& f, const InstructionQueue& queue) {
     f << "[\n";
     const vector<uint16_t>& completed = queue.getCompletedInstructions();
-    const vector<double>& sacrifices = queue.getCompletedSacrifices();
-    int sacrificeIndex = 0;
+    const map<uint32_t, double>& args = queue.getInstructionArgs();
     vector<string> lines;
     size_t i = 0;
     while (i < completed.size()) {
@@ -123,7 +134,7 @@ void writeInstructions(ostream& f, const InstructionQueue& queue) {
         } else if (instruction == Instruction::BigCrunch) {
             lines.push_back("[\"tryBigCrunchReset\",[0]]");
         } else if (instruction == Instruction::Sacrifice) {
-            Decimal sacTarget = Decimal(1, sacrifices[sacrificeIndex++]);
+            Decimal sacTarget = Decimal(1, args.at(i));
             lines.push_back(format("[\"trySacrificeReset\",[\"{}\"]]", sacTarget.toString(10)));
         }
         i = groupEnd;

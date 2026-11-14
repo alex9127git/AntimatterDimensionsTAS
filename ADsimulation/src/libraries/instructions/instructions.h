@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <vector>
 #include <iosfwd>
+#include <map>
 
 
 namespace Instruction {
@@ -25,7 +26,7 @@ class InstructionQueue {
         std::vector<uint16_t> purchaseInstructions;
         std::vector<double> sacrificeInstructions;
         std::vector<uint16_t> completedInstructions;
-        std::vector<double> completedSacrifices;
+        std::map<uint32_t, double> instructionArgs;
         size_t purchaseIndex = 0;
         size_t sacrificeIndex = 0;
 
@@ -40,7 +41,8 @@ class InstructionQueue {
         void completeSacrifice();
         const std::vector<uint16_t>& getCompletedInstructions() const;
         std::vector<double> getCompletedPurchases() const;
-        const std::vector<double>& getCompletedSacrifices() const;
+        std::vector<double> getCompletedSacrifices() const;
+        const std::map<uint32_t, double>& getInstructionArgs() const;
 
         std::vector<uint16_t> getQueuedPurchases() const;
         std::vector<double> getQueuedSacrifices() const;
