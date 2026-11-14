@@ -55,6 +55,8 @@ bool GameInstance::runInstruction(uint16_t instruction) {
         return gameState.dimboostReset();
     } else if (instruction == Instruction::AntimatterGalaxy) {
         return gameState.galaxyReset();
+    } else if (instruction == Instruction::BigCrunch) {
+        return gameState.infinityReset();
     } else if (instruction == Instruction::KonamiCode) {
         return gameState.handleKonamiCode();
     } else {

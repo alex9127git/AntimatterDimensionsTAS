@@ -34,6 +34,15 @@ int main(int argc, char* argv[]) {
             data.saveResult(instance);
             break;
         }
+        case NextInfinity: {
+            cout << "Not implemented yet" << endl;
+            break;
+        }
+        case ForceNextInfinity: {
+            GameInstance instance = runInfinity(data.gameState, data.useSacrifice);
+            data.saveResult(instance);
+            break;
+        }
     }
     return 0;
 };

@@ -120,6 +120,8 @@ void writeInstructions(ostream& f, const InstructionQueue& queue) {
             lines.push_back("[\"buyDimensionBoost\",[0]]");
         } else if (instruction == Instruction::AntimatterGalaxy) {
             lines.push_back("[\"buyGalaxyReset\",[0]]");
+        } else if (instruction == Instruction::BigCrunch) {
+            lines.push_back("[\"tryBigCrunchReset\",[0]]");
         } else if (instruction == Instruction::Sacrifice) {
             Decimal sacTarget = Decimal(1, sacrifices[sacrificeIndex++]);
             lines.push_back(format("[\"trySacrificeReset\",[\"{}\"]]", sacTarget.toString(10)));

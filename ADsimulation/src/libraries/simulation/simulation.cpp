@@ -36,8 +36,9 @@ void Iteration::checkProgress() {
     bool anyFinished = false;
     #pragma omp parallel for if(nodes.size() > PARALLEL_THRESHOLD) reduction(||:anyFinished)
     for (SearchNode& node : nodes) {
-        node.runNextInstructions();
-        anyFinished = anyFinished || progress.isFinished(node.game());
+        bool finishedBeforeInstruction = progress.isFinished(node.game());
+        if (!finishedBeforeInstruction) node.runNextInstructions();
+        anyFinished = anyFinished || finishedBeforeInstruction || progress.isFinished(node.game());
     }
     if (anyFinished) {
         if (verbose && !isFinished) {
@@ -516,7 +517,9 @@ namespace SimulationHelpers {
 }
 using namespace SimulationHelpers;
 
-GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose) {
+GameInstance runDimboost(
+    GameState st, bool useSacrifice, bool verbose
+) {
     GameInstance result;
     if (st.antimatterGalaxies() == 1 && st.dimensionBoosts() == 9) {
         result = runUntil(
@@ -539,6 +542,22 @@ GameInstance runGalaxy(
         st, Progress::untilGalaxy(), useSacrifice, verbose, earlyStopCondition
     );
     result.addInstructions({Instruction::AntimatterGalaxy});
+    result.runNextInstructions();
+    return result;
+}
+
+GameInstance runInfinity(
+    GameState st, bool useSacrifice, bool verbose
+) {
+    GameInstance result = runUntil(
+        st, Progress::untilInfinity(), useSacrifice, verbose
+    );
+    GameState last = result.game();
+    if (!last.achievements().isUnlocked(32) && last.canSacrifice() && last.getBoostAfterSacrifice() >= DC::D600) {
+        result.addInstructions({Instruction::Sacrifice, DC::D600.log10value()});
+        result.runNextInstructions();
+    }
+    result.addInstructions({Instruction::BigCrunch});
     result.runNextInstructions();
     return result;
 }

@@ -45,6 +45,23 @@ void GameState::recalcAchievementBonus() {
     recalcAD();
 }
 
+void GameState::tier1Reset() {
+    _AD = AntimatterDimensions();
+    _tickspeed = Tickspeed();
+    _sacrifice = Sacrifice();
+    Decimal startAntimatter = max({
+        DC::D10,
+        achievements().effectOrDefault(21)
+    });
+    _antimatter = startAntimatter;
+    _antimatterThisReset = startAntimatter;
+}
+
+void GameState::tier2Reset() {
+    tier1Reset();
+    _maxAntimatterThisInfinity = _antimatter;
+}
+
 bool GameState::checkUnlockCondition(int id) const {
     return AchConstants::unlockConditions[Achievements::idToIndex(id)](*this);
 }
@@ -53,13 +70,14 @@ void GameState::tick(double diff) {
     _realTimePlayed += diff * 1000;
     for (int i = 8; i >= 2; i--) {
         if (_AD[i].isUnlocked()) {
-            _AD[i].produceDimensions(_AD[i - 1], _tickspeed, diff / 10);
+            _AD[i].produceDimensions(_AD[i - 1], _tickspeed, getAMcap(), diff / 10);
         }
     }
-    Decimal currencyProduction = _AD[1].productionPerDiff(_tickspeed, diff);
+    Decimal currencyProduction = _AD[1].productionPerDiff(_tickspeed, getAMcap(), diff);
     _antimatter += currencyProduction;
     _totalAntimatter += currencyProduction;
     _antimatterThisReset += currencyProduction;
+    _maxAntimatterThisInfinity = max(_maxAntimatterThisInfinity, _antimatter);
     for (int ach : Achievements::afterTickAchievements) {
         this->unlockAchievement(ach, false);
     }
@@ -127,22 +145,24 @@ Decimal GameState::getAntimatterGoalForGalaxy() const {
 }
 
 bool GameState::canBuyNextDimboost() const {
+    if (!infinityBroken() && maxAntimatterThisInfinity() > DC::INF) return false;
     return (this->_AD[getTierForDimboost(_dimensionBoosts + 1)].getPurchases() >= 
             getAmountForDimboost(_dimensionBoosts + 1));
 }
 
 bool GameState::canBuyNextGalaxy() const {
+    if (!infinityBroken() && maxAntimatterThisInfinity() > DC::INF) return false;
     return (this->_AD[8].getPurchases() >= getAmountForGalaxy(_antimatterGalaxies + 1));
+}
+
+bool GameState::canCrunch() const {
+    return this->maxAntimatterThisInfinity() >= DC::INF;
 }
 
 bool GameState::dimboostReset() {
     if (canBuyNextDimboost()) {
         _dimensionBoosts += 1;
-        _AD = AntimatterDimensions();
-        _tickspeed = Tickspeed();
-        _sacrifice = Sacrifice();
-        _antimatter = DC::D10;
-        _antimatterThisReset = DC::D10;
+        tier1Reset();
         unlockAchievement(25, false);
         recalcSacrifice();
         recalcTickspeed();
@@ -157,12 +177,23 @@ bool GameState::galaxyReset() {
         unlockAchievement(26, true);
         _dimensionBoosts = 0;
         _antimatterGalaxies += 1;
-        _AD = AntimatterDimensions();
-        _tickspeed = Tickspeed();
-        _sacrifice = Sacrifice();
-        _antimatter = DC::D10;
-        _antimatterThisReset = DC::D10;
+        tier1Reset();
         unlockAchievement(27, false);
+        recalcSacrifice();
+        recalcTickspeed();
+        recalcAD();
+        return true;
+    }
+    return false;
+}
+
+bool GameState::infinityReset() {
+    if (canCrunch()) {
+        unlockAchievement(21, true);
+        _dimensionBoosts = 0;
+        _antimatterGalaxies = 0;
+        _infinity.addCurrency(DC::D1, DC::D1);
+        tier2Reset();
         recalcSacrifice();
         recalcTickspeed();
         recalcAD();
@@ -203,10 +234,12 @@ json GameState::to_json() const {
     j["antimatter"] = this->_antimatter.to_json();
     j["totalAntimatter"] = this->_totalAntimatter.to_json();
     j["antimatterThisReset"] = this->_antimatterThisReset.to_json();
+    j["maxAntimatterThisInfinity"] = this->_maxAntimatterThisInfinity.to_json();
     j["antimatterDimensionState"] = this->_AD.to_json();
     j["tickspeedState"] = this->_tickspeed.to_json();
     j["achievementState"] = this->_achievements.to_json();
     j["sacrificed"] = this->_sacrifice.to_json();
+    j["infinityState"] = this->_infinity.to_json();
     j["dimensionBoosts"] = this->_dimensionBoosts;
     j["antimatterGalaxies"] = this->_antimatterGalaxies;
     j["realTimePlayed"] = this->_realTimePlayed;
@@ -218,10 +251,12 @@ void GameState::from_json(const json& j) {
     readIfPresent(j, "antimatter", this->_antimatter);
     readIfPresent(j, "totalAntimatter", this->_totalAntimatter);
     readIfPresent(j, "antimatterThisReset", this->_antimatterThisReset);
+    readIfPresent(j, "maxAntimatterThisInfinity", this->_maxAntimatterThisInfinity);
     readIfPresent(j, "antimatterDimensionState", this->_AD);
     readIfPresent(j, "tickspeedState", this->_tickspeed);
     readIfPresent(j, "achievementState", this->_achievements);
     readIfPresent(j, "sacrificed", this->_sacrifice);
+    readIfPresent(j, "infinityState", this->_infinity);
     readIfPresent(j, "dimensionBoosts", this->_dimensionBoosts);
     readIfPresent(j, "antimatterGalaxies", this->_antimatterGalaxies);
     readIfPresent(j, "realTimePlayed", this->_realTimePlayed);

@@ -29,7 +29,7 @@ namespace {
         [](const Decimal&) {return DC::D1_1;},
 
         [](const Decimal&) {return DC::D1_05;},
-        [](const Decimal&) {return DC::D1_1;},
+        [](const Decimal&) {return DC::D0_1;},
         NO_EFFECT,
         [](const Decimal&) {return DC::D1_02;},
         NO_EFFECT,
@@ -124,8 +124,17 @@ Decimal Achievements::calcBonus() const {
     return Decimal::pow(DC::D1_25, fullRows) * Decimal::pow(DC::D1_03, achievements);
 }
 
+Decimal Achievements::getDefault(int id) {
+    switch (id) {
+        case 32:
+            return DC::D0;
+        default:
+            return DC::D1;
+    }
+}
+
 Decimal Achievements::effectOrDefault(int id, Decimal arg) const {
-    return isUnlocked(id) ? effectFormulae[idToIndex(id)](arg) : DC::D1;
+    return isUnlocked(id) ? effectFormulae[idToIndex(id)](arg) : getDefault(id);
 }
 
 json Achievements::to_json() const {

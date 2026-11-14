@@ -132,6 +132,7 @@ GameInstance runDimboost(GameState st, bool useSacrifice, bool verbose=true);
 GameInstance runGalaxy(GameState st, bool useSacrifice, bool verbose=true,
     std::function<bool(const SimulationHelpers::SegmentSearch&)> earlyStopCondition=
         [](const SimulationHelpers::SegmentSearch&) {return false;});
+GameInstance runInfinity(GameState st, bool useSacrifice, bool verbose=true);
 GameInstance runUntil(GameState st, const Progress& progress, bool useSacrifice, bool verbose,
     std::function<bool(const SimulationHelpers::SegmentSearch&)> earlyStopCondition=
         [](const SimulationHelpers::SegmentSearch&) {return false;});

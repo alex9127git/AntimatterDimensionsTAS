@@ -17,7 +17,7 @@ class Sacrifice : public ISerializable {
         void recalcSacrificeBonus();
 
     public:
-        Sacrifice();
+        Sacrifice() = default;
         Sacrifice(const json& j);
 
         Decimal getSacrificeBonus() const {return sacrificeBonus;}

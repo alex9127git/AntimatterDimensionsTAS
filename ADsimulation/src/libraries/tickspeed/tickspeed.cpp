@@ -1,15 +1,5 @@
 #include "tickspeed.h"
-#include "constants.h"
 
-
-Tickspeed::Tickspeed() 
-    :   costRule(DC::D1E3, DC::D10, DC::D10, DC::INF),
-        purchases(0),
-        unlocked(false),
-        cost(DC::D1E3),
-        value(DC::D1E3),
-        valuePerSecond(DC::D1)
-    {};
 
 Tickspeed::Tickspeed(const json& j) : Tickspeed::Tickspeed() {
     this->from_json(j);

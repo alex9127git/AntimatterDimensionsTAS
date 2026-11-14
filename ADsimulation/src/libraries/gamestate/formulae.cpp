@@ -23,7 +23,7 @@ const function<bool(const GameState&)> AchConstants::unlockConditions[] = {
     NOT_APPLICABLE,
     NOT_APPLICABLE,
 
-    NOT_IMPLEMENTED_YET,
+    NOT_APPLICABLE,
     ALWAYS_UNLOCKED,
     [](const GameState& st) {return st.AD()[8].getPurchases() == 99;},
     [](const GameState& st) {return st.antimatter() >= DC::D1E80;},
@@ -51,7 +51,7 @@ const function<bool(const GameState&)> AchConstants::unlockConditions[] = {
     NOT_IMPLEMENTED_YET,
     [](const GameState& st) {
         return st.antimatter() >= DC::D1E63 && 
-            st.AD()[1].productionPerSecond(st.tickspeed()) > st.antimatter();
+            st.AD()[1].productionPerSecond(st.tickspeed(), st.getAMcap()) > st.antimatter();
     },
     [](const GameState& st) {
         for (int i = 1; i <= 7; i++) {
@@ -129,7 +129,7 @@ Decimal getTotalTickspeed(const GameState& st) {
 }
 
 Decimal getSacrificeExponent(const GameState& st) {
-    return DC::D2 * st.achievements().effectOrDefault(32);
+    return DC::D2 * (DC::D1 + st.achievements().effectOrDefault(32));
 }
 
 Decimal getCostForDimPurchases(const ExponentialCostScaling& costRule, int32_t dimTarget) {

@@ -11,7 +11,9 @@
 enum RunType {
     NextDimboost,
     NextGalaxy,
-    ForceNextGalaxy
+    ForceNextGalaxy,
+    NextInfinity,
+    ForceNextInfinity
 };
 
 struct InputData {
@@ -114,15 +116,17 @@ inline InputData getInputFromCmd(int argc, char* argv[]) {
     if (result.gameState.dimensionBoosts() >= 4) {
         std::cout << "2 - Force Antimatter Galaxy" << std::endl;
     }
+    std::cout << "3 - Get next Infinity reset" << std::endl;
+    std::cout << "4 - Force Infinity reset" << std::endl;
     std::string line;
     std::getline(std::cin, line);
     int t;
     try {
         t = line.empty() ? 0 : std::stoi(line);
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
         return cancel(result);
     };
-    if (t < 0 || t > 2) return cancel(result);
+    if (t < 0 || t > 4) return cancel(result);
     if (t == 2 && result.gameState.dimensionBoosts() < 4) return cancel(result);
     result.runType = (RunType) t;
     if (t == 1 || result.gameState.dimensionBoosts() >= 5) {

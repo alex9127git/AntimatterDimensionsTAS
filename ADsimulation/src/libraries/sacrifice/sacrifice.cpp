@@ -3,10 +3,6 @@
 using namespace std;
 
 
-Sacrifice::Sacrifice() {
-    recalcSacrificeBonus();
-}
-
 Sacrifice::Sacrifice(const json& j) {
     from_json(j);
 }

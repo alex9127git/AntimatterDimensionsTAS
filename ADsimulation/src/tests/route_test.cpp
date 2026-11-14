@@ -55,7 +55,7 @@ TEST(RouteRetracing, CanRetracePurchases) {
     runAllQueuedInstructions(instance);
     json saveExpected = readJson(TEST_FILES_DIR "/01_purchaseTest/out.json");
     json saveActual = instance.game().to_json();
-    EXPECT_EQ(saveExpected, saveActual);
+    EXPECT_EQ(saveExpected, restrictToKeysOf(saveActual, saveExpected));
 }
 
 TEST(RouteRetracing, CanRetracePurchasesAndSacrifices) {
@@ -67,7 +67,7 @@ TEST(RouteRetracing, CanRetracePurchasesAndSacrifices) {
     runAllQueuedInstructions(instance);
     json saveExpected = readJson(TEST_FILES_DIR "/02_purchAndSacTest/out.json");
     json saveActual = instance.game().to_json();
-    EXPECT_EQ(saveExpected, saveActual);
+    EXPECT_EQ(saveExpected, restrictToKeysOf(saveActual, saveExpected));
 }
 
 TEST(IntegrationTesting, FirstDimboostSearchAndRetraceTest) {
@@ -76,7 +76,7 @@ TEST(IntegrationTesting, FirstDimboostSearchAndRetraceTest) {
     GameInstance actual = runDimboost(st, true, false);
     json saveExpected = readJson(TEST_FILES_DIR "/03_simulationTest/out.json");
     json saveActual = actual.game().to_json();
-    EXPECT_EQ(saveExpected, saveActual);
+    EXPECT_EQ(saveExpected, restrictToKeysOf(saveActual, saveExpected));
 }
 
 TEST(IntegrationTesting, ComplexSearchAndRetraceTest) {
@@ -90,7 +90,7 @@ TEST(IntegrationTesting, ComplexSearchAndRetraceTest) {
 
     json saveExpected = readJson(TEST_FILES_DIR "/02_purchAndSacTest/out.json");
     json saveActual = actual.game().to_json();
-    EXPECT_EQ(saveExpected, saveActual);
+    EXPECT_EQ(saveExpected, restrictToKeysOf(saveActual, saveExpected));
 
     int count = 0;
     size_t pos = 0;

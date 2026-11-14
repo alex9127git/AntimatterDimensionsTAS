@@ -5,6 +5,7 @@
 
 struct DC {
     inline static const Decimal D0 = Decimal(0);
+    inline static const Decimal D0_1 = Decimal(0.1);
     inline static const Decimal D0_2 = Decimal(0.2);
     inline static const Decimal D1 = Decimal(1);
 
@@ -52,4 +53,8 @@ struct DC {
     inline static const Decimal D1E150 = Decimal(1, (int64_t) 150LL);
 
     inline static const Decimal INF = Decimal::pow(D2, 1024);
+
+    inline static const Decimal D1E315 = Decimal(1, (int64_t) 315LL);
+
+    inline static const Decimal D1E9E15 = Decimal(1, (int64_t) 9'000'000'000'000'000);
 };

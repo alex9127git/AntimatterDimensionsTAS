@@ -47,3 +47,12 @@ void runAllQueuedInstructions(GameInstance& instance) {
         instance.runNextInstructions();
     }
 }
+
+json restrictToKeysOf(const json& actual, const json& expected) {
+    if (!actual.is_object() || !expected.is_object()) return actual;
+    json result = json::object();
+    for (const auto& [key, value] : expected.items()) {
+        if (actual.contains(key)) result[key] = restrictToKeysOf(actual.at(key), value);
+    }
+    return result;
+}

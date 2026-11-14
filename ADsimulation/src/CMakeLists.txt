@@ -137,10 +137,9 @@ target_sources(tickspeed
 target_link_libraries(tickspeed
     PUBLIC
         interfaces
+        constants
         costmath
         decimal
-    PRIVATE
-        constants
 )
 
 add_library(dimensions)
@@ -176,6 +175,24 @@ target_sources(sacrifice
             libraries/sacrifice/sacrifice.h
 )
 target_link_libraries(sacrifice
+    PUBLIC
+        interfaces
+        constants
+        decimal
+)
+
+add_library(infinity)
+target_sources(infinity
+    PRIVATE
+        libraries/infinity/infinity.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS
+            libraries/infinity
+        FILES
+            libraries/infinity/infinity.h
+)
+target_link_libraries(infinity
     PUBLIC
         interfaces
         constants
@@ -221,6 +238,7 @@ target_link_libraries(gamestate
         constants
         tickspeed
         sacrifice
+        infinity
         costmath
         decimal
 )

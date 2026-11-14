@@ -5,6 +5,7 @@
 #include "tickspeed.h"
 #include "sacrifice.h"
 #include "constants.h"
+#include "infinity.h"
 #include <cstdint>
 
 
@@ -12,19 +13,22 @@ class GameState : public ISerializable {
     private:
         Decimal _antimatter = DC::D10;
         Decimal _totalAntimatter = DC::D10;
+        Decimal _antimatterThisReset = DC::D10;
+        Decimal _maxAntimatterThisInfinity = DC::D10;
         AntimatterDimensions _AD = AntimatterDimensions();
         Tickspeed _tickspeed = Tickspeed();
         Achievements _achievements = Achievements();
         Sacrifice _sacrifice = Sacrifice();
+        Infinity _infinity = Infinity();
         int32_t _dimensionBoosts = 0;
         int32_t _antimatterGalaxies = 0;
         int64_t _realTimePlayed = 0;
         bool _canUseKonami = true;
+        bool _infinityBroken = false;
 
         // volatile, shouldn't be serialized
         
         Decimal achievementBonus = DC::D1;
-        Decimal _antimatterThisReset = DC::D10;
 
         void prepare();
 
@@ -35,6 +39,11 @@ class GameState : public ISerializable {
         void recalcTickspeed();
         void recalcSacrifice();
         void recalcAchievementBonus();
+
+        // private reset methods
+
+        void tier1Reset();
+        void tier2Reset();
 
         // checks
 
@@ -49,14 +58,19 @@ class GameState : public ISerializable {
         Decimal antimatter() const {return _antimatter;}
         Decimal totalAntimatter() const {return _totalAntimatter;}
         Decimal antimatterThisReset() const {return _antimatterThisReset;}
+        Decimal maxAntimatterThisInfinity() const {return _maxAntimatterThisInfinity;}
         const AntimatterDimensions& AD() const {return _AD;}
         const Tickspeed& tickspeed() const {return _tickspeed;}
         const Achievements& achievements() const {return _achievements;}
         const Sacrifice& sacrifice() const {return _sacrifice;}
+        const Infinity& infinity() const {return _infinity;}
         int64_t realTimePlayed() const {return _realTimePlayed;}
         int32_t dimensionBoosts() const {return _dimensionBoosts;}
         int32_t antimatterGalaxies() const {return _antimatterGalaxies;}
         bool canUseKonami() const {return _canUseKonami;}
+        bool infinityBroken() const {return _infinityBroken;}
+
+        Decimal getAMcap() const {return infinityBroken() ? DC::D1E9E15 : DC::D1E315;}
 
         void tick(double diff);
 
@@ -77,8 +91,10 @@ class GameState : public ISerializable {
         Decimal getAntimatterGoalForGalaxy() const;
         bool canBuyNextDimboost() const;
         bool canBuyNextGalaxy() const;
+        bool canCrunch() const;
         bool dimboostReset();
         bool galaxyReset();
+        bool infinityReset();
         bool canSacrifice() const;
     private:
         Decimal sacrificeIncrease() const;

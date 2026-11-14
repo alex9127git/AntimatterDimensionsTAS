@@ -17,15 +17,6 @@ Dimension::Dimension(
         multiplier(DC::D1)
     {}
 
-Dimension::Dimension()
-    :   costRule(DC::D10, DC::D1E3, DC::D10, DC::INF),
-        amount(DC::D0),
-        purchases(0),
-        unlocked(true),
-        cost(DC::D10),
-        multiplier(DC::D1)
-    {}
-
 void Dimension::update(const Decimal& newMult) {
     this->multiplier = newMult;
 }
@@ -89,16 +80,16 @@ AntimatterDimension::AntimatterDimension(
 )   :   Dimension(_cost, _scaling, _unlocked)
     {}
 
-Decimal AntimatterDimension::productionPerSecond(const Tickspeed& t) const {
-    return this->amount * this->multiplier * t.perSecond();
+Decimal AntimatterDimension::productionPerSecond(const Tickspeed& t, Decimal cap) const {
+    return min(this->amount * this->multiplier * t.perSecond(), cap);
 }
 
-Decimal AntimatterDimension::productionPerDiff(const Tickspeed& t, double diff) const {
-    return this->productionPerSecond(t) * Decimal(diff);
+Decimal AntimatterDimension::productionPerDiff(const Tickspeed& t, Decimal cap, double diff) const {
+    return this->productionPerSecond(t, cap) * Decimal(diff);
 }
 
-void AntimatterDimension::produceDimensions(AntimatterDimension& dimension, const Tickspeed& t, double diff) const {
-    dimension.amount += this->productionPerDiff(t, diff);
+void AntimatterDimension::produceDimensions(AntimatterDimension& dimension, const Tickspeed& t, Decimal cap, double diff) const {
+    dimension.amount += this->productionPerDiff(t, cap, diff);
 }
 
 void AntimatterDimension::onPurchase() {

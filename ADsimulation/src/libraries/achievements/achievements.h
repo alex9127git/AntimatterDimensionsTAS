@@ -31,6 +31,7 @@ class Achievements : public ISerializable {
         int achCount() const;
 
         Decimal calcBonus() const;
+        static Decimal getDefault(int id);
         Decimal effectOrDefault(int id, Decimal arg=DC::D0) const;
 
         json to_json() const override;

@@ -52,6 +52,15 @@ class Progress {
             );
         }
 
+        static Progress untilInfinity() {
+            return Progress(
+                [](const GameState& st) {return st.canCrunch();}, 
+                [](const GameState& st) {
+                    return st.antimatterThisReset().log10value() / DC::INF.log10value();
+                }
+            );
+        }
+
         double getFraction() const {return progressFraction;}
         void finish() {
             progressFraction = 1.0;
